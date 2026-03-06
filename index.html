@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUCLEAR_SUNSET.EXE // TTW_EDITION</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="theme-cw" oninput="triggerAutosave()">
+
+<!-- INTENSE TRAINING MODAL -->
+<div class="modal-overlay" id="it-modal">
+    <div class="modal-box">
+        <h2>INTENSE TRAINING</h2>
+        <p>Select which S.P.E.C.I.A.L. attribute to increase by 1 point.</p>
+        <div class="special-picker-grid" id="it-picker-grid"></div>
+        <button class="modal-cancel-btn" onclick="closeITModal()">CANCEL</button>
+    </div>
+</div>
+
+<div class="wrapper">
+    <header>
+        <div class="hc-alert-bar" id="hc-banner">HARDERCORE_OVERRIDE_ACTIVE</div>
+        <div class="header-controls">
+            <div class="os-title">NUCLEAR_SUNSET.EXE // TTW_EDITION</div>
+            <div class="settings-block">
+                <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL WASTELAND</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE DESERT</button></div>
+                <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
+                <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
+            </div>
+        </div>
+    </header>
+
+    <section>
+        <div class="scroll-v">
+            <h2>IDENTITY</h2>
+            <input type="text" id="char-name" placeholder="SUBJECT_NAME..." style="width:100%; font-size:1.5rem; font-weight:bold; margin-bottom:15px; border-bottom: 2px solid var(--pip-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <h2>S.P.E.C.I.A.L.</h2>
+                <div style="font-size:0.8rem; font-weight:bold;">PTS: <span id="pts-left">0</span></div>
+            </div>
+            <div id="special-list"></div>
+            <h2>TAGS (MAX 3)</h2>
+            <div id="tag-area" class="grid-tidy"></div>
+            <h2 id="trait-header">INITIAL TRAITS</h2>
+            <div id="trait-list"></div>
+            <button id="add-trait-btn" class="action-btn" onclick="addTrait()">+ ADD TRAIT</button>
+        </div>
+    </section>
+
+    <section>
+        <div class="tab-nav">
+            <button onclick="showTab('ov')" id="tab-btn-ov" class="active">OVERVIEW</button>
+            <button onclick="showTab('prog')" id="tab-btn-prog">PROGRESSION</button>
+            <button onclick="showTab('perks')" id="tab-btn-perks">ALL PERKS</button>
+            <button onclick="showTab('gear')" id="tab-btn-gear">LOADOUT</button>
+            <button onclick="showTab('quests')" id="tab-btn-quests">QUESTS</button>
+            <button onclick="showTab('coll')" id="tab-btn-coll">COLLECTIBLES</button>
+            <button onclick="showTab('uni')" id="tab-btn-uni">UNIQUES</button>
+        </div>
+
+        <div id="tab-ov" class="tab-content scroll-v">
+            <div id="ov-name" style="font-size:1.5rem; border-bottom:2px solid var(--pip-color); padding-bottom:5px; margin-bottom:10px;">NO_ID</div>
+            <div id="ov-spec" style="display:flex; justify-content:space-between; text-align:center; margin-bottom:15px;"></div>
+            <div class="ov-grid">
+                <div>
+                    <div class="ov-card"><span class="ov-sub">TAGS</span><div id="ov-tags"></div></div>
+                    <div class="ov-card"><span class="ov-sub">TRAITS</span><div id="ov-traits"></div></div>
+                    <div class="ov-card"><span class="ov-sub">GEAR_LIST</span><div id="ov-gear"></div></div>
+                </div>
+                <div class="ov-card"><span class="ov-sub">PERK_EVOLUTION</span><div id="ov-perks"></div></div>
+            </div>
+        </div>
+
+        <div id="tab-prog" class="tab-content scroll-v" style="display:none;">
+            <div id="prog-list" class="prog-grid"></div>
+            <h2>EXTRA REWARDS</h2>
+            <div id="extra-perk-list" class="prog-grid"></div>
+            <button class="action-btn" onclick="addExtraPerk()">+ ADD EXTRA PERK</button>
+        </div>
+
+        <div id="tab-perks" class="tab-content scroll-v" style="display:none;">
+            <div class="perks-controls">
+                <input type="text" id="perk-search-bar" class="pip-search" placeholder="SEARCH ALL PERKS..." oninput="renderAllPerks()" style="margin-bottom:0; flex:1;">
+            </div>
+            <div class="perks-controls" style="margin-bottom:10px;">
+                <span style="font-size:0.65rem; font-weight:bold; opacity:0.7; margin-right:5px;">SORT:</span>
+                <div class="perks-sort-group">
+                    <button class="sort-btn active" id="sort-az" onclick="setSort('az')">A–Z</button>
+                    <button class="sort-btn" id="sort-lvl" onclick="setSort('lvl')">BY LEVEL</button>
+                    <button class="sort-btn" id="sort-spec" onclick="setSort('spec')">BY S.P.E.C.I.A.L.</button>
+                </div>
+            </div>
+            <div id="all-perks-list"></div>
+        </div>
+
+        <div id="tab-gear" class="tab-content scroll-v" style="display:none;">
+            <div class="gear-split-grid">
+                <div><h2>WEAPONS</h2><div id="weapon-list"></div><button class="action-btn" onclick="addWeapon()">+ WEAPON</button></div>
+                <div><h2>APPAREL</h2><div id="armor-list"></div><button class="action-btn" onclick="addArmor()">+ APPAREL</button></div>
+            </div>
+        </div>
+
+        <div id="tab-quests" class="tab-content scroll-v" style="display:none;">
+            <input type="text" id="quest-search-bar" class="pip-search" placeholder="SEARCH QUESTS..." oninput="searchQuests()">
+            <div id="quest-list-container"></div>
+        </div>
+        
+        <div id="tab-coll" class="tab-content scroll-v" style="display:none;"><div id="coll-list"></div></div>
+
+        <div id="tab-uni" class="tab-content scroll-v" style="display:none;">
+            <h2>⚔ UNIQUE WEAPONS</h2>
+            <input type="text" id="uni-search-bar" class="pip-search" placeholder="SEARCH UNIQUE WEAPONS..." oninput="searchUniques()">
+            <div id="unique-weapon-checklist"></div>
+            <h2 style="margin-top:20px;">🛡 UNIQUE ARMOR &amp; APPAREL</h2>
+            <input type="text" id="uni-armor-search-bar" class="pip-search" placeholder="SEARCH UNIQUE ARMOR..." oninput="searchUniqueArmor()">
+            <div id="unique-armor-checklist"></div>
+        </div>
+    </section>
+
+    <section>
+        <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
+        <div style="display:flex; gap:5px; margin-bottom:10px;">
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
+            <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
+        </div>
+        <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
+        <div id="sync-status" style="font-size:0.6rem; text-align:right; opacity:0.6; margin-top:5px;">SYSTEM_SYNCED</div>
+        
+        <div class="credits-box">
+            <div class="sticky-note" id="sysop-note" style="display:block; background:#ff4; color:#000;">
+                !! STICKY NOTE !!<br>9:13AM, October 23, 2077,
+                HARDERCORE.EXE HAS BEEN ACTIVATED! GOD HELP US ALL! F.A.O FINALCATALYST - VAULT-TEC R&D
+            </div>
+            <b>SOURCE: <a href="https://nuclearsunset.com" target="_blank" style="color:inherit;">NUCLEARSUNSET.COM</a></b><br>
+            TEAM: DARKSOLARLEGEND, ORGASMICSNEEZE, DOKTORAKCEL, LIME, FINALCATALYST.
+            <div style="font-size: 0.65rem; border-top:1px dotted var(--pip-color); margin-top:5px; padding-top:4px;"><b>CREATED AND MAINTAINED BY GASSY</b></div>
+        </div>
+    </section>
+</div>
+
+<script src="scripts.js"></script>
+</body>
+</html>
