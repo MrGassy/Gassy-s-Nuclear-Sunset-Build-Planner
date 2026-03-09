@@ -3121,3 +3121,123 @@ body.theme-vault21:not(.mode-hc) .plab-trait { color: #ffcc66; }
 body.theme-legion:not(.mode-hc)  .plab-trait { color: #c8960c; }
 body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 
+
+/* ═══════════════════════════════════════════════════════
+   KARMA SELECTOR
+═══════════════════════════════════════════════════════ */
+.karma-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 2px;
+}
+.karma-btn {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 3px 5px;
+    font-size: 0.62em;
+    font-family: inherit;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    border: 1px solid rgba(var(--tc-r,100),var(--tc-g,200),var(--tc-b,100),0.25);
+    background: rgba(var(--tc-r,100),var(--tc-g,200),var(--tc-b,100),0.04);
+    color: rgba(var(--tc-r,100),var(--tc-g,200),var(--tc-b,100),0.5);
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.karma-btn:hover {
+    border-color: var(--kc, var(--pip-color));
+    color: var(--kc, var(--pip-color));
+    background: rgba(var(--tc-r,100),var(--tc-g,200),var(--tc-b,100),0.08);
+}
+.karma-btn.karma-active {
+    border-color: var(--kc, var(--pip-color));
+    color: var(--kc, var(--pip-color));
+    background: rgba(var(--tc-r,100),var(--tc-g,200),var(--tc-b,100),0.12);
+    font-weight: bold;
+}
+
+/* ═══════════════════════════════════════════════════════
+   TRANSIT / HUMBLED BUTTON
+═══════════════════════════════════════════════════════ */
+.transit-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 9px;
+    font-family: inherit;
+    font-size: 0.65em;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    border: 1px solid rgba(255, 80, 40, 0.45);
+    background: rgba(255, 60, 20, 0.07);
+    color: #ff7040;
+    border-radius: 2px;
+    margin-left: 6px;
+    transition: all 0.15s;
+}
+.transit-btn:hover {
+    border-color: #ff6030;
+    background: rgba(255,60,20,0.14);
+    color: #ff8050;
+}
+
+/* ═══════════════════════════════════════════════════════
+   HUMBLED STATUS BANNER
+═══════════════════════════════════════════════════════ */
+#humbled-status-banner {
+    display: flex;
+    gap: 8px;
+    padding: 7px 14px;
+    background: rgba(255, 60, 20, 0.08);
+    border-bottom: 1px solid rgba(255, 80, 40, 0.4);
+    color: #ff9060;
+    font-size: 0.68em;
+    line-height: 1.5;
+    flex-wrap: wrap;
+    align-items: center;
+}
+.hb-icon { font-size: 1.2em; }
+.hb-main { font-weight: bold; color: #ffb080; }
+.hb-sep  { color: rgba(255,150,80,0.4); }
+.hb-stats { color: #ff8050; }
+.hb-rule  { color: #ffc090; font-style: italic; }
+
+/* ═══════════════════════════════════════════════════════
+   HUMBLED MODAL SPECIAL PICKER
+═══════════════════════════════════════════════════════ */
+.humbled-special-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+.humbled-stat-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    font-family: inherit;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 1px solid rgba(255,80,40,0.35);
+    background: rgba(255,50,20,0.05);
+    color: #ff8060;
+    border-radius: 3px;
+    transition: all 0.15s;
+    font-size: 0.72em;
+    gap: 3px;
+}
+.humbled-stat-btn:hover {
+    border-color: #ff6030;
+    background: rgba(255,60,20,0.12);
+}
+.humbled-stat-btn.humbled-stat-picked {
+    border-color: #ff6030;
+    background: rgba(255,60,20,0.2);
+    color: #ffb080;
+}
+.hs-name { font-weight: bold; font-size: 1em; }
+.hs-val  { font-size: 1.3em; font-weight: bold; color: var(--pip-color); }
+.hs-arrow { font-size: 0.85em; color: #ff6030; }

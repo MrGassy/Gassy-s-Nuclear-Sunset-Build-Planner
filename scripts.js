@@ -1057,7 +1057,7 @@ function sanitizeImport(d) {
         const v = parseInt(d.skillPoints?.[s]);
         clean.skillPoints[s] = (!isNaN(v) && v >= 0 && v <= 100) ? v : 0;
     });
-    clean.charLevel = (typeof d.charLevel === 'number' && d.charLevel >= 1 && d.charLevel <= 50) ? Math.floor(d.charLevel) : 1;
+    clean.charLevel = (typeof d.charLevel === 'number' && d.charLevel >= 1 && d.charLevel <= 60) ? Math.floor(d.charLevel) : 1;
     clean.skillHistory = Array.isArray(d.skillHistory) ? d.skillHistory.slice(0, 50).map(e => ({
         level: typeof e.level === 'number' ? e.level : 1,
         allocation: (e.allocation && typeof e.allocation === 'object') ? Object.fromEntries(skills.map(s => [s, typeof e.allocation[s] === 'number' ? e.allocation[s] : 0])) : {},
@@ -1407,7 +1407,15 @@ function confirmLevelUp() {
     triggerAutosave();
     // Check if new level grants a perk and prompt
     const newLvl = charLevel;
-    const isPerkLevel = (mode === 'hc') ? (newLvl % 3 === 0) : (newLvl % 2 === 0);
+    // Humbled perk frequency rules:
+    //  Still below pre-humbled level →  STD: every 4;  HC: never
+    //  At/above pre-humbled level    →  normal rules resume
+    let isPerkLevel;
+    if (hasBeenHumbled && humbledLevel > 0 && newLvl < humbledLevel) {
+        isPerkLevel = (mode === 'hc') ? false : (newLvl % 4 === 0);
+    } else {
+        isPerkLevel = (mode === 'hc') ? (newLvl % 3 === 0) : (newLvl % 2 === 0);
+    }
     if (isPerkLevel) {
         showPerkLevelUpPrompt(newLvl);
     }
@@ -1899,6 +1907,8 @@ function updateAll() {
     const lvlBtn = document.getElementById('lvlup-open-btn');
     if (lvlBtn) {
         document.getElementById('char-level-display').textContent = charLevel;
+        renderKarmaSelector();
+        renderHumbledBanner();
         document.getElementById('lvlup-pts-preview').textContent = ptsLvl + ' PTS';
         const ready = tagged.size >= 3;
         lvlBtn.classList.toggle('lvlup-btn-ready', ready);
@@ -2430,7 +2440,8 @@ function collectData() {
         colls: Array.from(document.querySelectorAll('#coll-list input')).map(i => i.checked),
         uniWpns: Array.from(document.querySelectorAll('.u-wpn-check')).map(i => i.checked),
         uniArmor: Array.from(document.querySelectorAll('.u-armor-check')).map(i => i.checked),
-        skillPoints, charLevel,
+        skillPoints, charLevel, buildKarma,
+        humbledLevel, humbledReductions, hasBeenHumbled,
         implantsTaken, rewardPerksList, internalizedTraitsList,
         fourthTagSkill: _fourthTagSkill || null,
         startingTraits: startingTraits,
@@ -2469,6 +2480,10 @@ function hydrate(d) {
         skills.forEach(s => { skillPoints[s] = 0; });
     }
     charLevel = (typeof d.charLevel === 'number' && d.charLevel >= 1) ? d.charLevel : 1;
+    buildKarma = d.buildKarma || 'neutral';
+    humbledLevel = (typeof d.humbledLevel === 'number') ? d.humbledLevel : 0;
+    humbledReductions = (d.humbledReductions && typeof d.humbledReductions === 'object') ? d.humbledReductions : {};
+    hasBeenHumbled = !!d.hasBeenHumbled;
     document.getElementById('char-name').value = d.name || "";
     document.getElementById('user-notes').value = d.notes || "";
     if(d.regionalStorage) regionalStorage = d.regionalStorage;
@@ -3163,6 +3178,12 @@ function closeTraitDetailModal() {
 const CUSTOM_THEMES = ['fo3','bos','enclave','vault21','legion','ncr'];
 let _activeCustomTheme = '';
 
+/* ── Karma & Humbled ── */
+let buildKarma = 'neutral';  // 'very-good'|'good'|'neutral'|'evil'|'very-evil'
+let humbledLevel = 0;        // level at time of transit (0 = not yet humbled)
+let humbledReductions = {};  // {STR:1, PER:1, ...} — 4 stats chosen, each -1
+let hasBeenHumbled = false;
+
 function setCustomTheme(name, skipSave) {
     _activeCustomTheme = name || '';
     // Remove all theme-* classes, then re-apply origin + custom + hc
@@ -3186,6 +3207,132 @@ function applyStoredTheme() {
     document.querySelectorAll('.theme-btn').forEach(btn => {
         btn.classList.toggle('active-theme', (btn.dataset.theme || '') === saved);
     });
+}
+
+
+/* ═══════════════════════════════════════════════
+   KARMA SYSTEM
+═══════════════════════════════════════════════ */
+const KARMA_TIERS = [
+    { id: 'very-good', label: '★★ VERY GOOD', color: '#a0e8ff' },
+    { id: 'good',      label: '★ GOOD',        color: '#70d870' },
+    { id: 'neutral',   label: '◆ NEUTRAL',     color: '#c8c888' },
+    { id: 'evil',      label: '✖ EVIL',         color: '#ff8040' },
+    { id: 'very-evil', label: '✖✖ VERY EVIL',  color: '#ff3030' },
+];
+
+function setKarma(k) {
+    buildKarma = k;
+    document.querySelectorAll('.karma-btn').forEach(b => {
+        b.classList.toggle('karma-active', b.dataset.karma === k);
+    });
+    triggerAutosave();
+}
+
+function renderKarmaSelector() {
+    const el = document.getElementById('karma-selector');
+    if (!el) return;
+    el.innerHTML = KARMA_TIERS.map(t =>
+        `<button class="karma-btn${buildKarma === t.id ? ' karma-active' : ''}"
+            data-karma="${t.id}"
+            style="--kc:${t.color}"
+            onclick="setKarma('${t.id}')"
+            title="${t.label}">${t.label}</button>`
+    ).join('');
+}
+
+/* ═══════════════════════════════════════════════
+   HUMBLED / WASTELAND TRANSIT SYSTEM
+═══════════════════════════════════════════════ */
+let _humbledPickedStats = [];
+
+function openHumbledModal() {
+    if (hasBeenHumbled) { alert('HEAD TRAUMA: Transit already applied.'); return; }
+    document.getElementById('humbled-modal').style.display = 'flex';
+}
+
+function closeHumbledModal() {
+    document.getElementById('humbled-modal').style.display = 'none';
+    _humbledPickedStats = [];
+    renderHumbledPicker();
+}
+
+function renderHumbledPicker() {
+    const grid = document.getElementById('humbled-special-grid');
+    if (!grid) return;
+    const stats = ['STR','PER','END','CHA','INT','AGL','LCK'];
+    grid.innerHTML = stats.map(s => {
+        const picked = _humbledPickedStats.includes(s);
+        const cur = special[s] || 5;
+        return `<button class="humbled-stat-btn${picked ? ' humbled-stat-picked' : ''}"
+            onclick="toggleHumbledStat('${s}')"
+            title="${s}: ${cur} → ${cur - 1}">
+            <span class="hs-name">${s}</span>
+            <span class="hs-val">${cur}</span>
+            ${picked ? '<span class="hs-arrow">→ '+(cur-1)+'</span>' : ''}
+        </button>`;
+    }).join('');
+    const cntEl = document.getElementById('humbled-pick-count');
+    if (cntEl) cntEl.textContent = _humbledPickedStats.length;
+    const confirmBtn = document.getElementById('humbled-confirm-btn');
+    if (confirmBtn) confirmBtn.disabled = _humbledPickedStats.length !== 4;
+}
+
+function toggleHumbledStat(s) {
+    if (_humbledPickedStats.includes(s)) {
+        _humbledPickedStats = _humbledPickedStats.filter(x => x !== s);
+    } else if (_humbledPickedStats.length < 4) {
+        _humbledPickedStats.push(s);
+    }
+    renderHumbledPicker();
+}
+
+function confirmHumbled() {
+    if (_humbledPickedStats.length !== 4) return;
+    // Record state
+    hasBeenHumbled = true;
+    humbledLevel = charLevel;
+    humbledReductions = {};
+    _humbledPickedStats.forEach(s => { humbledReductions[s] = 1; });
+    // Reset level and skills
+    charLevel = 1;
+    Object.keys(skillPoints).forEach(k => { skillPoints[k] = 0; });
+    // Clear skill history too
+    if (typeof skillHistory !== 'undefined') skillHistory = [];
+    // Close modal
+    document.getElementById('humbled-modal').style.display = 'none';
+    _humbledPickedStats = [];
+    // Rebuild progression (wipe level rows, keep perks/traits from previous run)
+    updateAll();
+    reCheckAllPerkRows();
+    renderHumbledBanner();
+    triggerAutosave();
+}
+
+function renderHumbledBanner() {
+    const el = document.getElementById('humbled-status-banner');
+    if (!el) return;
+    if (!hasBeenHumbled) { el.style.display = 'none'; return; }
+    const stats = Object.keys(humbledReductions);
+    const reachedOld = charLevel >= humbledLevel;
+    const modeLabel = (mode === 'hc') ? 'HARDERCORE' : 'STANDARD';
+    let perkRule;
+    if (reachedOld) {
+        perkRule = 'PERK PENALTY LIFTED — NORMAL RATES RESTORED';
+    } else if (mode === 'hc') {
+        perkRule = `NO NEW PERKS UNTIL LVL ${humbledLevel}`;
+    } else {
+        perkRule = `PERKS EVERY 4 LEVELS UNTIL LVL ${humbledLevel} (CURRENTLY LVL ${charLevel})`;
+    }
+    el.style.display = 'flex';
+    el.innerHTML = `
+        <span class="hb-icon">☣</span>
+        <span class="hb-main">HEAD TRAUMA ACTIVE — PRE-TRANSIT LEVEL: <b>${humbledLevel}</b></span>
+        <span class="hb-sep">|</span>
+        <span class="hb-stats">SPECIAL REDUCTIONS: ${stats.map(s=>`${s} -1`).join(', ')}</span>
+        <span class="hb-sep">|</span>
+        <span class="hb-rule">${perkRule}</span>
+    `;
 }
 
 window.onload = () => {
