@@ -674,6 +674,28 @@ h2 {
 }
 .skill-row-tagged .skill-row-val { color: #ffd700; }
 
+/* 4th Tag skill (from Tag! perk) — distinct amber/orange style */
+.skill-row-tag4 {
+    background: rgba(255,160,40,0.09) !important;
+    border-left: 2px solid rgba(255,160,40,0.7) !important;
+}
+.skill-row-tag4 .skill-row-name { color: #ffaa33 !important; font-weight: bold; }
+.skill-row-tag4 .skill-row-fill { background: #ffaa33 !important; }
+.skill-row-tag4 .skill-row-val { color: #ffaa33 !important; }
+
+/* Tag +15 badge */
+.sdelta-tag {
+    background: rgba(255,215,0,0.18);
+    border: 1px solid rgba(255,215,0,0.5);
+    color: #ffd700;
+}
+/* 4th tag (Tag! perk) +15 badge */
+.sdelta-tag4 {
+    background: rgba(255,160,40,0.18);
+    border: 1px solid rgba(255,160,40,0.6);
+    color: #ffaa33;
+}
+
 /* Level-up button */
 .lvlup-open-btn {
     display: flex; flex-direction: column; align-items: center;
@@ -1069,7 +1091,27 @@ h2 {
     top: 0;
     height: 100%;
     background: var(--pip-color);
-    transition: width 0.2s ease;
+    transition: width 0.2s ease, opacity 0.3s ease, box-shadow 0.3s ease;
+}
+@keyframes spec-bar-pulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(40,255,80,0.7), 0 0 12px rgba(40,255,80,0.4); opacity: 1; }
+    50% { box-shadow: 0 0 18px rgba(40,255,80,1), 0 0 36px rgba(40,255,80,0.6), 0 0 60px rgba(40,255,80,0.2); opacity: 0.88; }
+}
+.spec-fill-full {
+    background: #44ff66 !important;
+    animation: spec-bar-pulse 1.4s ease-in-out infinite;
+}
+.spec-fill-warm {
+    background: rgba(80,255,100,0.9);
+    box-shadow: 0 0 8px rgba(40,255,80,0.5);
+    opacity: 0.95;
+}
+.spec-fill-mid {
+    opacity: 0.75;
+}
+.spec-fill-dim {
+    opacity: 0.45;
+    filter: brightness(0.6);
 }
 .special-compact-grid .special-val {
     font-size: 1rem;

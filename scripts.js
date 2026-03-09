@@ -48,7 +48,7 @@ function getTaggedSkills() {
     return t;
 }
 function skillTotal(s) {
-    return Math.min(100, skillBase(s) + (getTaggedSkills().has(s) ? 15 : 0) + (skillPoints[s] || 0));
+    return Math.min(100, skillBase(s) + (skillPoints[s] || 0));
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
@@ -1385,7 +1385,7 @@ function confirmLevelUp() {
         gains[s] = gain;
         skillPoints[s] = (skillPoints[s] || 0) + gain;
         // Hard cap: total skill must not exceed 100
-        const maxPts = 100 - skillBase(s) - (tagged.has(s) ? 15 : 0);
+        const maxPts = 100 - skillBase(s);
         if (skillPoints[s] > maxPts) skillPoints[s] = Math.max(0, maxPts);
     });
     // Record this level's allocation for the Skill Log
@@ -1800,7 +1800,7 @@ function updateAll() {
         return `<div class="special-row">
             <span class="spec-abbr-lg spec-info-btn" title="Click for ${k} details — ${rank}" onclick="openSpecialInfoModal('${k}')">${k}</span>
             <div class="spec-track-wide" onclick="openSpecialInfoModal('${k}')" style="cursor:pointer;" title="${rank}">
-                <div class="spec-fill-wide" style="width:${special[k]*10}%"></div>
+                <div class="spec-fill-wide${special[k]===10?' spec-fill-full':special[k]>=7?' spec-fill-warm':special[k]>=4?' spec-fill-mid':' spec-fill-dim'}" style="width:${special[k]*10}%; opacity:${(0.3 + (special[k]-1)/9*0.7).toFixed(2)};"></div>
             </div>
             <div class="special-controls">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
@@ -1818,7 +1818,7 @@ function updateAll() {
         const startingTraitHTML = startingTraits.map((t) => {
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
-        const safeN = encodeURIComponent(t.name);
+        const safeN = encodeURIComponent(t.name).replace(/'/g, '%27');
         const onclick = td ? `onclick="ovTraitClick('${safeN}')"` : '';
         return `<div class="ov-entry ov-entry-clickable" ${onclick} title="${td ? 'CLICK FOR TRAIT DETAILS' : t.name}"><span>◈ ${t.name}</span></div>`;
     }).join('');
@@ -1827,7 +1827,7 @@ function updateAll() {
         if (!n) return '';
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase());
-        const safeN = encodeURIComponent(n);
+        const safeN = encodeURIComponent(n).replace(/'/g, '%27');
         const onclick = td ? `onclick="ovTraitClick('${safeN}')"` : '';
         return `<div class="ov-entry ov-entry-clickable" ${onclick} title="${td ? 'CLICK FOR TRAIT DETAILS' : n}"><span>▸ ${n}</span></div>`;
     }).join('');
@@ -1906,19 +1906,21 @@ function updateAll() {
     const skillListEl = document.getElementById('skill-list');
     if (skillListEl) {
         skillListEl.innerHTML = skills.map(s => {
+            const isFourthTag = s === _fourthTagSkill;
             const isTagged = tagged.has(s);
             const base = skillBase(s);
-            const tagBonus = isTagged ? 15 : 0;
-            const spent = skillPoints[s] || 0;
+                        const spent = skillPoints[s] || 0;
             const tDelta = skillDelta[s] || 0;
             const pDelta = perkSkillDelta[s] || 0;
-            const val = Math.min(100, base + tagBonus + spent + tDelta + pDelta);
+            const val = Math.min(100, base + spent + tDelta + pDelta);
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
-            const breakdown = `BASE:${base}${tagBonus?` TAG:+${tagBonus}`:''}${spent?` LVL:+${spent}`:''}${tDelta?` TRAIT:${tDelta>0?'+':''}${tDelta}`:''}${pDelta?` PERK:${pDelta>0?'+':''}${pDelta}`:''}`;
-            return `<div class="skill-row${isTagged?' skill-row-tagged':''}" title="${breakdown}">
-                <span class="skill-row-name">${isTagged?'★ ':''}${s}</span>
+            const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')).trim();
+            const tagClass = isFourthTag ? ' skill-row-tagged skill-row-tag4' : (isTagged ? ' skill-row-tagged' : '');
+            const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
+            return `<div class="skill-row${tagClass}" title="${breakdown}">
+                <span class="skill-row-name">${tagIcon}${s}</span>
                 <div class="skill-row-bar"><div class="skill-row-fill" style="width:${val}%"></div></div>
                 <span class="skill-row-val">${val}</span>${deltaBadges}
             </div>`;
