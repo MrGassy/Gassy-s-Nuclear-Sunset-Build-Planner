@@ -183,6 +183,16 @@
                 <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL WASTELAND</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE DESERT</button></div>
                 <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
                 <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled style="border:1px solid rgba(100,200,255,0.3)!important;color:rgba(100,200,255,0.5);padding:5px 12px;cursor:pointer;font-size:0.75rem;background:transparent;letter-spacing:1px;transition:all 0.2s;border-bottom:1px solid rgba(100,200,255,0.3)!important;">↩ UNDO</button>
+                <div class="theme-selector-wrap">
+                    <span class="theme-sel-label">HUD</span>
+                    <button class="theme-btn active-theme" data-theme=""      onclick="setCustomTheme('')"        title="NUCLEAR SUNSET — DEFAULT">NS</button>
+                    <button class="theme-btn tbtn-fo3"     data-theme="fo3"   onclick="setCustomTheme('fo3')"     title="FALLOUT 3 PIP-BOY">FO3</button>
+                    <button class="theme-btn tbtn-bos"     data-theme="bos"   onclick="setCustomTheme('bos')"     title="BROTHERHOOD OF STEEL">BoS</button>
+                    <button class="theme-btn tbtn-enc"     data-theme="enclave" onclick="setCustomTheme('enclave')" title="ENCLAVE">ENC</button>
+                    <button class="theme-btn tbtn-v21"     data-theme="vault21" onclick="setCustomTheme('vault21')" title="VAULT 21">V21</button>
+                    <button class="theme-btn tbtn-leg"     data-theme="legion"  onclick="setCustomTheme('legion')"  title="CAESAR'S LEGION">LEG</button>
+                    <button class="theme-btn tbtn-ncr"     data-theme="ncr"     onclick="setCustomTheme('ncr')"     title="NEW CALIFORNIA REPUBLIC">NCR</button>
+                </div>
                 <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
             </div>
         </div>

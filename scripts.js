@@ -1117,6 +1117,7 @@ function setOrigin(o, skipSave=false) {
     }
     origin = o;
     document.body.className = (o === 'MW') ? 'theme-mw' : 'theme-cw';
+    if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
     if(mode==='hc') document.body.classList.add('mode-hc');
     document.getElementById('btn-cw').classList.toggle('active', o==='CW');
     document.getElementById('btn-mw').classList.toggle('active', o==='MW');
@@ -3155,6 +3156,38 @@ function closeTraitDetailModal() {
 }
 
 /* ===== INITIALIZATION ===== */
+
+/* ═══════════════════════════════════════════════
+   CUSTOM HUD THEMES
+═══════════════════════════════════════════════ */
+const CUSTOM_THEMES = ['fo3','bos','enclave','vault21','legion','ncr'];
+let _activeCustomTheme = '';
+
+function setCustomTheme(name, skipSave) {
+    _activeCustomTheme = name || '';
+    // Remove all theme-* classes, then re-apply origin + custom + hc
+    const isHC = document.body.classList.contains('mode-hc');
+    const originClass = (origin === 'MW') ? 'theme-mw' : 'theme-cw';
+    document.body.className = originClass;
+    if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
+    if (isHC) document.body.classList.add('mode-hc');
+    if (!skipSave) localStorage.setItem('NS_CustomTheme', _activeCustomTheme);
+    // Update selector button states
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        const active = (btn.dataset.theme || '') === _activeCustomTheme;
+        btn.classList.toggle('active-theme', active);
+    });
+}
+
+function applyStoredTheme() {
+    const saved = localStorage.getItem('NS_CustomTheme') || '';
+    _activeCustomTheme = saved;
+    if (saved) document.body.classList.add('theme-' + saved);
+    document.querySelectorAll('.theme-btn').forEach(btn => {
+        btn.classList.toggle('active-theme', (btn.dataset.theme || '') === saved);
+    });
+}
+
 window.onload = () => {
     document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
     renderUniques();
@@ -3174,4 +3207,5 @@ window.onload = () => {
         setOrigin('CW', true);
         renderImplants();
     }
+    applyStoredTheme();
 };

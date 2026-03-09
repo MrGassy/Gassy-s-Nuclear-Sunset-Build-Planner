@@ -2766,3 +2766,358 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
         grid-template-columns: 1fr;
     }
 }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NUCLEAR SUNSET — CUSTOM FACTION HUD THEMES
+   All selectors use :not(.mode-hc) — HARDERCORE always wins.
+   Variables set per-theme are picked up everywhere that uses var().
+   Hard-coded rgba tints are overridden with matching faction colours.
+═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Theme selector widget ──────────────────────────────────────── */
+.theme-selector-wrap {
+    display: flex; align-items: center; gap: 3px; flex-shrink: 0;
+}
+.theme-sel-label {
+    font-size: 0.58rem; letter-spacing: 1.5px; opacity: 0.4;
+    margin-right: 3px; white-space: nowrap;
+}
+.theme-btn {
+    font-size: 0.62rem !important; font-weight: bold;
+    padding: 3px 8px !important;
+    letter-spacing: 0.5px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+    background: transparent !important;
+    color: rgba(255,255,255,0.35) !important;
+    transition: all 0.14s; white-space: nowrap;
+}
+.theme-btn:hover:not(.active-theme) {
+    background: rgba(255,255,255,0.06) !important;
+    color: rgba(255,255,255,0.75) !important;
+    border-color: rgba(255,255,255,0.4) !important;
+    border-bottom-color: rgba(255,255,255,0.4) !important;
+}
+/* Active: take on the faction colour */
+.theme-btn.active-theme {
+    color: #000 !important;
+    box-shadow: 0 0 8px currentColor;
+}
+/* NS default */
+.theme-btn[data-theme=""].active-theme      { background: #28ff28 !important; border-color: #28ff28 !important; }
+.tbtn-fo3.active-theme                      { background: #24f024 !important; border-color: #24f024 !important; }
+.tbtn-bos.active-theme                      { background: #5ba8ff !important; border-color: #5ba8ff !important; }
+.tbtn-enc.active-theme                      { background: #f5c518 !important; border-color: #f5c518 !important; }
+.tbtn-v21.active-theme                      { background: #ff8c00 !important; border-color: #ff8c00 !important; }
+.tbtn-leg.active-theme                      { background: #cc2800 !important; border-color: #cc2800 !important; color: #fff !important; }
+.tbtn-ncr.active-theme                      { background: #c8a840 !important; border-color: #c8a840 !important; }
+/* Hover accent hints */
+.tbtn-fo3:hover  { color: #24f024 !important; border-color: #24f024 !important; border-bottom-color: #24f024 !important; }
+.tbtn-bos:hover  { color: #5ba8ff !important; border-color: #5ba8ff !important; border-bottom-color: #5ba8ff !important; }
+.tbtn-enc:hover  { color: #f5c518 !important; border-color: #f5c518 !important; border-bottom-color: #f5c518 !important; }
+.tbtn-v21:hover  { color: #ff8c00 !important; border-color: #ff8c00 !important; border-bottom-color: #ff8c00 !important; }
+.tbtn-leg:hover  { color: #cc2800 !important; border-color: #cc2800 !important; border-bottom-color: #cc2800 !important; }
+.tbtn-ncr:hover  { color: #c8a840 !important; border-color: #c8a840 !important; border-bottom-color: #c8a840 !important; }
+
+
+/* ═════════════════════════════════════════════════════════════════
+   SHARED THEME MIXIN APPROACH
+   Step 1: each theme sets CSS variables.
+   Step 2: a shared rule block targeting [class*="theme-"] remaps
+   every hard-coded rgba(40,255,40,...) tint → var(--tc-r,40),
+   var(--tc-g,255), var(--tc-b,40).  Keeps overrides DRY.
+   We also set --tc-r/g/b per theme for the tint rebuilding.
+═════════════════════════════════════════════════════════════════ */
+
+/* ── FO3 — Fallout 3 Pip-Boy 3000 ──────────────────────────────
+   Deeper jade-green CRT. Subtle amber phosphor edge glow.
+   More contrast, heavier scanlines — that chunky 2008 terminal feel.
+──────────────────────────────────────────────────────────────── */
+body.theme-fo3:not(.mode-hc) {
+    --pip-color:  #20e820;
+    --pip-bg:     #010806;
+    --pip-bg-2:   #020e08;
+    --pip-bg-3:   #041208;
+    --pip-border: #133313;
+    --glow-sm:    0 0 6px  rgba(32,232,32,.30);
+    --glow-md:    0 0 16px rgba(32,232,32,.24);
+    --glow-lg:    0 0 32px rgba(32,232,32,.16);
+    --tc-r: 32; --tc-g: 232; --tc-b: 32;  /* tint components */
+}
+body.theme-fo3:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(10,60,15,.55) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.10) 2px, rgba(0,0,0,.10) 4px);  /* heavier scanlines */
+}
+
+/* ── BoS — Brotherhood of Steel ────────────────────────────────
+   Cold military blue. Circuit-board grid whisper. Power armour HUD.
+──────────────────────────────────────────────────────────────── */
+body.theme-bos:not(.mode-hc) {
+    --pip-color:  #5ba8ff;
+    --pip-bg:     #020610;
+    --pip-bg-2:   #030b1c;
+    --pip-bg-3:   #051328;
+    --pip-border: #142a50;
+    --glow-sm:    0 0 6px  rgba(91,168,255,.28);
+    --glow-md:    0 0 16px rgba(91,168,255,.22);
+    --glow-lg:    0 0 32px rgba(91,168,255,.15);
+    --tc-r: 91; --tc-g: 168; --tc-b: 255;
+}
+body.theme-bos:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(8,25,70,.60) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.065) 2px, rgba(0,0,0,.065) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 40px,
+            rgba(91,168,255,.015) 40px, rgba(91,168,255,.015) 41px),
+        repeating-linear-gradient(0deg, transparent, transparent 40px,
+            rgba(91,168,255,.015) 40px, rgba(91,168,255,.015) 41px);  /* circuit grid */
+}
+
+/* ── Enclave — United States Government Remnant ────────────────
+   Gold authority on near-black. Institutional. Clean, imposing.
+──────────────────────────────────────────────────────────────── */
+body.theme-enclave:not(.mode-hc) {
+    --pip-color:  #f5c518;
+    --pip-bg:     #080602;
+    --pip-bg-2:   #0e0b03;
+    --pip-bg-3:   #140f04;
+    --pip-border: #3e2e00;
+    --glow-sm:    0 0 6px  rgba(245,197,24,.28);
+    --glow-md:    0 0 16px rgba(245,197,24,.22);
+    --glow-lg:    0 0 32px rgba(245,197,24,.15);
+    --tc-r: 245; --tc-g: 197; --tc-b: 24;
+}
+body.theme-enclave:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(60,42,0,.58) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px),
+        repeating-linear-gradient(45deg, transparent, transparent 60px,
+            rgba(245,197,24,.013) 60px, rgba(245,197,24,.013) 62px);  /* diagonal stamp */
+}
+
+/* ── Vault 21 — Lucky House Casino ─────────────────────────────
+   Warm amber-orange neon. Vegas glow. Warm dark backgrounds.
+──────────────────────────────────────────────────────────────── */
+body.theme-vault21:not(.mode-hc) {
+    --pip-color:  #ff8c00;
+    --pip-bg:     #0a0602;
+    --pip-bg-2:   #130904;
+    --pip-bg-3:   #1b0d05;
+    --pip-border: #4a2200;
+    --glow-sm:    0 0 6px  rgba(255,140,0,.30);
+    --glow-md:    0 0 18px rgba(255,140,0,.25);
+    --glow-lg:    0 0 36px rgba(255,140,0,.18);
+    --tc-r: 255; --tc-g: 140; --tc-b: 0;
+}
+body.theme-vault21:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(80,35,0,.62) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.075) 2px, rgba(0,0,0,.075) 4px),
+        repeating-linear-gradient(135deg, transparent, transparent 20px,
+            rgba(255,140,0,.013) 20px, rgba(255,140,0,.013) 21px),  /* diamond pattern */
+        repeating-linear-gradient(45deg, transparent, transparent 20px,
+            rgba(255,140,0,.013) 20px, rgba(255,140,0,.013) 21px);
+}
+
+/* ── Legion — Caesar's Legion SPQR ─────────────────────────────
+   Crimson blood & aged brass. Roman severity. Maroon darkness.
+──────────────────────────────────────────────────────────────── */
+body.theme-legion:not(.mode-hc) {
+    --pip-color:  #d43000;
+    --pip-bg:     #080302;
+    --pip-bg-2:   #110504;
+    --pip-bg-3:   #190706;
+    --pip-border: #541208;
+    --glow-sm:    0 0 6px  rgba(212,48,0,.30);
+    --glow-md:    0 0 16px rgba(212,48,0,.25);
+    --glow-lg:    0 0 32px rgba(212,48,0,.18);
+    --tc-r: 212; --tc-g: 48; --tc-b: 0;
+    --accent-gold: #b88a10;  /* brass instead of bright gold */
+}
+body.theme-legion:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(72,10,5,.65) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.09) 2px, rgba(0,0,0,.09) 4px);
+}
+
+/* ── NCR — New California Republic ─────────────────────────────
+   Desert ochre. Frontier ranger weathered. Dry heat and law.
+──────────────────────────────────────────────────────────────── */
+body.theme-ncr:not(.mode-hc) {
+    --pip-color:  #c8a840;
+    --pip-bg:     #090700;
+    --pip-bg-2:   #110e02;
+    --pip-bg-3:   #181403;
+    --pip-border: #3e3208;
+    --glow-sm:    0 0 6px  rgba(200,168,64,.28);
+    --glow-md:    0 0 14px rgba(200,168,64,.22);
+    --glow-lg:    0 0 28px rgba(200,168,64,.15);
+    --tc-r: 200; --tc-g: 168; --tc-b: 64;
+}
+body.theme-ncr:not(.mode-hc) {
+    background-image:
+        radial-gradient(ellipse at 50% 0%, rgba(52,40,5,.58) 0%, transparent 65%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px,
+            rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 32px,
+            rgba(200,168,64,.015) 32px, rgba(200,168,64,.015) 33px),  /* survey grid */
+        repeating-linear-gradient(0deg, transparent, transparent 32px,
+            rgba(200,168,64,.015) 32px, rgba(200,168,64,.015) 33px);
+}
+
+
+/* ═════════════════════════════════════════════════════════════════
+   STRUCTURAL OVERRIDES — applied to all 6 custom themes at once
+   Everything that used hard-coded rgba(40,255,40,…) gets swapped
+   to use var(--pip-color) tints or the --tc-r/g/b rebuild trick.
+═════════════════════════════════════════════════════════════════ */
+body.theme-fo3:not(.mode-hc),
+body.theme-bos:not(.mode-hc),
+body.theme-enclave:not(.mode-hc),
+body.theme-vault21:not(.mode-hc),
+body.theme-legion:not(.mode-hc),
+body.theme-ncr:not(.mode-hc) {
+
+    /* header */
+    & header {
+        box-shadow: var(--glow-md), inset 0 -1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+    }
+    /* section panels */
+    & section {
+        background: linear-gradient(160deg, var(--pip-bg-3) 0%, var(--pip-bg) 60%);
+        box-shadow: inset 0 0 60px rgba(0,0,0,.22), 0 1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.05);
+    }
+    /* h2 banners */
+    & h2 { background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07); }
+    /* overview cards */
+    & .ov-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
+    }
+    & .ov-sub { border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15); }
+    /* tab active glow */
+    & .tab-nav button.active {
+        box-shadow: 0 0 9px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+    }
+    /* modal */
+    & .modal-box, & .lvlup-box {
+        box-shadow: 0 0 40px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15), 0 0 80px rgba(0,0,0,.85);
+    }
+    /* perk picker perk cards */
+    & .pperk-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .pperk-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .pperk-name { color: var(--pip-color); }
+    & .pperk-rank-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35);
+        color: var(--pip-color);
+    }
+    /* trait picker cards */
+    & .ptrait-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.025);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .ptrait-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.09);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .ptrait-name, & .trait-card-name, & .trait-slot-name { color: var(--pip-color); }
+    & .ptrait-take-btn {
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38) !important;
+        color: var(--pip-color);
+    }
+    & .ptrait-elig-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+        color: var(--pip-color);
+    }
+    /* trait chips */
+    & .trait-chip {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
+        color: var(--pip-color);
+    }
+    /* level-trait tag */
+    & .lvl-tag.is-trait {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+        color: var(--pip-color);
+    }
+    /* progression rows */
+    & .prog-row {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.018);
+        border-color:      rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15);
+    }
+    & .prog-row.has-perk {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.036) !important;
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55) !important;
+    }
+    /* section labels */
+    & .plab-perk { color: var(--pip-color); border-color: var(--pip-color); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.04); }
+    & .plab-trait { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.03); }
+    /* level-up banners */
+    & #perk-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.50);
+        color: var(--pip-color);
+    }
+    & #trait-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+        color: var(--pip-color);
+    }
+    /* level-up ready button glow */
+    & .lvlup-btn-ready {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        box-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.22);
+    }
+    /* action buttons */
+    & .action-btn { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40) !important; color: var(--pip-color); }
+    & .action-btn:hover { background: var(--pip-color) !important; color: #000 !important; box-shadow: 0 0 10px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.25); }
+    /* gear cards */
+    & .gear-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.020);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.14);
+    }
+    /* perk zoom modal name */
+    & #perk-zoom-name { color: var(--pip-color); }
+    /* spec rank title glow */
+    & .spec-rank-title {
+        color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.70);
+        text-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+    }
+    /* scrollbar */
+    & .scroll-v::-webkit-scrollbar-thumb { background: var(--pip-border); }
+    & .scroll-v::-webkit-scrollbar-thumb:hover { background: var(--pip-color); }
+}
+
+/* ── Legion only: action buttons go white text (dark red bg is unreadable) ─ */
+body.theme-legion:not(.mode-hc) .action-btn:hover { color: #fff !important; }
+/* ── Legion: skill-delta positive tint should be brass, not green ── */
+body.theme-legion:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-legion:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #b88a10; border-color: rgba(184,138,16,.40); }
+/* ── NCR: same — use ochre for positive deltas ── */
+body.theme-ncr:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-ncr:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #c8a840; border-color: rgba(200,168,64,.40); }
+
+/* ── plab-trait colour per theme (these have their own identity hue) ── */
+body.theme-bos:not(.mode-hc)     .plab-trait { color: #8ec8ff; }
+body.theme-enclave:not(.mode-hc) .plab-trait { color: #ffe580; }
+body.theme-vault21:not(.mode-hc) .plab-trait { color: #ffcc66; }
+body.theme-legion:not(.mode-hc)  .plab-trait { color: #c8960c; }
+body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
+
