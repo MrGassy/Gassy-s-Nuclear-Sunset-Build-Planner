@@ -48,7 +48,10 @@ function getTaggedSkills() {
     return t;
 }
 function skillTotal(s) {
-    return Math.min(100, skillBase(s) + (skillPoints[s] || 0));
+    const _tb = getActiveTraitBonuses ? getActiveTraitBonuses().skillDelta : {};
+    const _pb = getActivePerkBonuses  ? getActivePerkBonuses().perkSkillDelta : {};
+    const _td = _tb[s]||0, _pd = _pb[s]||0;
+    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd) + (skillPoints[s]||0));
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
@@ -978,7 +981,8 @@ const questsData = {
         'DLC: DEAD MONEY': ['<a href="https://fallout.fandom.com/wiki/Sierra_Madre_Grand_Opening!" target="_blank">SIERRA MADRE GRAND OPENING!</a>', '<a href="https://fallout.fandom.com/wiki/Find_Collar_8:_Dog" target="_blank">FIND COLLAR 8: DOG</a>', '<a href="https://fallout.fandom.com/wiki/Find_Collar_12:_Christine" target="_blank">FIND COLLAR 12: CHRISTINE</a>', '<a href="https://fallout.fandom.com/wiki/Find_Collar_14:_Dean_Domino" target="_blank">FIND COLLAR 14: DEAN DOMINO</a>', '<a href="https://fallout.fandom.com/wiki/Fires_in_the_Sky" target="_blank">FIRES IN THE SKY</a>', '<a href="https://fallout.fandom.com/wiki/Strike_Up_the_Band" target="_blank">STRIKE UP THE BAND</a>', '<a href="https://fallout.fandom.com/wiki/Trigger_the_Gala_Event" target="_blank">TRIGGER THE GALA EVENT</a>', '<a href="https://fallout.fandom.com/wiki/Curtain_Call_at_the_Tampico" target="_blank">CURTAIN CALL AT THE TAMPICO</a>', '<a href="https://fallout.fandom.com/wiki/Last_Luxuries" target="_blank">LAST LUXURIES</a>', '<a href="https://fallout.fandom.com/wiki/Heist_of_the_Centuries" target="_blank">HEIST OF THE CENTURIES</a>', '<a href="https://fallout.fandom.com/wiki/Departing_Paradise" target="_blank">DEPARTING PARADISE</a>'],
         'DLC: HONEST HEARTS': ['<a href="https://fallout.fandom.com/wiki/Happy_Trails_Expedition" target="_blank">HAPPY TRAILS EXPEDITION</a>', '<a href="https://fallout.fandom.com/wiki/Arrival_at_Zion" target="_blank">ARRIVAL AT ZION</a>', '<a href="https://fallout.fandom.com/wiki/Roadside_Attraction" target="_blank">ROADSIDE ATTRACTION</a>', '<a href="https://fallout.fandom.com/wiki/Gone_Fishin%27" target="_blank">GONE FISHIN\'</a>', '<a href="https://fallout.fandom.com/wiki/Tourist_Trap" target="_blank">TOURIST TRAP</a>', '<a href="https://fallout.fandom.com/wiki/Deliverer_of_Sorrows" target="_blank">DELIVERER OF SORROWS</a>', '<a href="https://fallout.fandom.com/wiki/The_Grand_Staircase" target="_blank">THE GRAND STAIRCASE</a>', '<a href="https://fallout.fandom.com/wiki/The_Advance_Scouts" target="_blank">THE ADVANCE SCOUTS</a>', '<a href="https://fallout.fandom.com/wiki/The_Treacherous_Road" target="_blank">THE TREACHEROUS ROAD</a>', '<a href="https://fallout.fandom.com/wiki/River_Monsters" target="_blank">RIVER MONSTERS</a>', '<a href="https://fallout.fandom.com/wiki/Gathering_Storms" target="_blank">GATHERING STORMS</a>', '<a href="https://fallout.fandom.com/wiki/Crush_the_White_Legs" target="_blank">CRUSH THE WHITE LEGS</a>'],
         'DLC: OLD WORLD BLUES': ['<a href="https://fallout.fandom.com/wiki/Midnight_Science_Fiction_Feature!" target="_blank">MIDNIGHT SCIENCE FICTION FEATURE!</a>', '<a href="https://fallout.fandom.com/wiki/Welcome_to_the_Big_Empty" target="_blank">WELCOME TO THE BIG EMPTY</a>', '<a href="https://fallout.fandom.com/wiki/All_My_Friends_Have_Off_Switches" target="_blank">ALL MY FRIENDS HAVE OFF SWITCHES</a>', '<a href="https://fallout.fandom.com/wiki/X-2:_Strange_Transmissions!" target="_blank">X-2: STRANGE TRANSMISSIONS!</a>', '<a href="https://fallout.fandom.com/wiki/X-8:_High_School_Horror!" target="_blank">X-8: HIGH SCHOOL HORROR!</a>', '<a href="https://fallout.fandom.com/wiki/X-13:_Attack_of_the_Infiltrator!" target="_blank">X-13: ATTACK OF THE INFILTRATOR!</a>', '<a href="https://fallout.fandom.com/wiki/Old_World_Blues_(quest)" target="_blank">OLD WORLD BLUES</a>', '<a href="https://fallout.fandom.com/wiki/Project_X-13" target="_blank">PROJECT X-13</a>'],
-        'DLC: LONESOME ROAD': ['<a href="https://fallout.fandom.com/wiki/The_Reunion" target="_blank">THE REUNION</a>', '<a href="https://fallout.fandom.com/wiki/The_Silo" target="_blank">THE SILO</a>', '<a href="https://fallout.fandom.com/wiki/The_Job" target="_blank">THE JOB</a>', '<a href="https://fallout.fandom.com/wiki/The_Launch" target="_blank">THE LAUNCH</a>', '<a href="https://fallout.fandom.com/wiki/The_Divide" target="_blank">THE DIVIDE</a>', '<a href="https://fallout.fandom.com/wiki/The_Tunnelers" target="_blank">THE TUNNELERS</a>', '<a href="https://fallout.fandom.com/wiki/The_Courier" target="_blank">THE COURIER</a>', '<a href="https://fallout.fandom.com/wiki/The_End_(quest)" target="_blank">THE END</a>', '<a href="https://fallout.fandom.com/wiki/The_Apocalypse" target="_blank">THE APOCALYPSE</a>']
+        'DLC: LONESOME ROAD': ['<a href="https://fallout.fandom.com/wiki/The_Reunion" target="_blank">THE REUNION</a>', '<a href="https://fallout.fandom.com/wiki/The_Silo" target="_blank">THE SILO</a>', '<a href="https://fallout.fandom.com/wiki/The_Job" target="_blank">THE JOB</a>', '<a href="https://fallout.fandom.com/wiki/The_Launch" target="_blank">THE LAUNCH</a>', '<a href="https://fallout.fandom.com/wiki/The_Divide" target="_blank">THE DIVIDE</a>', '<a href="https://fallout.fandom.com/wiki/The_Tunnelers" target="_blank">THE TUNNELERS</a>', '<a href="https://fallout.fandom.com/wiki/The_Courier" target="_blank">THE COURIER</a>', '<a href="https://fallout.fandom.com/wiki/The_End_(quest)" target="_blank">THE END</a>', '<a href="https://fallout.fandom.com/wiki/The_Apocalypse" target="_blank">THE APOCALYPSE</a>'],
+        'COMPANION QUESTS': ['<a href="https://fallout.fandom.com/wiki/I_Forgot_to_Remember_to_Forget" target="_blank">I FORGOT TO REMEMBER TO FORGET — BOONE</a>','<a href="https://fallout.fandom.com/wiki/I_Could_Make_You_Care" target="_blank">I COULD MAKE YOU CARE — VERONICA</a>','<a href="https://fallout.fandom.com/wiki/ED-E_My_Love" target="_blank">ED-E MY LOVE — ED-E</a>','<a href="https://fallout.fandom.com/wiki/Nothin%27_But_a_Hound_Dog" target="_blank">NOTHIN\'T BUT A HOUND DOG — REX</a>','<a href="https://fallout.fandom.com/wiki/For_Auld_Lang_Syne" target="_blank">FOR AULD LANG SYNE — ARCADE</a>','<a href="https://fallout.fandom.com/wiki/Old_School_Ghoul" target="_blank">OLD SCHOOL GHOUL — RAUL</a>','<a href="https://fallout.fandom.com/wiki/Guess_Who_I_Saw_Today" target="_blank">GUESS WHO I SAW TODAY — LILY</a>','<a href="https://fallout.fandom.com/wiki/Heartache_by_the_Number" target="_blank">HEARTACHE BY THE NUMBER — CASS</a>']
     }
 };
 
@@ -1117,6 +1121,7 @@ function setOrigin(o, skipSave=false) {
     }
     origin = o;
     document.body.className = (o === 'MW') ? 'theme-mw' : 'theme-cw';
+    updateTransitBtn();
     if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
     if(mode==='hc') document.body.classList.add('mode-hc');
     document.getElementById('btn-cw').classList.toggle('active', o==='CW');
@@ -1139,6 +1144,14 @@ function setOrigin(o, skipSave=false) {
 function toggleCollapse(id) {
     const grid = document.querySelector(`.grid-tidy[data-category="${id}"]`);
     if (grid) grid.style.display = (grid.style.display === 'none') ? 'grid' : 'none';
+}
+
+function toggleAllInContainer(cId,btn){
+    const gs=document.querySelectorAll('#'+cId+' .grid-tidy');
+    if(!gs.length)return;
+    const vis=Array.from(gs).some(g=>g.style.display!=='none');
+    gs.forEach(g=>{g.style.display=vis?'none':'grid';});
+    if(btn)btn.textContent=vis?'▶ EXPAND ALL':'▼ COLLAPSE ALL';
 }
 
 /* ===== SEARCH LOGIC ===== */
@@ -1270,6 +1283,12 @@ function buildPerkCard(p) {
 
 function addPerkToBuild(name, req, isIT) {
     if (isIT) { openITModal(name, req); return; }
+    const _pd = PERKS_DATA.find(p=>p.name.toUpperCase()===name.toUpperCase());
+    if (_pd && !meetsRequirements(_pd)) { showPerkBlockedToast(name, 'REQUIREMENTS NOT MET'); return; }
+    const _mr = _pd ? _pd.ranks : 1;
+    const _tk = Array.from(document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row'))
+        .filter(r=>{const v=(r.querySelector('.prog-name-input')?.value||'').trim().toUpperCase();return v===name.toUpperCase()||v.startsWith(name.toUpperCase());}).length;
+    if (_tk>=_mr){showPerkBlockedToast(name,'MAX RANKS ('+_mr+'/'+_mr+')');return;}
     // Skip trait-slot-rows - only use real perk rows
     const rows = document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)');
     for (const row of rows) {
@@ -1299,6 +1318,17 @@ function showPerkToast(name) {
     toast.style.opacity = '1';
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+}
+
+function showPerkBlockedToast(name, reason) {
+    let t=document.getElementById('perk-added-toast');
+    if(!t){t=document.createElement('div');t.id='perk-added-toast';
+    t.style.cssText='position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--pip-bg-2);border:1px solid var(--pip-color);color:var(--pip-color);padding:10px 18px;font-size:0.7rem;font-family:var(--font-main);letter-spacing:1px;transition:opacity 0.4s;opacity:0;pointer-events:none;text-transform:uppercase;';
+    document.body.appendChild(t);}
+    t.style.color='#ff6060';t.style.borderColor='rgba(255,80,60,0.7)';
+    t.textContent='✕ '+reason+': '+name;
+    t.style.opacity='1';clearTimeout(t._timer);
+    t._timer=setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.style.color='';t.style.borderColor='';},450);},2800);
 }
 
 /* ===== LEVEL UP MODAL ===== */
@@ -1702,6 +1732,7 @@ function addUniqueArmorToLoadout(name) {
 function updateUniqueMarker(cb) {
     const marker = cb.parentElement.querySelector('.tag-marker');
     if (marker) marker.textContent = cb.checked ? '[X]' : '[ ]';
+    renderBadges();
 }
 
 function searchUniqueArmor() { searchItems('uni-armor-search-bar', 'unique-armor-checklist'); }
@@ -1780,12 +1811,96 @@ function calcCat(id) {
     const pctEl = document.getElementById(`pct-${id}`);
     if(pctEl) pctEl.innerText = pct === 100 ? "DONE" : pct + "%";
     document.getElementById(`h-${id}`).classList.toggle('completed', pct === 100);
+    renderBadges();
+}
+
+
+/* === KARMA FACE === */
+function updateKarmaFace(k){
+    const el=document.getElementById('karma-face');if(!el)return;
+    const F={'very-good':{top:'∘ ∘ ∘',g:'✦◠‿◠✦',s:'VERY GOOD',c:'#a0e8ff'},
+             'good':{top:'',g:'◠‿◠',s:'GOOD',c:'#70d870'},
+             'neutral':{top:'',g:'◉_◉',s:'NEUTRAL',c:'#c8c888'},
+             'evil':{top:'',g:'◉益◉',s:'EVIL',c:'#ff8040'},
+             'very-evil':{top:'',g:'☠‿☠',s:'VERY EVIL',c:'#ff3030'}};
+    const f=F[k]||F['neutral'];
+    el.innerHTML=(f.top?'<div class="kface-halo" style="color:'+f.c+'">'+f.top+'</div>':'')
+        +'<div class="kface-glyph" style="color:'+f.c+';text-shadow:0 0 8px '+f.c+'88">'+f.g+'</div>'
+        +'<div class="kface-sub" style="color:'+f.c+'">'+f.s+'</div>';
+}
+
+/* === TRANSIT BUTTON === */
+function updateTransitBtn(){
+    const b=document.getElementById('transit-btn');if(!b)return;
+    b.innerHTML=origin==='CW'?'☢ VENTURE TO THE MOJAVE':'☢ RETURN TO THE CAPITAL';
+    b.title=origin==='CW'?'WASTELAND TRANSIT — TO THE MOJAVE':'WASTELAND TRANSIT — TO THE CAPITAL';
+}
+
+/* === BADGE SYSTEM === */
+function _catComplete(sel,safe){
+    const g=document.querySelector(sel+' .grid-tidy[data-category="'+safe+'"]');
+    if(!g)return false;
+    const all=g.querySelectorAll('input[type="checkbox"]');
+    return all.length>0&&Array.from(all).every(c=>c.checked);
+}
+function computeBadges(){
+    const e=[];
+    [{safe:'u-pistols-revolvers',l:'PISTOLS & REVOLVERS'},{safe:'u-smgs-rifles',l:'SMGS & RIFLES'},
+     {safe:'u-shotguns',l:'SHOTGUNS'},{safe:'u-big-guns',l:'BIG GUNS'},{safe:'u-energy-weapons',l:'ENERGY WEAPONS'},
+     {safe:'u-explosives',l:'EXPLOSIVES'},{safe:'u-melee-weapons',l:'MELEE WEAPONS'},{safe:'u-unarmed',l:'UNARMED'}]
+    .forEach(w=>{if(_catComplete('#unique-weapon-checklist',w.safe))e.push({group:'ARSENAL',label:w.l,icon:'⚔'});});
+    [{safe:'a-power-armor-fo3',l:'POWER ARMOR (FO3)'},{safe:'a-combat-armor-fo3',l:'COMBAT ARMOR (FO3)'},
+     {safe:'a-outfits-clothing-fo3',l:'CLOTHING (FO3)'},{safe:'a-headgear-fo3',l:'HEADGEAR (FO3)'},
+     {safe:'a-power-armor-fnv',l:'POWER ARMOR (FNV)'},{safe:'a-combat-armor-fnv',l:'COMBAT ARMOR (FNV)'},
+     {safe:'a-outfits-clothing-fnv',l:'CLOTHING (FNV)'},{safe:'a-headgear-fnv',l:'HEADGEAR (FNV)'},
+     {safe:'a-dlc-armor-fnv',l:'DLC ARMOR (FNV)'}]
+    .forEach(a=>{if(_catComplete('#unique-armor-checklist',a.safe))e.push({group:'ARSENAL',label:a.l,icon:'⛑'});});
+    if(origin==='CW'){
+        if(_catComplete('#coll-list','special-bobble'))e.push({group:'COLLECTIBLES',label:'BOBBLEHEADS: S.P.E.C.I.A.L.',icon:'◆'});
+        if(_catComplete('#coll-list','skill-bobble'))  e.push({group:'COLLECTIBLES',label:'BOBBLEHEADS: SKILLS',icon:'◆'});
+    }else{
+        if(_catComplete('#coll-list','snow-base'))e.push({group:'COLLECTIBLES',label:'SNOWGLOBES: BASE',icon:'❅'});
+        if(_catComplete('#coll-list','snow-dlc')) e.push({group:'COLLECTIBLES',label:'SNOWGLOBES: DLC', icon:'❅'});
+    }
+    const _si=IMPLANTS_DATA.filter(i=>i.cat==='special');
+    if(_si.length&&_si.every(i=>!!implantsTaken[i.name]))e.push({group:'BODY MODS',label:'ALL SPECIAL IMPLANTS',icon:'⚕'});
+    const _bi=IMPLANTS_DATA.filter(i=>i.cat==='body');
+    if(_bi.length&&_bi.every(i=>!!implantsTaken[i.name]))e.push({group:'BODY MODS',label:'ALL BODY IMPLANTS',icon:'⚕'});
+    const _bmt=IMPLANTS_DATA.filter(i=>i.cat==='bigtmt');
+    if(_bmt.length&&_bmt.every(i=>!!implantsTaken[i.name]))e.push({group:'BODY MODS',label:'ALL BIG MT IMPLANTS',icon:'☆'});
+    [{safe:'main-quest',l:'MAIN QUEST (FO3)'},{safe:'dlc-operation-anchorage',l:'OP. ANCHORAGE'},
+     {safe:'dlc-the-pitt',l:'THE PITT'},{safe:'dlc-broken-steel',l:'BROKEN STEEL'},
+     {safe:'dlc-point-lookout',l:'POINT LOOKOUT'},{safe:'dlc-mothership-zeta',l:'MOTHERSHIP ZETA'}]
+    .forEach(b=>{if(_catComplete('#quest-list-container',b.safe))e.push({group:'CHRONICLE',label:b.l,icon:'☢'});});
+    [{safe:'main-quest-(general)',l:"COURIER'S JOURNEY"},{safe:'main-quest-(ncr)',l:'FOR THE REPUBLIC'},
+     {safe:'main-quest-(mr.-house)',l:"HOUSE'S GAMBIT"},{safe:'main-quest-(legion)',l:'AVE CAESAR'},
+     {safe:'main-quest-(independent)',l:'NO GODS, NO MASTERS'},{safe:'dlc-dead-money',l:'DEAD MONEY'},
+     {safe:'dlc-honest-hearts',l:'HONEST HEARTS'},{safe:'dlc-old-world-blues',l:'OLD WORLD BLUES'},
+     {safe:'dlc-lonesome-road',l:'LONESOME ROAD'},{safe:'companion-quests',l:'ALL COMPANIONS'}]
+    .forEach(b=>{if(_catComplete('#quest-list-container',b.safe))e.push({group:'CHRONICLE',label:b.l,icon:'◆'});});
+    return e;
+}
+function renderBadges(){
+    const el=document.getElementById('badge-panel');if(!el)return;
+    const badges=computeBadges();
+    if(!badges.length){el.innerHTML='<div class="badge-empty">— NO COMMENDATIONS YET —</div>';return;}
+    const grps={};
+    badges.forEach(b=>{if(!grps[b.group])grps[b.group]=[];grps[b.group].push(b);});
+    let h='';
+    for(const g in grps){
+        h+='<div class="badge-group-label">'+g+'</div>';
+        grps[g].forEach(b=>{h+='<div class="badge-row"><span class="badge-icon">'+b.icon+'</span><span class="badge-label">'+b.label+'</span></div>';});
+    }
+    el.innerHTML=h;
 }
 
 /* ===== UPDATE ALL ===== */
 function updateAll() {
     const pool = (mode === 'hc' ? 30 : 33);
-    const rem = pool - (Object.values(special).reduce((a,b)=>a+b,0) - 7);
+    let _ib=0; IMPLANTS_DATA.forEach(i=>{if(i.cat==='special'&&i.stat&&implantsTaken[i.name])_ib++;});
+    let _itb=0; document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row')
+        .forEach(r=>{if(/^Intense Training \(\+1 \w+\)/i.test(r.querySelector('.prog-name-input')?.value||''))_itb++;});
+    const rem = pool - Math.max(0, (Object.values(special).reduce((a,b)=>a+b,0) - 7) - _ib - _itb);
     document.getElementById('pts-left').innerText = rem;
     const { specialDelta, skillDelta, hasConditional } = getActiveTraitBonuses();
     const { perkSpecialDelta, perkSkillDelta } = getActivePerkBonuses();
@@ -1806,10 +1921,11 @@ function updateAll() {
         let deltaBadge = '';
         if (td !== 0) deltaBadge += `<span class="spec-delta-badge ${td>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${td>0?'+':''}${td}<span class="delta-src-tag">T</span></span>`;
         if (pd !== 0) deltaBadge += `<span class="spec-delta-badge ${pd>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pd>0?'+':''}${pd}<span class="delta-src-tag">P</span></span>`;
+        const _ds = Math.max(1, special[k]);
         return `<div class="special-row">
             <span class="spec-abbr-lg spec-info-btn" title="Click for ${k} details — ${rank}" onclick="openSpecialInfoModal('${k}')">${k}</span>
             <div class="spec-track-wide" onclick="openSpecialInfoModal('${k}')" style="cursor:pointer;" title="${rank}">
-                <div class="spec-fill-wide${special[k]===10?' spec-fill-full':special[k]>=7?' spec-fill-warm':special[k]>=4?' spec-fill-mid':' spec-fill-dim'}" style="width:${special[k]*10}%; opacity:${(0.3 + (special[k]-1)/9*0.7).toFixed(2)};"></div>
+                <div class="spec-fill-wide${_ds===10?' spec-fill-full':_ds>=7?' spec-fill-warm':_ds>=4?' spec-fill-mid':' spec-fill-dim'}" style="width:${_ds*10}%; opacity:${(0.3 + Math.max(0,_ds-1)/9*0.7).toFixed(2)};"></div>
             </div>
             <div class="special-controls">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
@@ -1923,7 +2039,8 @@ function updateAll() {
                         const spent = skillPoints[s] || 0;
             const tDelta = skillDelta[s] || 0;
             const pDelta = perkSkillDelta[s] || 0;
-            const val = Math.min(100, base + spent + tDelta + pDelta);
+            // Floor the base+delta penalty at 0; spent points always register
+            const val = Math.min(100, Math.max(0, base + tDelta + pDelta) + spent);
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
@@ -1939,6 +2056,9 @@ function updateAll() {
     }
     // Keep implant list in sync (limit changes when END changes)
     renderImplants();
+    renderBadges();
+    updateKarmaFace(buildKarma);
+    updateTransitBtn();
 }
 
 function mod(k, v) { special[k] += v; updateAll(); reCheckAllPerkRows(); triggerAutosave(); }
@@ -2218,6 +2338,9 @@ function checkPerkRequirements(row, perk) {
         }
     }
 
+    const _rc=Array.from(document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row'))
+        .filter(r=>{const v=(r.querySelector('.prog-name-input')?.value||'').trim().toUpperCase();return v===perk.name.toUpperCase()||v.startsWith(perk.name.toUpperCase());}).length;
+    if(_rc>perk.ranks)failures.push('Rank cap: '+_rc+' taken, max '+perk.ranks);
     if (failures.length) {
         warningEl.innerHTML = `<div class="req-warn-label">⚠ REQUIREMENTS NOT MET:</div>` +
             failures.map(f => `<div class="req-warn-item">${f}</div>`).join('');
@@ -3226,6 +3349,7 @@ function setKarma(k) {
     document.querySelectorAll('.karma-btn').forEach(b => {
         b.classList.toggle('karma-active', b.dataset.karma === k);
     });
+    updateKarmaFace(k);
     triggerAutosave();
 }
 

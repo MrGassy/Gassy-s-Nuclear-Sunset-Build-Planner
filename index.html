@@ -205,12 +205,17 @@
                 <input type="text" id="char-name" placeholder="DESIGNATION..." class="char-name-input">
                 <div class="left-label" style="margin-top:8px;">KARMA</div>
                 <div id="karma-selector" class="karma-selector"></div>
+                <div id="karma-face" class="karma-face"></div>
             </div>
             <div class="special-header-row">
                 <span class="section-label">S.P.E.C.I.A.L.</span>
                 <span class="pts-badge">PTS <span id="pts-left">0</span></span>
             </div>
             <div id="special-list" class="special-compact-grid"></div>
+            <div class="commend-wrap">
+                <div class="commend-header">COMMENDATIONS</div>
+                <div id="badge-panel"><div class="badge-empty">— NONE YET —</div></div>
+            </div>
         </div>
     </section>
 
@@ -274,7 +279,7 @@
                             ⬆ LVL <span id="char-level-display">1</span>
                             <span id="lvlup-pts-preview" class="lvlup-pts-preview"></span>
                         </button>
-                        <button class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT — TRIGGERS HEAD TRAUMA DEBUFF (FIRST TIME ONLY)">&#x2622; TRANSIT</button>
+                        <button id="transit-btn" class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT — TRIGGERS HEAD TRAUMA DEBUFF (FIRST TIME ONLY)">&#x2622; TRANSIT</button>
                     </div>
                     <div id="lvlup-not-ready" style="display:none;font-size:0.65rem;color:#ff6060;margin-bottom:6px;padding:4px 8px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,0,0,0.06);">⚠ SELECT 3 TAGS TO UNLOCK</div>
                     <div id="skill-list" class="skill-list-2col"></div>
@@ -393,10 +398,16 @@
         <div id="tab-coll" class="tab-content scroll-v" style="display:none;"><div id="coll-list"></div></div>
 
         <div id="tab-uni" class="tab-content scroll-v" style="display:none;">
-            <h2>⚔ UNIQUE WEAPONS</h2>
+            <div class="uni-section-header">
+                <h2>⚔ UNIQUE WEAPONS</h2>
+                <button class="uni-toggle-all-btn" id="wpn-toggle-btn" onclick="toggleAllInContainer('unique-weapon-checklist',this)">▼ COLLAPSE ALL</button>
+            </div>
             <input type="text" id="uni-search-bar" class="pip-search" placeholder="SEARCH UNIQUE WEAPONS..." oninput="searchUniques()">
             <div id="unique-weapon-checklist"></div>
-            <h2 style="margin-top:20px;">🛡 UNIQUE ARMOR &amp; APPAREL</h2>
+            <div class="uni-section-header" style="margin-top:20px;">
+                <h2>🛡 UNIQUE ARMOR &amp; APPAREL</h2>
+                <button class="uni-toggle-all-btn" id="armor-toggle-btn" onclick="toggleAllInContainer('unique-armor-checklist',this)">▼ COLLAPSE ALL</button>
+            </div>
             <input type="text" id="uni-armor-search-bar" class="pip-search" placeholder="SEARCH UNIQUE ARMOR..." oninput="searchUniqueArmor()">
             <div id="unique-armor-checklist"></div>
         </div>

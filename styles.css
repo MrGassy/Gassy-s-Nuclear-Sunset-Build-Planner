@@ -3241,3 +3241,29 @@ body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 .hs-name { font-weight: bold; font-size: 1em; }
 .hs-val  { font-size: 1.3em; font-weight: bold; color: var(--pip-color); }
 .hs-arrow { font-size: 0.85em; color: #ff6030; }
+
+/* ═══ TRANSIT BTN ═══ */
+#transit-btn.transit-btn { padding:6px 11px; font-size:0.68em; letter-spacing:0.07em; white-space:nowrap; flex-shrink:0; }
+
+/* ═══ KARMA FACE ═══ */
+.karma-face { text-align:center; padding:5px 0 4px; line-height:1.35; min-height:32px; }
+.kface-halo { font-size:0.55rem; letter-spacing:0.35em; opacity:0.75; margin-bottom:1px; }
+.kface-glyph { font-size:1.0rem; letter-spacing:0.08em; transition:color 0.3s,text-shadow 0.3s; }
+.kface-sub { font-size:0.48rem; letter-spacing:0.22em; opacity:0.6; margin-top:2px; text-transform:uppercase; }
+
+/* ═══ COMMENDATIONS ═══ */
+.commend-wrap { margin-top:14px; padding-top:10px; border-top:1px solid rgba(var(--pip-rgb,100,200,100),0.18); }
+.commend-header { font-size:0.56rem; font-weight:bold; letter-spacing:0.2em; color:var(--pip-color); opacity:0.5; padding:0 2px 6px; text-transform:uppercase; }
+#badge-panel { padding:0 1px; }
+.badge-empty { font-size:0.5rem; color:rgba(255,255,255,0.18); letter-spacing:0.1em; text-align:center; padding:4px 0; }
+.badge-group-label { font-size:0.49rem; letter-spacing:0.16em; opacity:0.38; color:var(--pip-color); padding:6px 3px 3px; text-transform:uppercase; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.1); margin-bottom:2px; }
+.badge-row { display:flex; align-items:center; gap:5px; padding:3px; font-size:0.57rem; letter-spacing:0.05em; color:var(--pip-color); border-radius:2px; opacity:0.85; }
+.badge-row:hover { background:rgba(var(--pip-rgb,100,200,100),0.07); opacity:1; }
+.badge-icon { font-size:0.68rem; width:15px; text-align:center; flex-shrink:0; }
+.badge-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+
+/* ═══ UNIQUES COLLAPSE BUTTON ═══ */
+.uni-section-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
+.uni-section-header h2 { margin:0; }
+.uni-toggle-all-btn { font-family:inherit; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; padding:4px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.35); color:var(--pip-color); border-radius:2px; opacity:0.7; transition:opacity 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; }
+.uni-toggle-all-btn:hover { opacity:1; background:rgba(var(--pip-rgb,100,200,100),0.08); }
