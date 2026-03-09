@@ -100,6 +100,136 @@ const TRAIT_CONDITIONAL_NAMES = new Set([
     "Bankrupt","Magnate","Callous"
 ]);
 
+
+
+/* ===== UNDO SYSTEM (last 5 states) ===== */
+let _undoStack = [];  // each entry = JSON string of collectData()
+let _undoPaused = false;  // prevent capture during hydrate
+
+function pushUndoState() {
+    if (_undoPaused) return;
+    const snap = JSON.stringify(collectData());
+    // Don't push duplicate of the last state
+    if (_undoStack.length && _undoStack[_undoStack.length - 1] === snap) return;
+    _undoStack.push(snap);
+    if (_undoStack.length > 5) _undoStack.shift();
+    updateUndoBtn();
+}
+
+function undoLastAction() {
+    if (_undoStack.length < 2) return; // need at least current + one prior
+    _undoStack.pop(); // discard current state
+    const prev = _undoStack[_undoStack.length - 1];
+    if (!prev) return;
+    _undoPaused = true;
+    try {
+        hydrate(JSON.parse(prev));
+    } finally {
+        _undoPaused = false;
+    }
+    updateUndoBtn();
+    // Flash the undo button
+    const btn = document.getElementById('undo-btn');
+    if (btn) { btn.classList.add('undo-flash'); setTimeout(() => btn.classList.remove('undo-flash'), 600); }
+}
+
+function updateUndoBtn() {
+    const btn = document.getElementById('undo-btn');
+    if (!btn) return;
+    const canUndo = _undoStack.length >= 2;
+    btn.disabled = !canUndo;
+    btn.title = canUndo ? `UNDO LAST ACTION (${_undoStack.length - 1} STEP${_undoStack.length > 2 ? 'S' : ''} AVAILABLE)` : 'NOTHING TO UNDO';
+    btn.style.opacity = canUndo ? '1' : '0.35';
+}
+
+/* ===== SPECIAL RANK TITLES ===== */
+const SPECIAL_RANKS = {
+    STR: ["WET NOODLE","BEACHED JELLYFISH","DOUGHY BABY","LIGHTWEIGHT","AVERAGE JOE","BARREL CHESTED","BEACH BULLY","CIRCUS STRONGMAN","DOOMSDAY PECS","HERCULES' BIGGER COUSIN"],
+    PER: ["DEAF BAT","SENILE MOLE","SQUINTING NEWT","UNSUSPECTING TROUT","WARY TROUT","ALERT COYOTE","BIG-EYED TIGER","MONOCLED FALCON","SNIPER HAWK","EAGLE WITH TELESCOPE"],
+    END: ["BASICALLY DEAD","CRUMBLY","DO NOT BEND","HANDLE WITH CARE","STAIN-RESISTANT","HARDY","TOUGH-AS-NAILS","FLAME RETARDANT","BULLET PROOF","UNSTOPPABLE"],
+    CHA: ["MISANTHROPE","OLD HERMIT","CREEPY UNDERTAKER","PEEVISH LIBRARIAN","SUBSTITUTE TEACHER","CHEERY SALESMAN","DIPLOMAT","MOVIE STAR","CASANOVA","CULT LEADER"],
+    INT: ["SUB-BRICK","VEGETABLE","CRETIN","KNUCKLE HEAD","KNOWLEDGEABLE","GIFTED","SMARTYPANTS","KNOW-IT-ALL","GENIUS","OMNISCIENT"],
+    AGI: ["WALKING DISASTER","ACCIDENT PRONE","OAF","BUTTERFINGERS","UNDER CONTROL","CATLIKE","KNIFE THROWER","KNIFE CATCHER","ACROBATIC MARVEL","WALKS ON WATER"],
+    LCK: ["13 PITCH-BLACK CATS","BROKEN GYPSY MIRROR","SICKLY ALBATROSS","SPILLED SALT","COIN FLIP","STACKED DECK","LUCKY 7","LEPRECHAUN'S FOOT","21 LEAF CLOVER","TWO-HEADED COIN FLIP"]
+};
+
+function getSpecialRank(k) {
+    const ranks = SPECIAL_RANKS[k];
+    if (!ranks) return '';
+    const val = Math.max(1, Math.min(10, special[k]));
+    return ranks[val - 1] || '';
+}
+
+/* ===== PERK SKILL/SPECIAL BONUSES (permanent unconditional) ===== */
+// Source tag: 'P' = perk, used to distinguish from trait 'T' deltas
+const PERK_BONUSES = {
+    // Skill perks
+    "A Stranger I Remain":          { skills: { "SNEAK": +26 } },
+    "Applied Ballistics":           { skills: { "BIG GUNS": +25 } },
+    "Alertness":                    { special: { PER: +2 } }, // conditional (crouched) but shown as ref
+    "Daddy's Boy/Girl":             { skills: {} }, // hacking — no direct skill number
+    "Gun Guru":                     { skills: { "REPAIR": +30 } }, // conditional (bench) but shown
+    "Headless Courier":             { special: { PER: +2 } }, // conditional (no helmet) — ref
+    "Stoicism":                     { skills: { "SURVIVAL": +3 } },
+    "Big Brained":                  { special: { INT: +1 } },
+    "Brainless":                    { special: { PER: -1 } },
+    "Reinforced Spine":             { special: { END: +1 } },
+    "Cardiac Arrest":               { skills: {} },
+    "My Own Master Now":            { special: { END: +1 } },
+    "Nerd Rage!":                   { skills: {} },
+    "Wasteland Masquerade":         { special: { CHA: +1, INT: +1 } }, // conditional (headwear)
+    "Irradiated Beauty":            { special: { CHA: +1 } }, // conditional (rads)
+    "Thirsty":                      { special: { CHA: +2 } }, // conditional (dehydration)
+    "Fight Hungry":                 { special: { END: +1 } }, // conditional
+    "Walker Instinct":              { special: { PER: +1, AGI: +1 } }, // conditional
+    "Boiadero":                     { special: { CHA: +1 } }, // conditional
+    "Coiled Snake":                 { skills: {} },
+    "Collective Consciousness":     { skills: { "SPEECH": +2 } }, // conditional
+    // Perks with clean flat skill bonuses (permanent/unconditional)
+    "Thief":                        { skills: { "SNEAK": +15 } }, // rank 3 = +15
+    "Iron Fist":                    { skills: {} },
+    "Swift Learner":                { skills: {} },
+    "Scoundrel":                    { skills: {} },
+    "Silver Tongue, Lead Pocket":   { skills: { "BARTER": +20 } }, // this is a TRAIT, already in TRAIT_BONUSES
+};
+
+// Cleaner map — ONLY perks with definitive, flat, always-on skill or SPECIAL bonuses
+// (conditional ones already shown via tooltip note)
+const PERK_SKILL_BONUSES = {
+    "A Stranger I Remain":  { skills: { "SNEAK": 26 } },
+    "Applied Ballistics":   { skills: { "BIG GUNS": 25 } },
+    "Stoicism":             { skills: { "SURVIVAL": 3 } },
+    "Big Brained":          { special: { INT: 1 } },
+    "Brainless":            { special: { PER: -1 } },
+    "Reinforced Spine":     { special: { END: 1 } },
+};
+
+function getActivePerkBonuses() {
+    // Collect all perk names currently in the build
+    const allPerkEls = document.querySelectorAll(
+        '#prog-list .prog-name-input, #extra-perk-list .prog-name-input'
+    );
+    const perkSpecialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const perkSkillDelta = {};
+    for (const el of allPerkEls) {
+        const name = (el.value || '').trim();
+        if (!name) continue;
+        const bonus = PERK_SKILL_BONUSES[name];
+        if (!bonus) continue;
+        if (bonus.special) {
+            for (const [k,v] of Object.entries(bonus.special)) {
+                if (perkSpecialDelta[k] !== undefined) perkSpecialDelta[k] += v;
+            }
+        }
+        if (bonus.skills) {
+            for (const [k,v] of Object.entries(bonus.skills)) {
+                perkSkillDelta[k] = (perkSkillDelta[k]||0) + v;
+            }
+        }
+    }
+    return { perkSpecialDelta, perkSkillDelta };
+}
+
 function getActiveTraitBonuses() {
     const specialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     const skillDelta = {};
@@ -201,52 +331,116 @@ function checkTraitEligible(trait) {
 /* ===== TRAIT MODAL ===== */
 function openTraitModal(slotId) {
     _traitSlotId = slotId;
+    // If this isn't a level-up call, clear the level picker state
+    if (slotId !== '__levelup__') _traitPickerLevel = null;
+    const titleEl = document.getElementById('trait-picker-title');
+    if (titleEl) {
+        if (_traitPickerLevel) {
+            titleEl.textContent = `LEVEL ${_traitPickerLevel} — SELECT YOUR TRAIT`;
+        } else if (slotId === '__starting__') {
+            titleEl.textContent = 'ADD STARTING TRAIT';
+        } else {
+            titleEl.textContent = 'SELECT TRAIT';
+        }
+    }
     document.getElementById('trait-modal').style.display = 'flex';
-    document.getElementById('trait-modal-search').value = '';
+    const srch = document.getElementById('trait-modal-search');
+    if (srch) srch.value = '';
     renderTraitGrid('');
 }
 
 function closeTraitModal() {
     document.getElementById('trait-modal').style.display = 'none';
+    const isLevelUp = !!_traitPickerLevel;
+    if (isLevelUp) {
+        // Show sticky banner reminder
+        const banner = document.getElementById('trait-lvlup-banner');
+        if (banner) {
+            const lvl = _traitPickerLevel;
+            banner.innerHTML = `<span style="font-size:0.75rem; letter-spacing:1px; color:#c8ffd4;">◈ LVL ${lvl}: TRAIT AVAILABLE!</span><button onclick="showTraitLevelUpPrompt(${lvl})" style="margin-left:12px; padding:3px 12px; font-size:0.65rem; background:#c8ffd4; color:black; border:none; cursor:pointer; letter-spacing:1px; font-weight:bold;">→ PICK TRAIT</button><button onclick="this.parentElement.style.display='none'" style="margin-left:6px; padding:3px 8px; font-size:0.65rem; background:none; border:1px solid #c8ffd4; color:#c8ffd4; cursor:pointer;">LATER</button>`;
+            banner.style.display = 'flex';
+        }
+    }
     _traitSlotId = null;
+    _traitPickerLevel = null;
 }
+
+function showTraitLevelUpPrompt(lvl) {
+    _traitPickerLevel = lvl;
+    // Find the correct slot id for this level
+    const slotId = `trait-slot-lvl-${lvl}`;
+    _traitSlotId = slotId;
+    const titleEl = document.getElementById('trait-picker-title');
+    if (titleEl) titleEl.textContent = `LEVEL ${lvl} — SELECT YOUR TRAIT`;
+    const srch = document.getElementById('trait-modal-search');
+    if (srch) srch.value = '';
+    renderTraitGrid('');
+    document.getElementById('trait-modal').style.display = 'flex';
+    // Hide the banner while modal is open
+    const banner = document.getElementById('trait-lvlup-banner');
+    if (banner) banner.style.display = 'none';
+}
+
+let _traitPickerLevel = null;
+let _traitPickerList = [];
 
 function renderTraitGrid(search) {
     const container = document.getElementById('trait-modal-grid');
+    if (!container) return;
     const q = (search || '').toLowerCase();
     const chosen = getChosenTraitNames();
+
     let filtered = TRAITS_DATA.filter(t => {
         if (q && !t.name.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
         return true;
     });
-    // Sort: eligible A-Z first, then ineligible A-Z; taken always last
+
+    // Sort: eligible A-Z, then ineligible A-Z, taken always last
     filtered = filtered.slice().sort((a, b) => {
-        const takenA = getChosenTraitNames().some(c => c.toLowerCase() === a.name.toLowerCase());
-        const takenB = getChosenTraitNames().some(c => c.toLowerCase() === b.name.toLowerCase());
+        const takenA = chosen.some(c => c.toLowerCase() === a.name.toLowerCase());
+        const takenB = chosen.some(c => c.toLowerCase() === b.name.toLowerCase());
         const eligA = checkTraitEligible(a);
         const eligB = checkTraitEligible(b);
         if (takenA !== takenB) return takenA ? 1 : -1;
         if (eligA !== eligB) return eligA ? -1 : 1;
         return a.name.localeCompare(b.name);
     });
-    container.innerHTML = filtered.map(t => {
+
+    _traitPickerList = filtered;
+
+    // Update count
+    const eligible = filtered.filter(t => checkTraitEligible(t) && !chosen.some(c => c.toLowerCase() === t.name.toLowerCase()));
+    const ineligible = filtered.filter(t => !checkTraitEligible(t) && !chosen.some(c => c.toLowerCase() === t.name.toLowerCase()));
+    const takenCount = filtered.filter(t => chosen.some(c => c.toLowerCase() === t.name.toLowerCase())).length;
+    const countEl = document.getElementById('trait-picker-count');
+    if (countEl) countEl.textContent = `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE · ${takenCount} TAKEN`;
+
+    container.innerHTML = _traitPickerList.map((t, i) => {
         const alreadyTaken = chosen.some(c => c.toUpperCase() === t.name.toUpperCase());
-        const eligible = checkTraitEligible(t);
-        const cls = alreadyTaken ? 'trait-card taken' : eligible ? 'trait-card eligible' : 'trait-card ineligible';
-        const badge = alreadyTaken ? '<span class="trait-badge taken-badge">TAKEN</span>'
-                    : eligible ? '<span class="trait-badge elig-badge">✓ ELIGIBLE</span>'
-                    : '<span class="trait-badge inelig-badge">REQ NOT MET</span>';
-        const reqText = t.req ? `<div class="trait-req">${t.req}</div>` : '';
-        const desc = t.desc.length > 200 ? t.desc.slice(0,200)+'...' : t.desc;
-        return `<div class="${cls}" onclick="selectTraitForSlot('${t.name.replace(/'/g,"\\'")}')">
-            <div class="trait-card-header">
-                <span class="trait-card-name">${t.name}</span>
+        const isElig = checkTraitEligible(t);
+        const cardCls = alreadyTaken ? 'ptrait-card ptrait-taken' : isElig ? 'ptrait-card' : 'ptrait-card ptrait-ineligible';
+        const badge = alreadyTaken
+            ? `<span class="ptrait-badge ptrait-taken-badge">TAKEN</span>`
+            : isElig
+            ? `<span class="ptrait-badge ptrait-elig-badge">✓ ELIGIBLE</span>`
+            : `<span class="ptrait-badge ptrait-inelig-badge">REQ NOT MET</span>`;
+        const reqText = t.req ? `<div class="pperk-req">${t.req}</div>` : `<div class="pperk-req" style="opacity:0.3;">NO REQUIREMENTS</div>`;
+        const btnLabel = alreadyTaken ? '✓ ALREADY TAKEN' : isElig ? '◈ TAKE THIS TRAIT' : '⚠ TAKE ANYWAY';
+        return `<div class="${cardCls}" onclick="selectTraitByIndex(${i})" title="${alreadyTaken ? 'ALREADY IN USE' : isElig ? 'TAKE TRAIT' : 'REQUIREMENTS NOT MET'}">
+            <div class="pperk-card-top">
+                <span class="ptrait-name">${t.name}</span>
                 ${badge}
             </div>
             ${reqText}
-            <div class="trait-card-desc">${desc}</div>
+            <div class="pperk-desc">${t.desc}</div>
+            <button class="ptrait-take-btn">${btnLabel}</button>
         </div>`;
-    }).join('');
+    }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO TRAITS FOUND</div>';
+}
+
+function selectTraitByIndex(i) {
+    const t = _traitPickerList[i];
+    if (t) selectTraitForSlot(t.name);
 }
 
 function selectTraitForSlot(traitName) {
@@ -270,6 +464,7 @@ function selectTraitForSlot(traitName) {
     closeTraitModal();
     updateAll();
     triggerAutosave();
+    checkAndOfferTraitPerk(traitName);
 }
 
 function clearTraitSlot(slotId) {
@@ -294,7 +489,9 @@ function makeTraitRow(slotId, levelLabel, chosenName) {
             <button class="trait-slot-btn prog-clear-btn" onclick="openTraitModal('${slotId}')">${btnLabel}</button>
             <button class="trait-slot-clear prog-clear-btn" onclick="clearTraitSlot('${slotId}')" style="display:${clearDisplay}; color:rgba(255,80,80,0.8);">✕ CLEAR</button>
         </div>
-        <div class="trait-slot-name" style="padding:6px 10px; font-size:0.85rem; color:#c8ffd4; letter-spacing:0.05em;">${displayName}</div>
+        <div class="trait-slot-name" style="padding:6px 10px; font-size:0.85rem; color:#c8ffd4; letter-spacing:0.05em; cursor:${name?'pointer':'default'};" ${name?`onclick="openTraitDetailModal('${name}', {type:'level', slotId:'${slotId}'})" title="Click for trait details"`:''}>
+            ${displayName}${name?' <span style="font-size:0.6rem; opacity:0.4; margin-left:4px;">[INFO]</span>':''}
+        </div>
     </div>`;
 }
 
@@ -405,8 +602,65 @@ function openPerkZoom(name, req, desc) {
 }
 
 // Clicked from PERK & TRAIT LOG overview panel
-function ovPerkClick(name, req, desc) {
-    openPerkZoom(name, req, desc);
+function ovPerkClick(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    // Search perks, then traits, then reward perks, then internalized
+    const perk = PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+    const trait = !perk && TRAITS_DATA.find(t => t.name.trim().toLowerCase() === name.trim().toLowerCase());
+    const intTrait = !perk && !trait && INTERNALIZED_TRAITS_DATA.find(t => t.name.trim().toLowerCase() === name.trim().toLowerCase());
+    const rewardP = !perk && !trait && !intTrait && REWARD_PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+    const entry = perk || trait || intTrait || rewardP;
+    if (!entry) return;
+    document.getElementById('perk-zoom-name').textContent = entry.name;
+    document.getElementById('perk-zoom-req').textContent = entry.req ? 'REQ: ' + entry.req : 'NO REQUIREMENTS';
+    document.getElementById('perk-zoom-desc').textContent = entry.desc;
+    const box = document.getElementById('perk-zoom-modal').querySelector('.perk-zoom-box');
+    if (box) {
+        box.removeAttribute('data-type');
+        if (trait || intTrait) box.setAttribute('data-type', 'trait');
+    }
+    document.getElementById('perk-zoom-modal').style.display = 'flex';
+}
+
+function ovTraitClick(encodedName) {
+    const name = decodeURIComponent(encodedName);
+    const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase())
+             || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (!td) return;
+    document.getElementById('perk-zoom-name').textContent = td.name;
+    document.getElementById('perk-zoom-req').textContent = td.req ? 'REQ: ' + td.req : 'NO REQUIREMENTS';
+    document.getElementById('perk-zoom-desc').textContent = td.desc;
+    const box = document.getElementById('perk-zoom-modal').querySelector('.perk-zoom-box');
+    if (box) box.setAttribute('data-type', 'trait');
+    document.getElementById('perk-zoom-modal').style.display = 'flex';
+}
+
+
+/* ===== ACTION STAR CHOICE MODAL ===== */
+let _actionStarRow = null;
+
+function openActionStarModal(row) {
+    _actionStarRow = row;
+    document.getElementById('action-star-modal').style.display = 'flex';
+}
+
+function closeActionStarModal() {
+    document.getElementById('action-star-modal').style.display = 'none';
+    _actionStarRow = null;
+}
+
+function confirmActionStarChoice(choice) {
+    if (!_actionStarRow) { closeActionStarModal(); return; }
+    const nameInput = _actionStarRow.querySelector('.prog-name-input');
+    // Append the choice annotation to the perk name
+    const choiceLabels = {
+        ap:    'ACTION STAR [+TOTAL AP]',
+        regen: 'ACTION STAR [+AP REGEN]',
+        cost:  'ACTION STAR [-WEAP AP COST]'
+    };
+    nameInput.value = choiceLabels[choice] || 'ACTION STAR';
+    closeActionStarModal();
+    triggerAutosave();
 }
 
 /* ===== IMPLANT PICKER MODAL ===== */
@@ -550,9 +804,10 @@ function renderStartingTraitsList() {
         return;
     }
     container.innerHTML = startingTraits.map((t, idx) => `
-        <div class="st-tag-chip">
-            <span class="st-tag-name">${t.name}</span>
-            <button class="st-tag-remove" onclick="removeStartingTrait(${idx})">✕</button>
+        <div class="st-tag-chip" title="Click for details">
+            <span class="st-tag-name" onclick="openTraitDetailModal('${t.name}', {type:'starting', idx:${idx}})" style="cursor:pointer;">${t.name}</span>
+            <button class="st-tag-detail-btn" onclick="openTraitDetailModal('${t.name}', {type:'starting', idx:${idx}})" title="View / Remove">?</button>
+            <button class="st-tag-remove" onclick="removeStartingTrait(${idx})" title="Remove trait">✕</button>
         </div>`).join('');
 }
 
@@ -569,6 +824,7 @@ function addStartingTrait(name) {
     updateAll();
     closeTraitModal();
     triggerAutosave();
+    checkAndOfferTraitPerk(name);
 }
 
 function removeStartingTrait(idx) {
@@ -691,6 +947,7 @@ function addInternalizedTrait(name) {
     closeInternalizedModal();
     renderInternalizedTraitsList();
     triggerAutosave();
+    checkAndOfferTraitPerk(name);
 }
 
 function removeInternalizedTrait(idx) {
@@ -1153,6 +1410,12 @@ function confirmLevelUp() {
     if (isPerkLevel) {
         showPerkLevelUpPrompt(newLvl);
     }
+    // Check if new level grants a trait slot (every 4 levels from 5: 5, 9, 13, 17...)
+    const isTraitLevel = newLvl >= 5 && (newLvl - 1) % 4 === 0;
+    if (isTraitLevel) {
+        // Offset slightly so it fires after the perk prompt if same level
+        setTimeout(() => showTraitLevelUpPrompt(newLvl), isPerkLevel ? 500 : 80);
+    }
 }
 
 function showPerkLevelUpPrompt(lvl) {
@@ -1516,65 +1779,89 @@ function updateAll() {
     const rem = pool - (Object.values(special).reduce((a,b)=>a+b,0) - 7);
     document.getElementById('pts-left').innerText = rem;
     const { specialDelta, skillDelta, hasConditional } = getActiveTraitBonuses();
+    const { perkSpecialDelta, perkSkillDelta } = getActivePerkBonuses();
+    // Merge perk deltas into combined display deltas
+    const combSpecDelta = {};
+    for (const k of Object.keys(specialDelta)) {
+        combSpecDelta[k] = (specialDelta[k]||0) + (perkSpecialDelta[k]||0);
+    }
+    const combSkillDelta = {};
+    const allSkillKeys = new Set([...Object.keys(skillDelta), ...Object.keys(perkSkillDelta)]);
+    for (const k of allSkillKeys) {
+        combSkillDelta[k] = (skillDelta[k]||0) + (perkSkillDelta[k]||0);
+    }
     document.getElementById('special-list').innerHTML = sKeys.map(k => {
-        const d = specialDelta[k] || 0;
-        const deltaBadge = d !== 0 ? `<span class="spec-delta-badge ${d>0?'sdelta-pos':'sdelta-neg'}">${d>0?'+':''}${d}</span>` : '';
+        const td = specialDelta[k] || 0;
+        const pd = perkSpecialDelta[k] || 0;
+        const rank = getSpecialRank(k);
+        let deltaBadge = '';
+        if (td !== 0) deltaBadge += `<span class="spec-delta-badge ${td>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${td>0?'+':''}${td}<span class="delta-src-tag">T</span></span>`;
+        if (pd !== 0) deltaBadge += `<span class="spec-delta-badge ${pd>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pd>0?'+':''}${pd}<span class="delta-src-tag">P</span></span>`;
         return `<div class="special-row">
-            <span class="spec-abbr-lg">${k}</span>
-            <div class="spec-track-wide"><div class="spec-fill-wide" style="width:${special[k]*10}%"></div></div>
+            <span class="spec-abbr-lg spec-info-btn" title="Click for ${k} details — ${rank}" onclick="openSpecialInfoModal('${k}')">${k}</span>
+            <div class="spec-track-wide" onclick="openSpecialInfoModal('${k}')" style="cursor:pointer;" title="${rank}">
+                <div class="spec-fill-wide" style="width:${special[k]*10}%"></div>
+            </div>
             <div class="special-controls">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
                 <span class="special-val">${special[k]}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
                 ${deltaBadge}
             </div>
+            <div class="spec-rank-title">${rank}</div>
         </div>`;
     }).join('');
 
     document.getElementById('ov-name').innerText = (document.getElementById('char-name').value || "NO_ID").toUpperCase();
     document.getElementById('ov-spec').innerHTML = sKeys.map(k => `<div class="char-banner-stat"><span class="char-banner-stat-key">${k}</span><span class="char-banner-stat-val">${special[k]}</span></div>`).join('');
     document.getElementById('ov-tags').innerHTML = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => { const label = c.parentElement.querySelectorAll('span')[1]; return `<div class="ov-entry"><span>${label ? label.innerText : ''}</span></div>`; }).join('') || "NONE";
-    const startingTraitHTML = startingTraits.map(t => `<div class="ov-entry"><span>◈ ${t.name}</span></div>`).join('');
-    const levelTraitHTML = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => { const n = r.getAttribute('data-chosen')||''; return n ? `<div class="ov-entry"><span>▸ ${n}</span></div>` : ''; }).join('');
+        const startingTraitHTML = startingTraits.map((t) => {
+        const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
+                 || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
+        const safeN = encodeURIComponent(t.name);
+        const onclick = td ? `onclick="ovTraitClick('${safeN}')"` : '';
+        return `<div class="ov-entry ov-entry-clickable" ${onclick} title="${td ? 'CLICK FOR TRAIT DETAILS' : t.name}"><span>◈ ${t.name}</span></div>`;
+    }).join('');
+    const levelTraitHTML = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => {
+        const n = r.getAttribute('data-chosen')||'';
+        if (!n) return '';
+        const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase())
+                 || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase());
+        const safeN = encodeURIComponent(n);
+        const onclick = td ? `onclick="ovTraitClick('${safeN}')"` : '';
+        return `<div class="ov-entry ov-entry-clickable" ${onclick} title="${td ? 'CLICK FOR TRAIT DETAILS' : n}"><span>▸ ${n}</span></div>`;
+    }).join('');
     const traitHTML = startingTraitHTML + levelTraitHTML || 'NONE';
     const ovT = document.getElementById('ov-traits'); if(ovT) ovT.innerHTML = traitHTML;
 
     document.getElementById('ov-perks').innerHTML = (() => {
+        // Strip annotations like [+AP REGEN] or (+1 STR) from perk names for lookup
+        function baseName(v) { return v.replace(/\s*[\[(].*?[\])]$/, '').trim(); }
         const levelPerks = Array.from(document.querySelectorAll('#prog-list .prog-row')).map(r => {
             const lvl = r.querySelector('.lvl-tag')?.innerText || '';
             const val = r.querySelector('.prog-name-input')?.value || '';
             if (!val) return '';
-            const perk = PERKS_DATA.find(p => p.name.trim().toLowerCase() === val.trim().toLowerCase());
-            const trait = !perk && TRAITS_DATA.find(t => t.name.trim().toLowerCase() === val.trim().toLowerCase());
-            const clickable = perk || trait;
-            const onclick = clickable ? `onclick="ovPerkClick('${val.replace(/'/g,"\\'")}','${(perk||trait).req.replace(/'/g,"\\'")}','${(perk||trait).desc.replace(/'/g,"\\'")}')"` : '';
-            return `<div class="ov-entry ov-entry-clickable" ${onclick}><span>${val}</span><span style="opacity:0.5;">${lvl}</span></div>`;
+            // always set onclick — ovPerkClick will look up across all data sources
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${val}</span><span style="opacity:0.5;">${lvl}</span></div>`;
         }).join('');
         const bonusPerks = Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).map(r => {
             const val = r.querySelector('.prog-name-input')?.value || '';
             if (!val) return '';
-            const perk = PERKS_DATA.find(p => p.name.trim().toLowerCase() === val.trim().toLowerCase());
-            const trait = !perk && TRAITS_DATA.find(t => t.name.trim().toLowerCase() === val.trim().toLowerCase());
-            const onclick = (perk||trait) ? `onclick="ovPerkClick('${val.replace(/'/g,"\\'")}','${(perk||trait).req.replace(/'/g,"\\'")}','${(perk||trait).desc.replace(/'/g,"\\'")}' )"` : '';
-            return `<div class="ov-entry ov-entry-clickable" ${onclick}><span>${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`;
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`;
         }).join('');
         const rewardPerks = rewardPerksList.map(rp => {
-            const perk = PERKS_DATA.find(p => p.name.trim().toLowerCase() === rp.name.trim().toLowerCase());
-            const onclick = perk ? `onclick="ovPerkClick('${rp.name.replace(/'/g,"\\'")}','${perk.req.replace(/'/g,"\\'")}','${perk.desc.replace(/'/g,"\\'")}' )"` : '';
-            return `<div class="ov-entry ov-entry-clickable" ${onclick}><span>${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`;
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(rp.name)}')" title="CLICK FOR DETAILS"><span>${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`;
         }).join('');
         const internalized = internalizedTraitsList.map(it => {
-            const trait = TRAITS_DATA.find(t => t.name.trim().toLowerCase() === it.name.trim().toLowerCase());
-            const onclick = trait ? `onclick="ovPerkClick('${it.name.replace(/'/g,"\\'")}','${trait.req.replace(/'/g,"\\'")}','${trait.desc.replace(/'/g,"\\'")}' )"` : '';
-            return `<div class="ov-entry ov-entry-clickable" ${onclick}><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`;
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(it.name)}')" title="CLICK FOR DETAILS"><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`;
         }).join('');
         return (levelPerks + bonusPerks + rewardPerks + internalized) || '<span style="opacity:0.3; font-size:0.65rem;">NONE YET</span>';
     })();
 
     let gearHTML = Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => {
         const ins = c.querySelectorAll('.gear-field-input');
-        const n = ins[0]?.value||''; const a = ins[2]?.value||'';
-        return n ? `<div class="ov-entry"><span>⚔ ${n}</span><span style="opacity:0.6;">${a}</span></div>` : '';
+        const n = ins[0]?.value||''; const a = ins[2]?.value||''; const str = ins[3]?.value||''; const sel = c.querySelector('.gear-skill-type-select'); const st = sel?.value||''; const sr = ins[4]?.value||'';
+        return n ? `<div class="ov-entry"><span>⚔ ${n}</span><div style="display:flex;gap:6px;align-items:center;">${st?`<span style="font-size:0.68rem;color:rgba(255,220,80,0.7);border:1px solid rgba(255,220,80,0.25);padding:0 4px;">${st}${sr?' '+sr:''}</span>`:''}${str?`<span style="font-size:0.68rem;color:rgba(100,180,255,0.7);border:1px solid rgba(100,180,255,0.2);padding:0 4px;">STR ${str}</span>`:''}${a?`<span style="opacity:0.55;">${a}</span>`:''}</div></div>` : '';
     }).join('');
     gearHTML += Array.from(document.querySelectorAll('#armor-list .gear-card')).map(c => {
         const ins = c.querySelectorAll('.gear-field-input');
@@ -1623,14 +1910,17 @@ function updateAll() {
             const base = skillBase(s);
             const tagBonus = isTagged ? 15 : 0;
             const spent = skillPoints[s] || 0;
-            const val = Math.min(100, base + tagBonus + spent);
-            const sd = skillDelta[s] || 0;
-            const sdBadge = sd !== 0 ? `<span class="skill-delta-badge ${sd>0?'sdelta-pos':'sdelta-neg'}">${sd>0?'+':''}${sd}</span>` : '';
-            const breakdown = `BASE:${base}${tagBonus?` TAG:+${tagBonus}`:''}${spent?` LVL:+${spent}`:''}${sd?` TRAIT:${sd>0?'+':''}${sd}`:''}`;
+            const tDelta = skillDelta[s] || 0;
+            const pDelta = perkSkillDelta[s] || 0;
+            const val = Math.min(100, base + tagBonus + spent + tDelta + pDelta);
+            let deltaBadges = '';
+            if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
+            if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
+            const breakdown = `BASE:${base}${tagBonus?` TAG:+${tagBonus}`:''}${spent?` LVL:+${spent}`:''}${tDelta?` TRAIT:${tDelta>0?'+':''}${tDelta}`:''}${pDelta?` PERK:${pDelta>0?'+':''}${pDelta}`:''}`;
             return `<div class="skill-row${isTagged?' skill-row-tagged':''}" title="${breakdown}">
                 <span class="skill-row-name">${isTagged?'★ ':''}${s}</span>
                 <div class="skill-row-bar"><div class="skill-row-fill" style="width:${val}%"></div></div>
-                <span class="skill-row-val">${val}</span>${sdBadge}
+                <span class="skill-row-val">${val}</span>${deltaBadges}
             </div>`;
         }).join('');
     }
@@ -1669,6 +1959,28 @@ function addWeapon() {
                         <input type="text" class="gear-field-input" oninput="triggerAutosave()" placeholder=".357 MAG, 5MM...">
                     </div>
                 </div>
+                <div class="gear-field-row gear-weapon-req-row">
+                    <div class="gear-field-group gear-str-req-group">
+                        <label class="gear-field-label">STR REQ</label>
+                        <input type="text" class="gear-field-input gear-stat-input gear-str-req-input" oninput="triggerAutosave()" placeholder="—">
+                    </div>
+                    <div class="gear-field-group gear-skill-type-group">
+                        <label class="gear-field-label">SKILL TYPE</label>
+                        <select class="gear-field-select gear-skill-type-select" onchange="triggerAutosave()">
+                            <option value="">— NONE —</option>
+                            <option value="GUNS">GUNS</option>
+                            <option value="BIG GUNS">BIG GUNS</option>
+                            <option value="ENERGY WEAPONS">ENERGY WEAPONS</option>
+                            <option value="EXPLOSIVES">EXPLOSIVES</option>
+                            <option value="MELEE WEAPONS">MELEE WEAPONS</option>
+                            <option value="UNARMED">UNARMED</option>
+                        </select>
+                    </div>
+                    <div class="gear-field-group gear-skill-req-group">
+                        <label class="gear-field-label">SKILL REQ</label>
+                        <input type="text" class="gear-field-input gear-stat-input gear-skill-req-input" oninput="triggerAutosave()" placeholder="—">
+                    </div>
+                </div>
             </div>
         </div>`);
     updateGearCounts();
@@ -1696,6 +2008,20 @@ function addArmor() {
                         <select class="gear-field-select" onchange="updateArmorBadge(this);triggerAutosave()">
                             <option>LIGHT</option><option>MEDIUM</option><option>HEAVY</option><option>POWER ARMOR</option>
                         </select>
+                    </div>
+                </div>
+                <div class="gear-field-row gear-armor-stats-row">
+                    <div class="gear-field-group">
+                        <label class="gear-field-label">DT</label>
+                        <input type="text" class="gear-field-input gear-stat-input" oninput="triggerAutosave()" placeholder="0">
+                    </div>
+                    <div class="gear-field-group">
+                        <label class="gear-field-label">DR</label>
+                        <input type="text" class="gear-field-input gear-stat-input" oninput="triggerAutosave()" placeholder="0%">
+                    </div>
+                    <div class="gear-field-group gear-field-effect">
+                        <label class="gear-field-label">EFFECT / BONUS</label>
+                        <input type="text" class="gear-field-input" oninput="triggerAutosave()" placeholder="E.G. +5 SNEAK, CHEM RESIST...">
                     </div>
                 </div>
             </div>
@@ -1950,6 +2276,10 @@ function selectPerkInRow(row, perkName) {
     if (perk.name.trim().toUpperCase() === 'TAG!') {
         setTimeout(() => openTagModal(), 80);
     }
+    // If Action Star, prompt choice
+    if (perk.name.trim().toUpperCase() === 'ACTION STAR') {
+        setTimeout(() => openActionStarModal(row), 80);
+    }
 
     triggerAutosave();
 }
@@ -2066,6 +2396,7 @@ function toggleTag(itemEl) {
 
 /* ===== AUTOSAVE & PERSISTENCE ===== */
 function triggerAutosave() {
+    pushUndoState();
     const data = collectData();
     localStorage.setItem('Nuclear_Sunset_Permanent_Vault', JSON.stringify(data));
     document.getElementById('sync-status').innerText = "V_MEMORY_SYNCED_" + new Date().toLocaleTimeString();
@@ -2090,8 +2421,8 @@ function collectData() {
             r.querySelector('.prog-name-input')?.value || '',
             r.querySelector('.prog-notes-input')?.value || ''
         ]),
-        weapons: Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); return [ins[0]?.value||'', ins[1]?.value||'', ins[2]?.value||'']; }),
-        armor: Array.from(document.querySelectorAll('#armor-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); return [ins[0]?.value||'', ins[1]?.value||'', sel?.value||'LIGHT']; }),
+        weapons: Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-skill-type-select'); return [ins[0]?.value||'', ins[1]?.value||'', ins[2]?.value||'', ins[3]?.value||'', sel?.value||'', ins[4]?.value||'']; }),
+        armor: Array.from(document.querySelectorAll('#armor-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); return [ins[0]?.value||'', ins[1]?.value||'', sel?.value||'LIGHT', ins[2]?.value||'', ins[3]?.value||'', ins[4]?.value||'']; }),
         quests: Array.from(document.querySelectorAll('#quest-list-container input')).map(i => i.checked),
         colls: Array.from(document.querySelectorAll('#coll-list input')).map(i => i.checked),
         uniWpns: Array.from(document.querySelectorAll('.u-wpn-check')).map(i => i.checked),
@@ -2159,9 +2490,9 @@ function hydrate(d) {
     const tl = document.getElementById('trait-list');
     if (tl) tl.innerHTML = '';
     document.getElementById('weapon-list').innerHTML = '';
-    d.weapons.forEach(v => { addWeapon(); const c = document.querySelector('#weapon-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(ins[2]) ins[2].value = v[2]||''; });
+    d.weapons.forEach(v => { addWeapon(); const c = document.querySelector('#weapon-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-skill-type-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(ins[2]) ins[2].value = v[2]||''; if(ins[3]) ins[3].value = v[3]||''; if(sel && v[4]) sel.value = v[4]; if(ins[4]) ins[4].value = v[5]||''; });
     document.getElementById('armor-list').innerHTML = '';
-    d.armor.forEach(v => { addArmor(); const c = document.querySelector('#armor-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(sel && v[2]) { sel.value = v[2]; updateArmorBadge(sel); } });
+    d.armor.forEach(v => { addArmor(); const c = document.querySelector('#armor-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(sel && v[2]) { sel.value = v[2]; updateArmorBadge(sel); } if(ins[2]) ins[2].value = v[3]||''; if(ins[3]) ins[3].value = v[4]||''; if(ins[4]) ins[4].value = v[5]||''; });
     // Restore trait slots from saved traits array
     if (d.traits && Array.isArray(d.traits)) {
         const traitSlots = Array.from(document.querySelectorAll('#prog-list .trait-slot-row'));
@@ -2253,6 +2584,10 @@ function closeTagModal() {
 function randomizeBuild() {
     if (!confirm('RANDOMIZE S.P.E.C.I.A.L., TAGS, AND STARTING TRAITS? (THIS WILL OVERWRITE CURRENT SELECTIONS)')) return;
 
+    // ── Step 0: Random name
+    const nameInput = document.getElementById('char-name');
+    if (nameInput) nameInput.value = getRandomWastelandName();
+
     // ── Step 1: Randomize SPECIAL — distribute the FULL pool so all points are used
     const pool = mode === 'hc' ? 30 : 33;
     const newSpecial = { STR:1,PER:1,END:1,CHA:1,INT:1,AGI:1,LCK:1 };
@@ -2310,6 +2645,41 @@ function randomizeBuild() {
 
 
 /* ===== PERK PICKER MODAL (LEVEL UP) ===== */
+
+/* ===== TRAIT / INTERNALIZED TRAIT FREE PERK PICKER ===== */
+// Traits & internalized traits that grant a free bonus perk
+const PERK_GRANTING_TRAITS = new Set([
+    'Delicate','Doom Spiral','Empath','Fickle','Hemophiliac','Insolent',
+    'Lazy','Legally Blind','Lubberly','Narcoleptic','Phillistine',
+    'Root Of All Evil','Sarcopenic','Sluggish','Soviet Roulette','Weak Knees',
+    // Internalized traits
+    'Bottomless Stomach','Congenital Heart Defect','Human Sieve','Tragic Survivor'
+]);
+
+let _traitPerkPickerList = []; // full list used for trait perk modal (eligible + ineligible)
+
+function checkAndOfferTraitPerk(traitName) {
+    if (!PERK_GRANTING_TRAITS.has(traitName)) return;
+    setTimeout(() => openTraitPerkPickerModal(traitName), 120);
+}
+
+function openTraitPerkPickerModal(traitName) {
+    // Re-use the perk picker modal but in 'trait' mode
+    _perkPickerLevel = null; // not a level-up
+    const titleEl = document.getElementById('perk-picker-title');
+    if (titleEl) titleEl.innerHTML = `◈ TRAIT BONUS &mdash; <span style="color:#c8ffd4;">${traitName}</span>: SELECT A FREE PERK`;
+    const srchEl = document.getElementById('perk-picker-search');
+    if (srchEl) srchEl.value = '';
+    // Set mode flag so renderer knows
+    const modal = document.getElementById('perk-picker-modal');
+    if (modal) {
+        modal.setAttribute('data-mode', 'trait');
+        modal.setAttribute('data-trait', traitName);
+    }
+    renderPerkPickerGrid();
+    if (modal) modal.style.display = 'flex';
+}
+
 let _perkPickerLevel = null;
 let _perkPickerList = [];
 
@@ -2326,8 +2696,17 @@ function openPerkPickerModal(lvl) {
 
 function closePerkPickerModal() {
     const modal = document.getElementById('perk-picker-modal');
-    if (modal) modal.style.display = 'none';
-    // Show the classic banner as a reminder
+    const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
+    if (modal) {
+        modal.style.display = 'none';
+        modal.removeAttribute('data-mode');
+        modal.removeAttribute('data-trait');
+    }
+    if (isTraitMode) {
+        // Just close, no reminder banner for trait perks
+        return;
+    }
+    // Show the classic banner as a reminder for level-up perks
     const banner = document.getElementById('perk-lvlup-banner');
     if (banner && _perkPickerLevel) {
         const lvl = _perkPickerLevel;
@@ -2338,36 +2717,91 @@ function closePerkPickerModal() {
 }
 
 function renderPerkPickerGrid() {
+    const modal = document.getElementById('perk-picker-modal');
+    const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
     const search = ((document.getElementById('perk-picker-search')||{}).value || '').toLowerCase().trim();
-    const eligible = PERKS_DATA.filter(p => meetsRequirements(p));
-    _perkPickerList = search ? eligible.filter(p =>
-        p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
-    ) : eligible;
-
-    const countEl = document.getElementById('perk-picker-count');
-    if (countEl) countEl.textContent = `${_perkPickerList.length} ELIGIBLE`;
 
     const grid = document.getElementById('perk-picker-grid');
     if (!grid) return;
-    grid.innerHTML = _perkPickerList.map((p, i) => {
-        const rankBadge = p.ranks > 1
-            ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${p.ranks} RANKS</span>`
-            : `<span class="pperk-rank-badge">1 RANK</span>`;
-        return `<div class="pperk-card" onclick="takePerkFromModal(${i})">
-            <div class="pperk-card-top">
-                <span class="pperk-name">${p.name}</span>
-                ${rankBadge}
-            </div>
-            <div class="pperk-req">${p.req}</div>
-            <div class="pperk-desc">${p.desc}</div>
-            <button class="pperk-take-btn">✓ TAKE THIS PERK</button>
-        </div>`;
-    }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO ELIGIBLE PERKS FOUND</div>';
+
+    if (isTraitMode) {
+        // Show ALL perks: eligible A-Z first, then ineligible A-Z (dimmed, still selectable)
+        const eligible = PERKS_DATA
+            .filter(p => meetsRequirements(p))
+            .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
+            .sort((a,b) => a.name.localeCompare(b.name));
+        const ineligible = PERKS_DATA
+            .filter(p => !meetsRequirements(p))
+            .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
+            .sort((a,b) => a.name.localeCompare(b.name));
+
+        _perkPickerList = [...eligible, ...ineligible];
+        const countEl = document.getElementById('perk-picker-count');
+        if (countEl) countEl.textContent = `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE`;
+
+        grid.innerHTML = _perkPickerList.map((p, i) => {
+            const isElig = i < eligible.length;
+            const rankBadge = p.ranks > 1
+                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${p.ranks} RANKS</span>`
+                : `<span class="pperk-rank-badge">1 RANK</span>`;
+            return `<div class="pperk-card pperk-trait-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${isElig ? 'TAKE THIS PERK' : 'REQUIREMENTS NOT MET — YOU MAY STILL SELECT AS A TRAIT REWARD'}">
+                <div class="pperk-card-top">
+                    <span class="pperk-name">${p.name}</span>
+                    ${rankBadge}
+                    ${!isElig ? '<span class="pperk-inelig-tag">REQ NOT MET</span>' : ''}
+                </div>
+                <div class="pperk-req">${p.req}</div>
+                <div class="pperk-desc">${p.desc}</div>
+                <button class="pperk-take-btn">${isElig ? '✓ TAKE THIS PERK' : '⚠ TAKE ANYWAY'}</button>
+            </div>`;
+        }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
+    } else {
+        // Level-up mode: eligible only
+        const eligible = PERKS_DATA.filter(p => meetsRequirements(p));
+        _perkPickerList = search ? eligible.filter(p =>
+            p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
+        ) : eligible;
+
+        const countEl = document.getElementById('perk-picker-count');
+        if (countEl) countEl.textContent = `${_perkPickerList.length} ELIGIBLE`;
+
+        grid.innerHTML = _perkPickerList.map((p, i) => {
+            const rankBadge = p.ranks > 1
+                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${p.ranks} RANKS</span>`
+                : `<span class="pperk-rank-badge">1 RANK</span>`;
+            return `<div class="pperk-card" onclick="takePerkFromModal(${i})">
+                <div class="pperk-card-top">
+                    <span class="pperk-name">${p.name}</span>
+                    ${rankBadge}
+                </div>
+                <div class="pperk-req">${p.req}</div>
+                <div class="pperk-desc">${p.desc}</div>
+                <button class="pperk-take-btn">✓ TAKE THIS PERK</button>
+            </div>`;
+        }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO ELIGIBLE PERKS FOUND</div>';
+    }
 }
 
 function takePerkFromModal(idx) {
     const perk = _perkPickerList[idx];
     if (!perk) return;
+
+    const modal = document.getElementById('perk-picker-modal');
+    const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
+
+    if (isTraitMode) {
+        // Add as a bonus perk in extra-perk-list
+        addExtraPerk();
+        const extras = document.querySelectorAll('#extra-perk-list .prog-row');
+        const last = extras[extras.length - 1];
+        if (last) selectPerkInRow(last, perk.name);
+        // Clean up modal state
+        if (modal) { modal.style.display = 'none'; modal.removeAttribute('data-mode'); modal.removeAttribute('data-trait'); }
+        showPerkToast(perk.name);
+        triggerAutosave();
+        return;
+    }
+
     const lvl = _perkPickerLevel;
     let targetRow = null;
 
@@ -2394,7 +2828,6 @@ function takePerkFromModal(idx) {
     if (targetRow) selectPerkInRow(targetRow, perk.name);
 
     // Close modal and hide banner
-    const modal = document.getElementById('perk-picker-modal');
     if (modal) modal.style.display = 'none';
     const banner = document.getElementById('perk-lvlup-banner');
     if (banner) banner.style.display = 'none';
@@ -2441,6 +2874,282 @@ function stickyNoteClick() {
             _stickyActive = false;
         }, 1100);
     }
+}
+
+
+/* ===== RANDOM NAME LISTS ===== */
+const RAND_MALE_FIRST = [
+    "AARON","ADAM","ALAN","ALBERT","ALEX","ALLEN","ANDRE","ANDREW","ANTHONY","ARTHUR",
+    "BEN","BERNARD","BILLY","BOBBY","BRADLEY","BRANDON","BRIAN","BRUCE","CARL","CARLOS",
+    "CHARLES","CHARLIE","CHRIS","CHRISTOPHER","CLARENCE","CLIFFORD","COLE","COREY","CRAIG","DALE",
+    "DANIEL","DARRELL","DAVID","DENNIS","DEREK","DONALD","DOUGLAS","DUSTIN","DYLAN","EARL",
+    "EDWARD","ELIJAH","ERIC","ERNEST","ETHAN","EUGENE","EVAN","FRANK","FRED","GARY",
+    "GEORGE","GERALD","GLEN","GORDON","GRANT","GREG","HENRY","HOWARD","IVAN","JACK",
+    "JAMES","JASON","JEFF","JEROME","JESSE","JOE","JOEL","JOHN","JONATHAN","JOSEPH",
+    "JOSHUA","JUAN","JUSTIN","KEITH","KENNETH","KEVIN","KYLE","LANCE","LARRY","LEON",
+    "LEWIS","LIAM","LOGAN","MARCUS","MARK","MARTIN","MATTHEW","MAX","MICHAEL","MILES",
+    "MITCHELL","NATHAN","NICHOLAS","NOAH","OLIVER","OSCAR","PATRICK","PAUL","PETER","PHILIP"
+];
+const RAND_FEMALE_FIRST = [
+    "ABIGAIL","ALICE","AMBER","AMY","ANDREA","ANGELA","ASHLEY","BARBARA","BETTY","BEVERLY",
+    "BRENDA","BRITTANY","CAROL","CAROLINE","CASSANDRA","CATHERINE","CHARLOTTE","CHERYL","CHRISTINA","CLAIRE",
+    "CRYSTAL","CYNTHIA","DANA","DEBORAH","DENISE","DIANA","DONNA","DOROTHY","ELAINE","ELENA",
+    "ELIZABETH","EMILY","EMMA","EVELYN","FRANCES","GLORIA","GRACE","HANNAH","HELEN","IRENE",
+    "JACQUELINE","JANET","JENNIFER","JESSICA","JOAN","JOYCE","JUDITH","JULIA","JULIE","KAREN",
+    "KATHERINE","KIMBERLY","LAURA","LINDA","LISA","LORRAINE","LUCY","MARGARET","MARIA","MARIE",
+    "MARILYN","MARTHA","MARY","MELISSA","MICHELLE","NANCY","NATALIE","NICOLE","NORMA","OLIVIA",
+    "PAMELA","PATRICIA","PAULA","RACHEL","REBECCA","RITA","ROSA","RUTH","SANDRA","SARAH",
+    "SHARON","SHIRLEY","STEPHANIE","SUSAN","TAMARA","TAMMY","TERESA","TINA","VALERIE","VIRGINIA"
+];
+const RAND_LAST = [
+    "ADAMS","ALLEN","ANDERSON","BAILEY","BAKER","BARNES","BELL","BENNETT","BROOKS","BROWN",
+    "BUTLER","CAMPBELL","CARTER","CLARK","COLE","COLLINS","COOK","COOPER","COX","CRUZ",
+    "DAVIS","DIAZ","EDWARDS","EVANS","FISHER","FLORES","FORD","FOSTER","GARCIA","GONZALEZ",
+    "GRAHAM","GRAY","GREEN","GRIFFIN","HALL","HAMILTON","HARRIS","HARRISON","HAYES","HENDERSON",
+    "HERNANDEZ","HILL","HOWARD","HUGHES","JACKSON","JAMES","JENKINS","JOHNSON","JONES","KELLY",
+    "KING","KNIGHT","LAWRENCE","LEE","LEWIS","LONG","LOPEZ","MARTIN","MARTINEZ","MASON",
+    "MATTHEWS","MILLER","MITCHELL","MOORE","MORGAN","MORRIS","MURPHY","MYERS","NELSON","NGUYEN",
+    "PARKER","PATTERSON","PEREZ","PERRY","PETERSON","PHILLIPS","POWELL","PRICE","RAMIREZ","REED",
+    "REYES","RICHARDSON","RIVERA","ROBERTS","ROBINSON","RODRIGUEZ","ROGERS","ROSS","RUSSELL","SANCHEZ",
+    "SANDERS","SCOTT","SIMMONS","SMITH","STEWART","TAYLOR","THOMAS","THOMPSON","TORRES","TURNER",
+    "WALKER","WARD","WASHINGTON","WATSON","WHITE","WILLIAMS","WILSON","WOOD","WRIGHT","YOUNG"
+];
+
+function getRandomWastelandName() {
+    const gender = Math.random() < 0.5 ? 'M' : 'F';
+    const firsts = gender === 'M' ? RAND_MALE_FIRST : RAND_FEMALE_FIRST;
+    const first = firsts[Math.floor(Math.random() * firsts.length)];
+    const last = RAND_LAST[Math.floor(Math.random() * RAND_LAST.length)];
+    return first + ' ' + last;
+}
+
+/* ===== SPECIAL INFO DATA ===== */
+const SPECIAL_INFO = {
+    STR: {
+        label: 'STRENGTH',
+        color: '#ff9944',
+        effects: [
+            'Increased carry weight',
+            'Increased melee damage',
+            'Increased knockdown resistance',
+            'Improved hip-fire spread',
+            'Improved recoil control'
+        ]
+    },
+    PER: {
+        label: 'PERCEPTION',
+        color: '#66ddff',
+        effects: [
+            'Improved NPC detection while sneaking',
+            'Improved non-damaging forced entry bonus',
+            'Improved bullet spread',
+            'Improved degree of time dilation in Bullet Time'
+        ]
+    },
+    END: {
+        label: 'ENDURANCE',
+        color: '#88ff55',
+        effects: [
+            'Increased HP',
+            'Increased radiation resistance',
+            'Increased poison resistance',
+            'Increased knockdown resistance',
+            'Increased health regeneration over time',
+            'Increased sleep/wait health regeneration',
+            'Reduced addiction chance'
+        ]
+    },
+    CHA: {
+        label: 'CHARISMA',
+        color: '#ff88cc',
+        effects: [
+            'Improved companion damage and defense',
+            'Higher number of recruitable companions',
+            'Improved barter prices',
+            'Easier dialogue checks',
+            'Increased reputation gains and decreased losses'
+        ],
+        extra: (val) => {
+            // Companion slots
+            const hasMag = hasMagneticPersonalityPerk();
+            const bonus = hasMag ? 1 : 0;
+            let slots, hcSlots;
+            if (val >= 10) slots = 3;
+            else if (val >= 7) slots = 2;
+            else if (val >= 4) slots = 1;
+            else slots = 0;
+            if (val >= 10) hcSlots = 2;
+            else if (val >= 5) hcSlots = 1;
+            else hcSlots = 0;
+            const magLabel = bonus ? ` <span style="color:#ffd080;font-size:0.65rem;">+1 (Magnetic Personality)</span>` : '';
+            return `<div class="sinfo-companion-box">
+                <div class="sinfo-companion-header">◆ COMPANION SLOTS</div>
+                <div class="sinfo-companion-row">
+                    <span class="sinfo-mode-tag">STD</span>
+                    <span class="sinfo-slot-val">${slots + bonus}</span>
+                    <span class="sinfo-slot-sub">slot${(slots + bonus) !== 1 ? 's' : ''}${magLabel}</span>
+                </div>
+                <div class="sinfo-companion-row">
+                    <span class="sinfo-mode-tag sinfo-mode-hc">HC</span>
+                    <span class="sinfo-slot-val">${hcSlots + bonus}</span>
+                    <span class="sinfo-slot-sub">slot${(hcSlots + bonus) !== 1 ? 's' : ''}${magLabel}</span>
+                </div>
+                <div class="sinfo-companion-thresholds">
+                    <div style="opacity:0.55; font-size:0.62rem; margin-bottom:4px;">STD THRESHOLDS:</div>
+                    <div class="${val>=4?'sinfo-thresh-met':'sinfo-thresh'}">CHA 4 → 1 companion</div>
+                    <div class="${val>=7?'sinfo-thresh-met':'sinfo-thresh'}">CHA 7 → 2 companions</div>
+                    <div class="${val>=10?'sinfo-thresh-met':'sinfo-thresh'}">CHA 10 → 3 companions</div>
+                    <div style="opacity:0.55; font-size:0.62rem; margin:6px 0 4px;">HC THRESHOLDS:</div>
+                    <div class="${val>=5?'sinfo-thresh-met':'sinfo-thresh'}">CHA 5 → 1 companion (HC)</div>
+                    <div class="${val>=10?'sinfo-thresh-met':'sinfo-thresh'}">CHA 10 → 2 companions (HC)</div>
+                    ${bonus ? '<div style="color:#ffd080;font-size:0.62rem; margin-top:4px;">★ MAGNETIC PERSONALITY: +1 SLOT</div>' : ''}
+                </div>
+            </div>`;
+        }
+    },
+    INT: {
+        label: 'INTELLIGENCE',
+        color: '#bbaaff',
+        effects: [
+            'Improved skill points per level',
+            'Improved non-damaging forced entry bonus',
+            'Enemy intelligence reduces success in dialogue checks'
+        ]
+    },
+    AGI: {
+        label: 'AGILITY',
+        color: '#44ffaa',
+        effects: [
+            'Increased Action Points (AP)',
+            'Improved radiation decay',
+            'Improved non-damaging forced entry bonus',
+            'Improved lockpicking',
+            'Faster swim speed',
+            'Faster reload speed',
+            'Faster draw and holster speed',
+            'Faster weapon jam recovery speed'
+        ]
+    },
+    LCK: {
+        label: 'LUCK',
+        color: '#ffdd44',
+        effects: [
+            'Improved critical hit chance',
+            'Improved crippled limb recovery chance while sleeping at full health',
+            'Reduced odds for item destruction during forced entry',
+            'Reduced chance for bypass tool to be destroyed',
+            'Improved outcomes in scripted events (e.g. repairing electrical boxes)',
+            'Improved lockpicking chances',
+            'Improved hacking chances (with Immersive Minigame Tweaks)',
+            'Reduced weapon jam chance'
+        ]
+    }
+};
+
+function hasMagneticPersonalityPerk() {
+    const allPerkInputs = document.querySelectorAll('#prog-list .prog-name-input, #extra-perk-list .prog-name-input');
+    for (const inp of allPerkInputs) {
+        if ((inp.value || '').trim().toUpperCase() === 'MAGNETIC PERSONALITY') return true;
+    }
+    return false;
+}
+
+function openSpecialInfoModal(k) {
+    const info = SPECIAL_INFO[k];
+    if (!info) return;
+    const val = special[k];
+    const modal = document.getElementById('special-info-modal');
+    const title = document.getElementById('sinfo-title');
+    const valEl = document.getElementById('sinfo-val');
+    const effects = document.getElementById('sinfo-effects');
+    const extra = document.getElementById('sinfo-extra');
+
+    if (title) { title.textContent = info.label; title.style.color = info.color; }
+    if (valEl) { valEl.textContent = val; valEl.style.color = info.color; }
+    if (effects) {
+        effects.innerHTML = info.effects.map(e => `<div class="sinfo-effect-row">▸ ${e}</div>`).join('');
+    }
+    if (extra) {
+        extra.innerHTML = info.extra ? info.extra(val) : '';
+    }
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeSpecialInfoModal() {
+    const modal = document.getElementById('special-info-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+/* ===== TRAIT DETAIL MODAL ===== */
+let _traitDetailIdx = null;
+let _traitDetailIsLevel = false;
+let _traitDetailSlotId = null;
+
+function openTraitDetailModal(name, opts) {
+    // opts: { type: 'starting', idx: N } or { type: 'level', slotId: 'xxx' }
+    const trait = TRAITS_DATA.find(t => t.name === name);
+    const modal = document.getElementById('trait-detail-modal');
+    if (!modal) return;
+
+    document.getElementById('td-name').textContent = name;
+    document.getElementById('td-req').textContent = trait ? (trait.req || 'NO REQUIREMENTS') : '';
+    document.getElementById('td-desc').textContent = trait ? trait.desc : name;
+
+    // Delta badge info
+    const bonus = TRAIT_BONUSES ? TRAIT_BONUSES[name] : null;
+    const deltaEl = document.getElementById('td-delta');
+    if (deltaEl && bonus) {
+        let parts = [];
+        if (bonus.special) {
+            for (const [k,v] of Object.entries(bonus.special)) {
+                parts.push(`<span class="${v>0?'sdelta-pos':'sdelta-neg'}" style="padding:1px 6px; border-radius:2px; font-size:0.65rem; font-weight:bold;">${k} ${v>0?'+':''}${v}</span>`);
+            }
+        }
+        if (bonus.skills) {
+            for (const [k,v] of Object.entries(bonus.skills)) {
+                if (k === '__ALL__') parts.push(`<span class="${v>0?'sdelta-pos':'sdelta-neg'}" style="padding:1px 6px; border-radius:2px; font-size:0.65rem; font-weight:bold;">ALL SKILLS ${v>0?'+':''}${v}</span>`);
+                else parts.push(`<span class="${v>0?'sdelta-pos':'sdelta-neg'}" style="padding:1px 6px; border-radius:2px; font-size:0.65rem; font-weight:bold;">${k} ${v>0?'+':''}${v}</span>`);
+            }
+        }
+        deltaEl.innerHTML = parts.length ? `<div style="margin-bottom:8px; display:flex; flex-wrap:wrap; gap:4px;">${parts.join('')}</div>` : '';
+    } else if (deltaEl) {
+        deltaEl.innerHTML = '';
+    }
+
+    // Wire up remove button
+    const removeBtn = document.getElementById('td-remove-btn');
+    if (removeBtn) {
+        if (opts.type === 'starting') {
+            removeBtn.onclick = () => { removeStartingTrait(opts.idx); closeTraitDetailModal(); };
+            removeBtn.style.display = 'inline-block';
+        } else if (opts.type === 'level') {
+            removeBtn.onclick = () => { clearTraitSlot(opts.slotId); closeTraitDetailModal(); };
+            removeBtn.style.display = 'inline-block';
+        } else {
+            removeBtn.style.display = 'none';
+        }
+    }
+
+    // Wire up change button
+    const changeBtn = document.getElementById('td-change-btn');
+    if (changeBtn) {
+        if (opts.type === 'starting') {
+            changeBtn.onclick = () => { closeTraitDetailModal(); openStartingTraitModal(); };
+            changeBtn.style.display = 'inline-block';
+        } else if (opts.type === 'level') {
+            changeBtn.onclick = () => { closeTraitDetailModal(); openTraitModal(opts.slotId); };
+            changeBtn.style.display = 'inline-block';
+        } else {
+            changeBtn.style.display = 'none';
+        }
+    }
+
+    modal.style.display = 'flex';
+}
+
+function closeTraitDetailModal() {
+    const modal = document.getElementById('trait-detail-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 /* ===== INITIALIZATION ===== */

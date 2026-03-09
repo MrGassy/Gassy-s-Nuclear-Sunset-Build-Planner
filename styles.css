@@ -172,14 +172,15 @@ body.mode-hc .sticky-note:not(.sticky-falling) {
 
 body { 
     background-color: var(--pip-bg);
-    /* Subtle CRT scanline overlay */
-    background-image: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 2px,
-        rgba(0,0,0,0.06) 2px,
-        rgba(0,0,0,0.06) 4px
-    );
+    background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(20,60,30,0.35) 0%, transparent 70%),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 2px,
+            rgba(0,0,0,0.045) 2px,
+            rgba(0,0,0,0.045) 4px
+        );
     color: var(--pip-color); 
     font-family: var(--font-main); margin: 0; 
     overflow: hidden; height: 100vh; font-size: 15px; 
@@ -334,10 +335,10 @@ header {
 
 section { 
     border: 1px solid var(--pip-border); 
-    background: var(--pip-bg); 
+    background: linear-gradient(160deg, var(--pip-bg-3) 0%, var(--pip-bg) 60%);
     padding: 14px 16px; 
     overflow: hidden; display: flex; flex-direction: column;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.18), 0 1px 0 rgba(40,255,40,0.05);
 }
 .scroll-v { overflow-y: auto; flex-grow: 1; padding-right: 4px; }
 .scroll-v::-webkit-scrollbar { width: 3px; }
@@ -357,12 +358,13 @@ section {
 .header-row h2 { background: none; color: inherit; margin: 0; padding: 0; border: none; font-size: 0.9rem; pointer-events: none; }
 
 h2 { 
-    background: rgba(255,255,255,0.06); 
+    background: rgba(40,255,40,0.07); 
     color: var(--pip-color); 
-    font-size: 0.87rem; text-align: left; 
+    font-size: 0.87rem; text-align: center; 
     margin: 12px 0 8px; padding: 5px 10px; 
     font-weight: bold; letter-spacing: 2px;
     border-left: 3px solid var(--pip-color);
+    border-right: 3px solid var(--pip-color);
 }
 
 .grid-tidy { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
@@ -412,15 +414,16 @@ h2 {
 
 .ov-card { 
     border: 1px solid var(--pip-border); padding: 10px 12px; 
-    background: var(--card-bg); margin-bottom: 8px;
-    border-left: 3px solid var(--pip-border);
+    background: rgba(40,255,40,0.03); margin-bottom: 8px;
+    border-left: 3px solid rgba(40,255,40,0.25);
 }
 .ov-sub { 
-    font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.07); 
+    font-weight: bold; border-bottom: 1px solid rgba(40,255,40,0.15); 
     margin-bottom: 6px; font-size: 0.77rem; display: block; 
-    letter-spacing: 2px; opacity: 0.5; padding-bottom: 5px;
+    letter-spacing: 2px; color: var(--pip-color); opacity: 0.7;
+    padding-bottom: 5px; text-align: center;
 }
-.ov-entry { font-size: 0.85rem; padding: 2px 0; display: flex; justify-content: space-between; }
+.ov-entry { font-size: 0.82rem; padding: 3px 2px; display: flex; justify-content: space-between; align-items: center; color: var(--text-mid); line-height: 1.4; }
 .ov-entry-clickable {
     cursor: pointer;
     border-radius: 2px;
@@ -441,9 +444,9 @@ h2 {
 
 .prog-row {
     position: relative;
-    background: rgba(255,255,255,0.02);
-    border: 1px solid rgba(255,255,255,0.07);
-    border-left: 3px solid rgba(255,255,255,0.12);
+    background: rgba(40,255,40,0.018);
+    border: 1px solid rgba(40,255,40,0.1);
+    border-left: 3px solid rgba(40,255,40,0.15);
     transition: border-color 0.15s, box-shadow 0.15s;
 }
 .prog-row.has-perk {
@@ -462,8 +465,8 @@ h2 {
 }
 .lvl-tag {
     font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;
-    background: rgba(255,255,255,0.12); padding: 3px 8px;
-    color: var(--pip-color);
+    background: rgba(40,255,40,0.12); padding: 3px 8px;
+    color: var(--pip-color); text-align: center;
 }
 .lvl-tag.is-trait { background: rgba(255,200,0,0.15); color: #ffd700; }
 .prog-rank-badge {
@@ -1128,8 +1131,8 @@ h2 {
 /* ===== CHARACTER SHEET 3-COL GRID ===== */
 .char-sheet-cols {
     display: grid;
-    grid-template-columns: 175px 200px 1fr;
-    gap: 14px;
+    grid-template-columns: 170px 195px 1fr;
+    gap: 18px 22px;
     align-items: start;
 }
 
@@ -1885,9 +1888,12 @@ h2 {
 }
 
 .cs-start-trait-btn {
+    font-size: 0.6rem !important;
+    padding: 2px 6px !important;
     color: #a0ffb8 !important;
     border-color: rgba(100,255,130,0.4) !important;
     background: rgba(100,255,130,0.05) !important;
+    letter-spacing: 0.04em !important;
 }
 .cs-start-trait-btn:hover {
     background: rgba(100,255,130,0.15) !important;
@@ -2182,4 +2188,539 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 .skilllog-pts-row td {
     border-top: 1px solid rgba(100,255,100,0.1);
     padding: 4px 8px;
+}
+
+/* ══════════════════════════════════════════════
+   SPECIAL INFO MODAL
+══════════════════════════════════════════════ */
+.spec-info-btn {
+    cursor: pointer;
+    transition: color 0.12s;
+}
+.spec-info-btn:hover {
+    color: #fff;
+    text-shadow: 0 0 8px var(--pip-color);
+}
+
+.sinfo-effect-row {
+    font-size: 0.72rem;
+    color: rgba(255,255,255,0.78);
+    letter-spacing: 0.04em;
+    padding: 3px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    line-height: 1.4;
+}
+.sinfo-effect-row:last-child { border-bottom: none; }
+
+/* Companion box inside CHA modal */
+.sinfo-companion-box {
+    margin-top: 14px;
+    border: 1px solid rgba(255,136,204,0.3);
+    border-radius: 3px;
+    padding: 10px 12px;
+    background: rgba(255,136,204,0.05);
+}
+.sinfo-companion-header {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: #ff88cc;
+    font-weight: bold;
+    margin-bottom: 8px;
+}
+.sinfo-companion-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+.sinfo-mode-tag {
+    font-size: 0.6rem;
+    background: rgba(0,200,80,0.15);
+    border: 1px solid rgba(0,200,80,0.3);
+    color: var(--pip-color);
+    padding: 1px 6px;
+    border-radius: 2px;
+    min-width: 28px;
+    text-align: center;
+    letter-spacing: 0.06em;
+}
+.sinfo-mode-hc {
+    background: rgba(255,160,30,0.15);
+    border-color: rgba(255,160,30,0.3);
+    color: #ffa020;
+}
+.sinfo-slot-val {
+    font-size: 1.4rem;
+    font-weight: bold;
+    color: #ff88cc;
+    line-height: 1;
+    min-width: 20px;
+}
+.sinfo-slot-sub {
+    font-size: 0.65rem;
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.04em;
+}
+.sinfo-companion-thresholds {
+    margin-top: 8px;
+    border-top: 1px solid rgba(255,136,204,0.15);
+    padding-top: 8px;
+}
+.sinfo-thresh {
+    font-size: 0.62rem;
+    color: rgba(255,255,255,0.3);
+    padding: 2px 0;
+    letter-spacing: 0.04em;
+}
+.sinfo-thresh-met {
+    font-size: 0.62rem;
+    color: #ff88cc;
+    padding: 2px 0;
+    letter-spacing: 0.04em;
+    font-weight: bold;
+}
+
+/* ══════════════════════════════════════════════
+   TRAIT DETAIL MODAL & CHIP UPDATES
+══════════════════════════════════════════════ */
+.st-tag-detail-btn {
+    background: rgba(100,255,100,0.1);
+    border: 1px solid rgba(100,255,100,0.25);
+    color: rgba(100,255,100,0.7);
+    font-size: 0.58rem;
+    font-weight: bold;
+    padding: 0 5px;
+    cursor: pointer;
+    border-radius: 2px;
+    font-family: inherit;
+    line-height: 1.4;
+    transition: background 0.1s;
+}
+.st-tag-detail-btn:hover {
+    background: rgba(100,255,100,0.22);
+    color: var(--pip-color);
+}
+
+/* ══════════════════════════════════════════════
+   ARMOR CARD STATS ROW
+══════════════════════════════════════════════ */
+.gear-armor-stats-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+    align-items: flex-end;
+}
+.gear-armor-stats-row .gear-field-group {
+    flex: 0 0 auto;
+}
+.gear-armor-stats-row .gear-field-effect {
+    flex: 1 1 auto;
+}
+.gear-stat-input {
+    width: 60px !important;
+    text-align: center;
+}
+
+/* ══════════════════════════════════════════════
+   TRAIT PERK PICKER — ineligible cards
+══════════════════════════════════════════════ */
+.pperk-ineligible {
+    opacity: 0.45;
+    border-color: rgba(100,100,100,0.3) !important;
+}
+.pperk-ineligible:hover {
+    opacity: 0.7;
+    border-color: rgba(255,160,50,0.5) !important;
+    background: rgba(255,160,50,0.05) !important;
+}
+.pperk-ineligible .pperk-name {
+    color: rgba(200,200,200,0.8) !important;
+}
+.pperk-ineligible .pperk-take-btn {
+    border-color: rgba(255,160,50,0.5) !important;
+    color: rgba(255,160,50,0.7) !important;
+}
+.pperk-inelig-tag {
+    font-size: 0.55rem;
+    background: rgba(255,100,50,0.15);
+    border: 1px solid rgba(255,100,50,0.35);
+    color: rgba(255,120,60,0.9);
+    padding: 1px 5px;
+    border-radius: 2px;
+    letter-spacing: 0.06em;
+    margin-left: 4px;
+}
+.pperk-trait-card {
+    border-top: 2px solid rgba(200,255,212,0.3) !important;
+}
+
+/* ══════════════════════════════════════════════
+   SPECIAL RANK TITLES
+══════════════════════════════════════════════ */
+.special-row {
+    position: relative;
+}
+.spec-rank-title {
+    position: absolute;
+    right: 0;
+    bottom: -13px;
+    font-size: 0.52rem;
+    letter-spacing: 0.08em;
+    color: rgba(150,255,150,0.6);
+    font-weight: bold;
+    white-space: nowrap;
+    pointer-events: none;
+    text-align: right;
+    line-height: 1;
+    text-shadow: 0 0 6px rgba(40,255,40,0.3);
+}
+/* Give special rows a bit more breathing room for rank title */
+#special-list .special-row {
+    margin-bottom: 14px;
+}
+
+/* ══════════════════════════════════════════════
+   DELTA SOURCE TAGS (T = TRAIT, P = PERK)
+══════════════════════════════════════════════ */
+.delta-src-tag {
+    font-size: 0.48rem;
+    font-weight: bold;
+    letter-spacing: 0.02em;
+    margin-left: 2px;
+    vertical-align: super;
+    opacity: 0.75;
+}
+.sdelta-perk {
+    color: #ffcc44 !important;
+    background: rgba(255,200,50,0.12) !important;
+    border-color: rgba(255,200,50,0.35) !important;
+}
+.sdelta-perk.sdelta-neg {
+    color: #ff9944 !important;
+    background: rgba(255,140,50,0.12) !important;
+    border-color: rgba(255,140,50,0.35) !important;
+}
+
+/* ══════════════════════════════════════════════
+   HEADER SUBTITLE
+══════════════════════════════════════════════ */
+.os-title-sub {
+    font-size: 0.6em;
+    opacity: 0.45;
+    letter-spacing: 0.08em;
+    font-weight: normal;
+    margin-left: 4px;
+}
+
+/* ov-card trait tint when data-type=trait on zoom modal */
+#perk-zoom-modal .perk-zoom-box[data-type="trait"] {
+    border-color: rgba(200,255,212,0.4) !important;
+}
+#perk-zoom-modal .perk-zoom-box[data-type="trait"] #perk-zoom-name {
+    color: #c8ffd4 !important;
+}
+#perk-zoom-modal .perk-zoom-box[data-type="trait"] #perk-zoom-req {
+    color: rgba(200,255,212,0.6) !important;
+}
+
+/* tab-nav alignment */
+.tab-nav button { text-align: center; }
+
+/* banner char name centering */
+.char-banner-name { text-align: center; }
+
+/* prog section labels center */
+.prog-section-label { text-align: center; justify-content: center; }
+
+/* overview summary card labels centered */
+.ov-card .ov-sub { text-align: center; }
+
+/* skill list row name — clip long text */
+.skill-row-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* identity block — center labels */
+.identity-field label { text-align: center; display: block; }
+
+/* special-header text center */
+.special-header-row { text-align: center; }
+
+/* perk zoom modal desc — improved contrast */
+#perk-zoom-desc { 
+    color: rgba(220,255,220,0.92) !important; 
+    line-height: 1.75 !important;
+}
+#perk-zoom-req { color: #ffd060 !important; }
+
+/* gear card labels center */
+.gear-field-label { 
+    display: block; 
+    text-align: center;
+    color: rgba(180,255,180,0.55);
+    font-size: 0.62rem;
+    letter-spacing: 0.08em;
+    margin-bottom: 2px;
+}
+
+/* Perk card desc text - more readable */
+.pperk-desc {
+    color: rgba(210,255,210,0.75) !important;
+    line-height: 1.55 !important;
+}
+.pperk-req {
+    color: rgba(255,200,60,0.75) !important;
+}
+.pperk-name { color: var(--pip-color) !important; }
+
+/* Progression perk info text */
+.perk-info-desc { 
+    color: rgba(210,255,210,0.8) !important;
+    line-height: 1.6 !important;
+}
+.perk-info-req { color: rgba(255,210,60,0.8) !important; }
+
+/* Trait slot name in progression */
+.trait-slot-name { 
+    color: #c8ffd4 !important;
+    letter-spacing: 0.05em;
+}
+
+/* prog section label backgrounds */
+.plab-perk   { background: rgba(40,255,40,0.07) !important; }
+.plab-trait  { background: rgba(200,255,212,0.06) !important; }
+.plab-bonus  { background: rgba(100,180,255,0.06) !important; }
+.plab-reward { background: rgba(255,200,80,0.06) !important; }
+.plab-int    { background: rgba(192,160,255,0.06) !important; }
+.plab-implant{ background: rgba(100,220,255,0.06) !important; }
+
+/* prog notes textarea placeholder */
+.prog-notes-input::placeholder { color: rgba(150,220,150,0.25) !important; }
+
+/* starting trait chips */
+.st-tag-chip {
+    background: rgba(200,255,212,0.06) !important;
+    border-color: rgba(200,255,212,0.25) !important;
+}
+.st-tag-name { color: #c8ffd4 !important; }
+
+/* Gear card inputs */
+.gear-field-input {
+    color: rgba(200,255,200,0.9) !important;
+}
+.gear-field-input::placeholder { 
+    color: rgba(100,180,100,0.35) !important;
+}
+
+/* modal box backgrounds */
+.modal-box {
+    background: linear-gradient(160deg, #0a1810 0%, #070e09 100%) !important;
+    border: 1px solid rgba(40,255,40,0.25) !important;
+}
+
+/* bonus perk row border */
+.prog-row.bonus-perk-row {
+    border-left-color: rgba(100,180,255,0.5) !important;
+}
+
+/* ══════════════════════════════════════════════
+   UNDO BUTTON
+══════════════════════════════════════════════ */
+#undo-btn {
+    border: 1px solid rgba(100,200,255,0.3) !important;
+    border-bottom: 1px solid rgba(100,200,255,0.3) !important;
+    color: rgba(100,200,255,0.55);
+    padding: 5px 12px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    background: transparent;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+}
+#undo-btn:not([disabled]):hover {
+    border-color: rgba(100,200,255,0.7) !important;
+    color: rgba(100,220,255,0.9);
+    background: rgba(100,200,255,0.06) !important;
+    box-shadow: 0 0 8px rgba(100,200,255,0.15);
+}
+#undo-btn[disabled] { cursor: default; }
+#undo-btn.undo-flash {
+    background: rgba(100,200,255,0.15) !important;
+    border-color: rgba(100,200,255,0.8) !important;
+    color: rgba(150,230,255,1);
+}
+
+/* ══════════════════════════════════════════════
+   ACTION STAR CHOICE MODAL
+══════════════════════════════════════════════ */
+.action-star-choice-btn {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: rgba(255,200,50,0.04);
+    border: 1px solid rgba(255,200,50,0.2) !important;
+    border-bottom: 1px solid rgba(255,200,50,0.2) !important;
+    color: var(--pip-color);
+    padding: 12px 16px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+    width: 100%;
+}
+.action-star-choice-btn:hover {
+    background: rgba(255,200,50,0.1) !important;
+    border-color: rgba(255,200,50,0.6) !important;
+    box-shadow: 0 0 12px rgba(255,200,50,0.1);
+}
+.asc-icon {
+    font-size: 1.5rem;
+    color: #ffd060;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.asc-title {
+    font-size: 0.85rem;
+    font-weight: bold;
+    color: #ffd060;
+    letter-spacing: 0.08em;
+    margin-bottom: 3px;
+}
+.asc-desc {
+    font-size: 0.65rem;
+    color: rgba(255,200,80,0.55);
+    letter-spacing: 0.05em;
+}
+
+/* ══════════════════════════════════════════════
+   WEAPON REQ ROW
+══════════════════════════════════════════════ */
+.gear-weapon-req-row {
+    align-items: flex-end;
+    margin-top: 4px;
+    padding-top: 6px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+}
+.gear-str-req-group { flex: 0 0 60px; }
+.gear-skill-type-group { flex: 1; }
+.gear-skill-req-group { flex: 0 0 72px; }
+.gear-skill-type-select {
+    width: 100%;
+    font-size: 0.7rem !important;
+    padding: 2px 4px;
+    background: transparent;
+    border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+    color: var(--pip-color);
+}
+.gear-str-req-input, .gear-skill-req-input {
+    text-align: center;
+}
+
+/* ══════════════════════════════════════════════
+   TRAIT PICKER GRID (perk-picker style)
+══════════════════════════════════════════════ */
+.ptrait-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 8px;
+    align-content: start;
+}
+
+.ptrait-card {
+    background: rgba(200,255,212,0.03);
+    border: 1px solid rgba(200,255,212,0.2);
+    border-radius: 3px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    position: relative;
+}
+.ptrait-card:hover {
+    background: rgba(200,255,212,0.09);
+    border-color: rgba(200,255,212,0.55);
+}
+.ptrait-card:hover .ptrait-take-btn {
+    background: #c8ffd4;
+    color: #000;
+}
+
+.ptrait-ineligible {
+    opacity: 0.55;
+    border-color: rgba(200,255,212,0.1);
+}
+.ptrait-ineligible:hover {
+    opacity: 0.85;
+    border-color: rgba(255,180,60,0.5);
+    background: rgba(255,180,60,0.05);
+}
+
+.ptrait-taken {
+    opacity: 0.4;
+    border-color: rgba(200,255,212,0.12);
+    cursor: default;
+}
+.ptrait-taken:hover {
+    background: rgba(200,255,212,0.03);
+    border-color: rgba(200,255,212,0.12);
+}
+
+.ptrait-name {
+    color: #c8ffd4;
+    font-size: 0.93rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    flex: 1;
+    min-width: 0;
+}
+
+.ptrait-badge {
+    font-size: 0.62rem;
+    padding: 1px 6px;
+    border-radius: 2px;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+.ptrait-elig-badge {
+    background: rgba(200,255,212,0.1);
+    border: 1px solid rgba(200,255,212,0.35);
+    color: #c8ffd4;
+}
+.ptrait-inelig-badge {
+    background: rgba(255,150,50,0.1);
+    border: 1px solid rgba(255,150,50,0.35);
+    color: rgba(255,180,80,0.85);
+}
+.ptrait-taken-badge {
+    background: rgba(200,255,212,0.07);
+    border: 1px solid rgba(200,255,212,0.2);
+    color: rgba(200,255,212,0.5);
+}
+
+.ptrait-take-btn {
+    margin-top: 6px;
+    padding: 4px 10px;
+    font-size: 0.65rem;
+    background: transparent;
+    border: 1px solid rgba(200,255,212,0.3) !important;
+    border-bottom: 1px solid rgba(200,255,212,0.3) !important;
+    color: #c8ffd4;
+    cursor: pointer;
+    letter-spacing: 0.06em;
+    align-self: flex-start;
+    transition: background 0.12s;
+}
+.ptrait-taken .ptrait-take-btn {
+    opacity: 0.4;
+    cursor: default;
+}
+
+@media (max-width: 768px) {
+    .ptrait-grid {
+        grid-template-columns: 1fr;
+    }
 }

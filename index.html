@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NUCLEAR_SUNSET.EXE // TTW_EDITION</title>
+    <title>NUCLEAR SUNSET — CHARACTER PLANNER // TTW EDITION</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body class="theme-cw" oninput="triggerAutosave()">
@@ -39,15 +39,23 @@
 
 
 <!-- TRAIT SELECTION MODAL -->
-<div class="modal-overlay" id="trait-modal" style="display:none; align-items:flex-start; padding-top:4vh;">
-  <div class="lvlup-box" style="max-width:700px; width:95vw; max-height:90vh; overflow-y:auto;">
-    <div class="lvlup-header">
-      <span style="font-size:1rem; letter-spacing:0.15em; color:#c8ffd4;">SELECT TRAIT</span>
+<div class="modal-overlay" id="trait-modal" style="display:none; align-items:flex-start; padding-top:3vh;">
+  <div class="lvlup-box perk-picker-box" style="max-width:960px; width:96vw; max-height:92vh; display:flex; flex-direction:column; overflow:hidden;">
+    <div class="lvlup-header" style="flex-shrink:0;">
+      <div>
+        <span id="trait-picker-title" style="font-size:1rem; letter-spacing:0.15em; color:#c8ffd4;">SELECT TRAIT</span>
+        <span id="trait-picker-count" style="font-size:0.6rem; opacity:0.5; margin-left:12px;"></span>
+      </div>
       <button class="lvlup-close" onclick="closeTraitModal()">✕</button>
     </div>
-    <input type="text" id="trait-modal-search" class="pip-search" placeholder="SEARCH TRAITS..."
-      oninput="renderTraitGrid(this.value)" style="margin:10px 16px; width:calc(100% - 32px); box-sizing:border-box;">
-    <div id="trait-modal-grid" style="padding:0 16px 16px;"></div>
+    <div style="padding:8px 16px; flex-shrink:0; border-bottom:1px solid rgba(200,255,212,0.15);">
+      <input type="text" id="trait-modal-search" class="pip-search" placeholder="SEARCH TRAITS BY NAME OR EFFECT..."
+        oninput="renderTraitGrid(this.value)" style="width:100%; box-sizing:border-box;">
+    </div>
+    <div id="trait-modal-grid" class="perk-picker-grid ptrait-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
+    <div style="padding:10px 16px; border-top:1px solid rgba(200,255,212,0.15); flex-shrink:0; display:flex; justify-content:flex-end;">
+      <button class="action-btn" style="opacity:0.7; border-color:rgba(200,255,212,0.4); color:#c8ffd4;" onclick="closeTraitModal()">SKIP FOR NOW →</button>
+    </div>
   </div>
 </div>
 
@@ -106,11 +114,11 @@
     <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:14px; gap:12px;">
       <div>
         <div id="perk-zoom-name" style="font-size:1.1rem; font-weight:bold; color:var(--pip-color); letter-spacing:0.1em; margin-bottom:6px;"></div>
-        <div id="perk-zoom-req" style="font-size:0.72rem; color:#ffd700; letter-spacing:0.05em; font-weight:bold;"></div>
+        <div id="perk-zoom-req" style="font-size:0.72rem; color:#ffd060; letter-spacing:0.07em; font-weight:bold; opacity:0.9;"></div>
       </div>
-      <button onclick="document.getElementById('perk-zoom-modal').style.display='none'" style="flex-shrink:0; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.75rem;">✕</button>
+      <button onclick="const m=document.getElementById('perk-zoom-modal');m.style.display='none';const b=m.querySelector('.perk-zoom-box');if(b)b.removeAttribute('data-type');" style="flex-shrink:0; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.75rem;">✕</button>
     </div>
-    <div id="perk-zoom-desc" style="font-size:0.9rem; line-height:1.7; color:var(--pip-color); opacity:0.9; border-top:1px solid rgba(255,255,255,0.1); padding-top:12px;"></div>
+    <div id="perk-zoom-desc" style="font-size:0.88rem; line-height:1.8; color:rgba(220,255,220,0.92); border-top:1px solid rgba(40,255,40,0.15); padding-top:12px; margin-top:4px;"></div>
   </div>
 </div>
 
@@ -135,14 +143,46 @@
   </div>
 </div>
 
+
+<!-- SPECIAL INFO MODAL -->
+<div class="modal-overlay" id="special-info-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:460px; width:92vw; position:relative;">
+    <button onclick="closeSpecialInfoModal()" style="position:absolute; top:10px; right:12px; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:2px 9px; cursor:pointer; font-size:0.75rem; font-family:inherit;">✕</button>
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:14px;">
+      <span id="sinfo-title" style="font-size:1.1rem; font-weight:bold; letter-spacing:0.12em;"></span>
+      <span id="sinfo-val" style="font-size:2rem; font-weight:bold; line-height:1;"></span>
+    </div>
+    <div id="sinfo-effects" style="margin-bottom:12px;"></div>
+    <div id="sinfo-extra"></div>
+  </div>
+</div>
+
+<!-- TRAIT DETAIL MODAL -->
+<div class="modal-overlay" id="trait-detail-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:520px; width:92vw;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px;">
+      <div id="td-name" style="font-size:1rem; font-weight:bold; color:#c8ffd4; letter-spacing:0.1em;"></div>
+      <button onclick="closeTraitDetailModal()" style="flex-shrink:0; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:2px 9px; cursor:pointer; font-size:0.75rem; font-family:inherit; margin-left:12px;">✕</button>
+    </div>
+    <div id="td-req" style="font-size:0.68rem; color:#ffd700; letter-spacing:0.06em; margin-bottom:10px; font-weight:bold;"></div>
+    <div id="td-delta"></div>
+    <div id="td-desc" style="font-size:0.82rem; line-height:1.6; color:rgba(255,255,255,0.8); border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; margin-bottom:14px;"></div>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button id="td-change-btn" class="action-btn" style="font-size:0.65rem;">⟳ CHANGE</button>
+      <button id="td-remove-btn" style="background:rgba(255,50,50,0.1); border:1px solid rgba(255,80,80,0.5); color:rgba(255,100,100,0.9); padding:4px 14px; font-size:0.65rem; letter-spacing:0.08em; font-family:inherit; cursor:pointer; font-weight:bold;">✕ REMOVE TRAIT</button>
+    </div>
+  </div>
+</div>
+
 <div class="wrapper">
     <header>
         <div class="hc-alert-bar" id="hc-banner">⚠ HARDERCORE_OVERRIDE_ACTIVE — SYSTEM INTEGRITY COMPROMISED ⚠</div>
         <div class="header-controls">
-            <div class="os-title">NUCLEAR_SUNSET.EXE // TTW_EDITION</div>
+            <div class="os-title">☢ NUCLEAR SUNSET — BUILD PLANNER <span class="os-title-sub">// TALE OF TWO WASTELANDS</span></div>
             <div class="settings-block">
                 <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL WASTELAND</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE DESERT</button></div>
                 <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
+                <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled style="border:1px solid rgba(100,200,255,0.3)!important;color:rgba(100,200,255,0.5);padding:5px 12px;cursor:pointer;font-size:0.75rem;background:transparent;letter-spacing:1px;transition:all 0.2s;border-bottom:1px solid rgba(100,200,255,0.3)!important;">↩ UNDO</button>
                 <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
             </div>
         </div>
@@ -176,6 +216,8 @@
 
         <!-- PERK LEVEL UP PROMPT BANNER -->
         <div id="perk-lvlup-banner" style="display:none; align-items:center; padding:8px 16px; background:rgba(var(--pip-rgb,100,200,100),0.12); border-bottom:1px solid var(--pip-color); color:var(--pip-color);"></div>
+        <!-- TRAIT LEVEL UP PROMPT BANNER -->
+        <div id="trait-lvlup-banner" style="display:none; align-items:center; padding:8px 16px; background:rgba(200,255,212,0.07); border-bottom:1px solid rgba(200,255,212,0.4); color:#c8ffd4;"></div>
 
         <div id="tab-ov" class="tab-content scroll-v">
             <!-- CHAR BANNER -->
@@ -202,10 +244,7 @@
                 <div class="char-sheet-col">
                     <div class="cs-header">
                         <span class="cs-label" id="trait-header">TRAITS <span id="hc-trait-counter" class="hc-trait-counter">0/5</span></span>
-                        <div class="cs-trait-btns">
-                            <button class="cs-add-btn cs-start-trait-btn" title="ADD STARTING TRAIT" onclick="openStartingTraitModal()">◈ STARTING</button>
-                            <button class="cs-add-btn" title="ADD LEVEL-UP TRAIT SLOT" onclick="openTraitModal(null)">+ LEVEL</button>
-                        </div>
+                        <button class="cs-add-btn cs-start-trait-btn" title="ADD A STARTING TRAIT TO YOUR CHARACTER" onclick="openStartingTraitModal()">◈ ADD STARTING TRAIT</button>
                     </div>
                     <div id="hc-trait-limit-warning" style="display:none; background:rgba(255,0,0,0.1); border-left:3px solid rgba(255,0,0,0.7); color:#ff6060; padding:5px 10px; font-size:0.72rem; margin-bottom:6px; letter-spacing:0.05em;">⚠ HARDERCORE LIMIT — MAX 5 STARTING TRAITS</div>
                     <div id="trait-list" style="display:none;"></div>
@@ -392,5 +431,45 @@
 </div>
 
 <script src="scripts.js"></script>
+
+<!-- Action Star Choice Modal -->
+<div class="modal-overlay" id="action-star-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:480px; width:92vw; border-color:rgba(255,200,50,0.4);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+      <div>
+        <div style="font-size:1.05rem; font-weight:bold; color:#ffd060; letter-spacing:0.12em; margin-bottom:6px;">★ ACTION STAR</div>
+        <div style="font-size:0.7rem; color:rgba(255,200,80,0.6); letter-spacing:0.06em;">SELECT YOUR RANK BONUS</div>
+      </div>
+      <button onclick="closeActionStarModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;">✕</button>
+    </div>
+    <div style="font-size:0.8rem; color:rgba(220,200,100,0.75); margin-bottom:16px; line-height:1.6; border-top:1px solid rgba(255,200,50,0.15); padding-top:12px;">
+      AS YOUR ACTION STAR CAREER DEVELOPS, CHOOSE ONE ENHANCEMENT FOR THIS RANK:
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button onclick="confirmActionStarChoice('ap')" class="action-star-choice-btn">
+        <span class="asc-icon">⚡</span>
+        <div>
+          <div class="asc-title">+ TOTAL ACTION POINTS</div>
+          <div class="asc-desc">INCREASE YOUR MAXIMUM AP POOL</div>
+        </div>
+      </button>
+      <button onclick="confirmActionStarChoice('regen')" class="action-star-choice-btn">
+        <span class="asc-icon">↻</span>
+        <div>
+          <div class="asc-title">+ AP REGENERATION RATE</div>
+          <div class="asc-desc">REGENERATE ACTION POINTS FASTER</div>
+        </div>
+      </button>
+      <button onclick="confirmActionStarChoice('cost')" class="action-star-choice-btn">
+        <span class="asc-icon">▼</span>
+        <div>
+          <div class="asc-title">− WEAPON AP COST</div>
+          <div class="asc-desc">REDUCE THE AP COST OF WEAPON ATTACKS</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
