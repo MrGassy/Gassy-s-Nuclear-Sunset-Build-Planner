@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NUCLEAR SUNSET — CHARACTER PLANNER // TTW EDITION</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles_no_ascii.css">
 </head>
 <body class="theme-cw" oninput="triggerAutosave()">
 
@@ -228,6 +228,7 @@
             <button onclick="showTab('quests')" id="tab-btn-quests">QUESTS</button>
             <button onclick="showTab('coll')" id="tab-btn-coll">COLLECTIBLES</button>
             <button onclick="showTab('uni')" id="tab-btn-uni">UNIQUES</button>
+            <button onclick="showTab('books')" id="tab-btn-books">📚 BOOKS</button>
             <button onclick="showTab('skilllog')" id="tab-btn-skilllog">SKILL LOG</button>
         </div>
 
@@ -420,13 +421,17 @@
             <div id="skilllog-empty" class="skilllog-empty">NO LEVEL-UP DATA RECORDED YET — LEVEL UP TO BEGIN TRACKING</div>
             <div id="skilllog-table-wrap"></div>
         </div>
+
+        <div id="tab-books" class="tab-content scroll-v" style="display:none;"></div>
     </section>
 
     <section>
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
-        <div style="display:flex; gap:5px; margin-bottom:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:10px;">
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
+            <button id="export-img-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportBuildImage()">📷 EXPORT IMAGE</button>
+            <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
             <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
         </div>
         <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
@@ -456,7 +461,8 @@
     </section>
 </div>
 
-<script src="scripts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="scripts_no_ascii.js"></script>
 
 <!-- Action Star Choice Modal -->
 <div class="modal-overlay" id="action-star-modal" style="display:none; align-items:center; justify-content:center;">

@@ -3267,3 +3267,35 @@ body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 .uni-section-header h2 { margin:0; }
 .uni-toggle-all-btn { font-family:inherit; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; padding:4px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.35); color:var(--pip-color); border-radius:2px; opacity:0.7; transition:opacity 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; }
 .uni-toggle-all-btn:hover { opacity:1; background:rgba(var(--pip-rgb,100,200,100),0.08); }
+
+
+/* ═══ BOOKS TAB ═══ */
+.books-header { padding:10px 0 14px; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.18); margin-bottom:14px; }
+.books-title { font-size:0.85rem; font-weight:bold; letter-spacing:0.18em; color:var(--pip-color); margin-bottom:4px; }
+.books-sub { font-size:0.57rem; opacity:0.7; letter-spacing:0.07em; margin-bottom:6px; line-height:1.6; }
+.books-ideologue-active { color:#ffd060; margin-left:8px; letter-spacing:0.1em; }
+.books-count { font-size:0.65rem; letter-spacing:0.14em; color:var(--pip-color); opacity:0.8; }
+.books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px; }
+.book-card { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid rgba(var(--pip-rgb,100,200,100),0.22); border-radius:3px; background:rgba(0,0,0,0.25); transition:background 0.15s,border-color 0.15s; }
+.book-card.book-found { background:rgba(var(--pip-rgb,100,200,100),0.08); border-color:rgba(var(--pip-rgb,100,200,100),0.5); }
+.book-icon { font-size:1.4rem; flex-shrink:0; }
+.book-info { flex:1; min-width:0; overflow:hidden; }
+.book-name { font-size:0.68rem; font-weight:bold; letter-spacing:0.06em; color:var(--pip-color); white-space:normal; word-break:break-word; line-height:1.4; margin-bottom:3px; }
+.book-skill-label { font-size:0.52rem; opacity:0.5; letter-spacing:0.15em; margin-bottom:4px; text-transform:uppercase; }
+.book-bonus { margin-top:2px; }
+.book-bonus-val { font-size:0.6rem; font-weight:bold; color:#7eff7e; letter-spacing:0.08em; }
+.book-bonus-none { font-size:0.52rem; opacity:0.28; letter-spacing:0.1em; }
+.book-controls { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
+.book-count-num { font-size:0.75rem; font-weight:bold; color:var(--pip-color); letter-spacing:0.05em; min-width:16px; text-align:center; line-height:1; }
+.book-btn { width:22px; height:22px; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.4); color:var(--pip-color); cursor:pointer; font-size:0.85rem; font-family:inherit; font-weight:bold; border-radius:2px; padding:0; transition:background 0.12s,opacity 0.12s; line-height:1; }
+.book-btn:hover:not(:disabled) { background:rgba(var(--pip-rgb,100,200,100),0.15); }
+.book-btn:disabled { opacity:0.2; cursor:default; }
+.book-btn-plus { border-color:rgba(var(--pip-rgb,100,200,100),0.5); }
+.book-btn-minus { border-color:rgba(255,100,100,0.4); color:rgba(255,120,120,0.9); }
+.book-btn-minus:hover:not(:disabled) { background:rgba(255,80,80,0.12); }
+
+/* ═══ BOOK SKILL BADGE ═══ */
+.sdelta-book { background:rgba(100,180,255,0.15) !important; border-color:rgba(100,180,255,0.4) !important; color:#7eccff !important; }
+
+
+/* (ASCII VAULT BOY NOT USED IN THIS VERSION) */

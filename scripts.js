@@ -4,6 +4,7 @@ let currentSort = 'az';
 let skillPoints = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let charLevel = 1;
 let showEligibleOnly = false;
+let skillBooksFound = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let _lvlupSession = {}, _lvlupPointsLeft = 0;
 let skillHistory = [];
 let _itTargetRow = null; // tracks which prog-row triggered IT modal // [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
@@ -16,6 +17,31 @@ const SKILL_GOVERNING = {
     'GUNS':'AGI','LOCKPICK':'PER','MEDICINE':'INT','MELEE WEAPONS':'STR',
     'REPAIR':'INT','SCIENCE':'INT','SNEAK':'AGI','SPEECH':'CHA','SURVIVAL':'END','UNARMED':'END'
 };
+const SKILL_BOOKS = [
+  { skill:'BARTER',          name:'Tales of a Junktown Jerky Vendor',         max:24 },
+  { skill:'BIG GUNS',        name:'U.S. Army: 30 Handy Flamethrower Recipes', max:16 },
+  { skill:'ENERGY WEAPONS',  name:'Nikola Tesla and You',                      max:20 },
+  { skill:'EXPLOSIVES',      name:'Duck and Cover!',                           max:20 },
+  { skill:'GUNS',            name:'Guns and Bullets',                          max:24 },
+  { skill:'LOCKPICK',        name:'Tumblers Today',                            max:20 },
+  { skill:'MEDICINE',        name:'D.C. Journal of Internal Medicine',         max:20 },
+  { skill:'MELEE WEAPONS',   name:'Grognak the Barbarian',                     max:20 },
+  { skill:'REPAIR',          name:"Dean's Electronics",                        max:16 },
+  { skill:'SCIENCE',         name:'Big Book of Science',                       max:20 },
+  { skill:'SNEAK',           name:'Chinese Army: Special Ops Training Manual', max:16 },
+  { skill:'SPEECH',          name:'Lying, Congressional Style',                max:16 },
+  { skill:'SURVIVAL',        name:'Wasteland Survival Guide',                  max:20 },
+  { skill:'UNARMED',         name:'Pugilism Illustrated',                      max:16 },
+];
+function hasIdeologue() {
+    return getChosenTraitNames && getChosenTraitNames().some(n => n.toLowerCase() === 'ideologue');
+}
+function bookBonus(s) {
+    const count = skillBooksFound[s] || 0;
+    if (!count) return 0;
+    return count * (hasIdeologue() ? 3 : 2);
+}
+
 const SKILL_REQ_MAP = [
     { pattern: /\bEner(?:gy)?\.\s*Weap(?:on)?(?:s|\.)*\s+(\d+)/i, skill: 'ENERGY WEAPONS' },
     { pattern: /\bBig\s+Guns\s+(\d+)/i,                            skill: 'BIG GUNS' },
@@ -51,7 +77,8 @@ function skillTotal(s) {
     const _tb = getActiveTraitBonuses ? getActiveTraitBonuses().skillDelta : {};
     const _pb = getActivePerkBonuses  ? getActivePerkBonuses().perkSkillDelta : {};
     const _td = _tb[s]||0, _pd = _pb[s]||0;
-    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd) + (skillPoints[s]||0));
+    const _bd = bookBonus(s);
+    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd) + (skillPoints[s]||0) + _bd);
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
@@ -1061,6 +1088,11 @@ function sanitizeImport(d) {
         const v = parseInt(d.skillPoints?.[s]);
         clean.skillPoints[s] = (!isNaN(v) && v >= 0 && v <= 100) ? v : 0;
     });
+    clean.skillBooksFound = {};
+    skills.forEach(s => {
+        const v = parseInt(d.skillBooksFound?.[s]);
+        clean.skillBooksFound[s] = (!isNaN(v) && v >= 0) ? v : 0;
+    });
     clean.charLevel = (typeof d.charLevel === 'number' && d.charLevel >= 1 && d.charLevel <= 60) ? Math.floor(d.charLevel) : 1;
     clean.skillHistory = Array.isArray(d.skillHistory) ? d.skillHistory.slice(0, 50).map(e => ({
         level: typeof e.level === 'number' ? e.level : 1,
@@ -1081,7 +1113,52 @@ function showTab(t) {
     if (t === 'perks') renderAllPerks();
     if (t === 'skilllog') renderSkillLog();
     if (t === 'prog') renderImplants();
+    if (t === 'books') renderBooksTab();
+    nsAudio.click();
 }
+
+function addBook(skill, delta) {
+    const val = (skillBooksFound[skill] || 0) + delta;
+    skillBooksFound[skill] = Math.max(0, val);
+    renderBooksTab();
+    updateAll();
+    triggerAutosave();
+}
+
+function renderBooksTab() {
+    const el = document.getElementById('tab-books');
+    if (!el) return;
+    const ideologue = hasIdeologue();
+    const ptsEach = ideologue ? 3 : 2;
+    const totalFound = skills.reduce((acc, s) => acc + (skillBooksFound[s] || 0), 0);
+    el.innerHTML = `
+    <div class="books-header">
+        <div class="books-title">📚 SKILL BOOKS</div>
+        <div class="books-sub">EACH BOOK FOUND GRANTS <b>+2 PTS</b> TO ITS SKILL &nbsp;|&nbsp; <b>+3 PTS</b> WITH THE <b>IDEOLOGUE</b> TRAIT${ideologue ? ' <span class="books-ideologue-active">✦ IDEOLOGUE ACTIVE — +3 PER BOOK</span>' : ''}</div>
+        <div class="books-count">${totalFound} TOTAL BOOKS FOUND</div>
+    </div>
+    <div class="books-grid">
+    ${SKILL_BOOKS.map(b => {
+        const count = skillBooksFound[b.skill] || 0;
+        const bonus = count * ptsEach;
+        const hasAny = count > 0;
+        return `<div class="book-card ${hasAny ? 'book-found' : ''}">
+            <div class="book-icon">${hasAny ? '📖' : '📕'}</div>
+            <div class="book-info">
+                <div class="book-name">${b.name}</div>
+                <div class="book-skill-label">${b.skill}</div>
+                <div class="book-bonus">${hasAny ? `<span class="book-bonus-val">+${bonus} PTS (×${count} ${count===1?'COPY':'COPIES'})</span>` : '<span class="book-bonus-none">NONE FOUND</span>'}</div>
+            </div>
+            <div class="book-controls">
+                <button class="book-btn book-btn-minus" onclick="addBook('${b.skill}',-1)" ${count===0?'disabled':''}>−</button>
+                <span class="book-count-num">${count}</span>
+                <button class="book-btn book-btn-plus" onclick="addBook('${b.skill}',1)">+</button>
+            </div>
+        </div>`;
+    }).join('')}
+    </div>`;
+}
+
 
 /* ===== MODE & ORIGIN TOGGLES ===== */
 function setMode(m, skipSave=false) {
@@ -1091,6 +1168,7 @@ function setMode(m, skipSave=false) {
         r.querySelector('.prog-notes-input')?.value || ''
     ]);
     mode = m; document.body.classList.toggle('mode-hc', m==='hc');
+    nsAudio.updateModeSound(m === 'hc');
     document.getElementById('hc-banner').style.display = m==='hc' ? 'flex' : 'none';
     document.getElementById('sysop-note').style.display = m==='hc' ? 'block' : 'none';
     document.getElementById('m-std').classList.toggle('active', m==='std');
@@ -2039,12 +2117,14 @@ function updateAll() {
                         const spent = skillPoints[s] || 0;
             const tDelta = skillDelta[s] || 0;
             const pDelta = perkSkillDelta[s] || 0;
+            const bDelta = bookBonus(s);
             // Floor the base+delta penalty at 0; spent points always register
-            const val = Math.min(100, Math.max(0, base + tDelta + pDelta) + spent);
+            const val = Math.min(100, Math.max(0, base + tDelta + pDelta) + spent + bDelta);
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
-            const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')).trim();
+            if (bDelta !== 0) deltaBadges += `<span class="skill-delta-badge sdelta-pos sdelta-book" title="FROM SKILL BOOKS (×${skillBooksFound[s] || 0}${hasIdeologue()?', IDEOLOGUE':''})">+${bDelta}<span class="delta-src-tag">B</span></span>`;
+            const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')+(bDelta?' BOOK:+'+bDelta:'')).trim();
             const tagClass = isFourthTag ? ' skill-row-tagged skill-row-tag4' : (isTagged ? ' skill-row-tagged' : '');
             const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
             return `<div class="skill-row${tagClass}" title="${breakdown}">
@@ -2564,6 +2644,7 @@ function collectData() {
         uniWpns: Array.from(document.querySelectorAll('.u-wpn-check')).map(i => i.checked),
         uniArmor: Array.from(document.querySelectorAll('.u-armor-check')).map(i => i.checked),
         skillPoints, charLevel, buildKarma,
+        skillBooksFound,
         humbledLevel, humbledReductions, hasBeenHumbled,
         implantsTaken, rewardPerksList, internalizedTraitsList,
         fourthTagSkill: _fourthTagSkill || null,
@@ -2604,6 +2685,14 @@ function hydrate(d) {
     }
     charLevel = (typeof d.charLevel === 'number' && d.charLevel >= 1) ? d.charLevel : 1;
     buildKarma = d.buildKarma || 'neutral';
+    if (d.skillBooksFound && typeof d.skillBooksFound === 'object') {
+        skills.forEach(s => {
+            const v = parseInt(d.skillBooksFound[s]);
+            skillBooksFound[s] = (!isNaN(v) && v >= 0) ? v : 0;
+        });
+    } else {
+        skills.forEach(s => { skillBooksFound[s] = 0; });
+    }
     humbledLevel = (typeof d.humbledLevel === 'number') ? d.humbledLevel : 0;
     humbledReductions = (d.humbledReductions && typeof d.humbledReductions === 'object') ? d.humbledReductions : {};
     hasBeenHumbled = !!d.hasBeenHumbled;
@@ -2724,6 +2813,7 @@ function closeTagModal() {
 /* ===== RANDOMIZE BUILD ===== */
 function randomizeBuild() {
     if (!confirm('RANDOMIZE S.P.E.C.I.A.L., TAGS, AND STARTING TRAITS? (THIS WILL OVERWRITE CURRENT SELECTIONS)')) return;
+    nsAudio.diceRoll();
 
     // ── Step 0: Random name
     const nameInput = document.getElementById('char-name');
@@ -3459,6 +3549,185 @@ function renderHumbledBanner() {
     `;
 }
 
+/* ===== AUDIO SYSTEM ===== */
+const nsAudio = (() => {
+    let ctx = null, muted = false, crtNode = null, claxonNode = null;
+
+    function getCtx() {
+        if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        return ctx;
+    }
+
+    function playTone(freq, type, duration, vol, attack=0.005, decay=0.05) {
+        if (muted) return;
+        try {
+            const c = getCtx();
+            const osc = c.createOscillator();
+            const gain = c.createGain();
+            osc.connect(gain); gain.connect(c.destination);
+            osc.type = type; osc.frequency.setValueAtTime(freq, c.currentTime);
+            gain.gain.setValueAtTime(0, c.currentTime);
+            gain.gain.linearRampToValueAtTime(vol, c.currentTime + attack);
+            gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + duration);
+            osc.start(c.currentTime); osc.stop(c.currentTime + duration + 0.01);
+        } catch(e) {}
+    }
+
+    function playNoise(duration, vol, filterFreq=800) {
+        if (muted) return;
+        try {
+            const c = getCtx();
+            const buf = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
+            const data = buf.getChannelData(0);
+            for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+            const src = c.createBufferSource();
+            src.buffer = buf;
+            const filter = c.createBiquadFilter();
+            filter.type = 'lowpass'; filter.frequency.value = filterFreq;
+            const gain = c.createGain();
+            gain.gain.setValueAtTime(vol, c.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + duration);
+            src.connect(filter); filter.connect(gain); gain.connect(c.destination);
+            src.start(); src.stop(c.currentTime + duration + 0.01);
+        } catch(e) {}
+    }
+
+    return {
+        click() {
+            if (muted) return;
+            playNoise(0.04, 0.15, 1200);
+            playTone(1200, 'square', 0.03, 0.06);
+        },
+        clack() {
+            if (muted) return;
+            playNoise(0.06, 0.2, 600);
+            playTone(400, 'sawtooth', 0.05, 0.04);
+        },
+        diceRoll() {
+            if (muted) return;
+            try {
+                const c = getCtx();
+                for (let i = 0; i < 8; i++) {
+                    setTimeout(() => {
+                        playNoise(0.07, 0.18, 900);
+                        playTone(300 + Math.random()*400, 'triangle', 0.06, 0.05);
+                    }, i * 80);
+                }
+            } catch(e) {}
+        },
+        startCRT() {
+            if (muted || crtNode) return;
+            try {
+                const c = getCtx();
+                const buf = c.createBuffer(1, c.sampleRate * 2, c.sampleRate);
+                const data = buf.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                crtNode = c.createBufferSource();
+                crtNode.buffer = buf; crtNode.loop = true;
+                const filter = c.createBiquadFilter();
+                filter.type = 'bandpass'; filter.frequency.value = 60; filter.Q.value = 0.5;
+                const gain = c.createGain(); gain.gain.value = 0.015;
+                crtNode.connect(filter); filter.connect(gain); gain.connect(c.destination);
+                crtNode.start();
+            } catch(e) {}
+        },
+        stopCRT() {
+            try { if (crtNode) { crtNode.stop(); crtNode = null; } } catch(e) { crtNode = null; }
+        },
+        startClaxon() {
+            if (claxonNode) return;
+            try {
+                const c = getCtx();
+                const osc1 = c.createOscillator();
+                const osc2 = c.createOscillator();
+                const gain = c.createGain();
+                osc1.type = 'sawtooth'; osc1.frequency.value = 440;
+                osc2.type = 'sawtooth'; osc2.frequency.value = 220;
+                gain.gain.value = muted ? 0 : 0.03;
+                osc1.connect(gain); osc2.connect(gain); gain.connect(c.destination);
+                // Slow pulse
+                const lfo = c.createOscillator();
+                const lfoGain = c.createGain(); lfoGain.gain.value = 0.02;
+                lfo.frequency.value = 0.5; lfo.type = 'sine';
+                lfo.connect(lfoGain); lfoGain.connect(gain.gain);
+                osc1.start(); osc2.start(); lfo.start();
+                claxonNode = { osc1, osc2, lfo, gain };
+            } catch(e) {}
+        },
+        stopClaxon() {
+            try {
+                if (claxonNode) {
+                    claxonNode.osc1.stop(); claxonNode.osc2.stop(); claxonNode.lfo.stop();
+                    claxonNode = null;
+                }
+            } catch(e) { claxonNode = null; }
+        },
+        updateModeSound(isHC) {
+            if (isHC) { this.stopCRT(); this.startClaxon(); }
+            else { this.stopClaxon(); this.startCRT(); }
+        },
+        isMuted() { return muted; },
+        toggleMute() {
+            muted = !muted;
+            if (muted) { this.stopCRT(); this.stopClaxon(); }
+            else { this.startCRT(); if (mode === 'hc') this.startClaxon(); }
+            const btn = document.getElementById('ns-mute-btn');
+            if (btn) btn.textContent = muted ? '🔇 MUTED' : '🔊 SFX';
+            return muted;
+        },
+        init() {
+            // Attach click/key sounds to UI via event delegation
+            document.addEventListener('click', (e) => {
+                const t = e.target;
+                if (t.matches('button, .tab-nav button, .action-btn, .grid-item, .book-card, .cs-add-btn, .randomize-btn')) return; // handled elsewhere
+                if (t.tagName === 'BUTTON' || t.closest('button')) { this.click(); return; }
+                if (t.tagName === 'INPUT' && t.type === 'checkbox') { this.clack(); return; }
+                if (t.classList.contains('grid-item') || t.closest('.grid-item')) { this.clack(); return; }
+                if (t.classList.contains('book-card') || t.closest('.book-card')) { this.clack(); return; }
+            }, { capture: true });
+            document.addEventListener('keydown', (e) => {
+                const t = e.target;
+                if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') { this.click(); }
+            }, { passive: true });
+            this.startCRT();
+        }
+    };
+})();
+
+/* ===== EXPORT TO IMAGE ===== */
+function exportBuildImage() {
+    nsAudio.click();
+    const target = document.querySelector('.pip-frame') || document.querySelector('#tab-ov') || document.body;
+    if (typeof html2canvas === 'undefined') {
+        alert('html2canvas not loaded — check your internet connection and try again.');
+        return;
+    }
+    const btn = document.getElementById('export-img-btn');
+    if (btn) { btn.textContent = '⏳ RENDERING...'; btn.disabled = true; }
+    html2canvas(target, {
+        backgroundColor: '#0a0a0a',
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
+        windowWidth: target.scrollWidth,
+        windowHeight: target.scrollHeight,
+        scrollX: 0, scrollY: 0
+    }).then(canvas => {
+        const link = document.createElement('a');
+        const name = document.getElementById('char-name')?.value || 'dweller';
+        link.download = `${name.replace(/[^a-z0-9]/gi,'_')}_build.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+        if (btn) { btn.textContent = '📷 EXPORT IMAGE'; btn.disabled = false; }
+    }).catch(err => {
+        console.error('html2canvas error:', err);
+        alert('IMAGE EXPORT FAILED. Try taking a screenshot manually.');
+        if (btn) { btn.textContent = '📷 EXPORT IMAGE'; btn.disabled = false; }
+    });
+}
+
 window.onload = () => {
     document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
     renderUniques();
@@ -3479,4 +3748,6 @@ window.onload = () => {
         renderImplants();
     }
     applyStoredTheme();
+    nsAudio.init();
+    renderBooksTab();
 };
