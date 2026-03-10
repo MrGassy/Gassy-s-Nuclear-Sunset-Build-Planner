@@ -221,15 +221,15 @@
 
     <section>
         <div class="tab-nav">
-            <button onclick="showTab('ov')" id="tab-btn-ov" class="active">OVERVIEW</button>
-            <button onclick="showTab('prog')" id="tab-btn-prog">TRAITS &amp; IMPLANTS</button>
-            <button onclick="showTab('perks')" id="tab-btn-perks">ALL PERKS</button>
-            <button onclick="showTab('gear')" id="tab-btn-gear">LOADOUT</button>
-            <button onclick="showTab('quests')" id="tab-btn-quests">QUESTS</button>
-            <button onclick="showTab('coll')" id="tab-btn-coll">COLLECTIBLES</button>
-            <button onclick="showTab('uni')" id="tab-btn-uni">UNIQUES</button>
+            <button onclick="showTab('ov')" id="tab-btn-ov" class="active">🧑 OVERVIEW</button>
+            <button onclick="showTab('prog')" id="tab-btn-prog">🧬 TRAITS &amp; IMPLANTS</button>
+            <button onclick="showTab('perks')" id="tab-btn-perks">⭐ ALL PERKS</button>
+            <button onclick="showTab('gear')" id="tab-btn-gear">⚔️ LOADOUT</button>
+            <button onclick="showTab('quests')" id="tab-btn-quests">📜 QUESTS</button>
+            <button onclick="showTab('coll')" id="tab-btn-coll">💎 COLLECTIBLES</button>
+            <button onclick="showTab('uni')" id="tab-btn-uni">🏆 UNIQUES</button>
             <button onclick="showTab('books')" id="tab-btn-books">📚 BOOKS</button>
-            <button onclick="showTab('skilllog')" id="tab-btn-skilllog">SKILL LOG</button>
+            <button onclick="showTab('skilllog')" id="tab-btn-skilllog">📊 SKILL LOG</button>
         </div>
 
         <!-- HUMBLED STATUS BANNER -->
@@ -427,10 +427,9 @@
 
     <section>
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:10px;">
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
-            <button id="export-img-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportBuildImage()">📷 EXPORT IMAGE</button>
             <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
             <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
         </div>
@@ -461,7 +460,7 @@
     </section>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="data.js"></script>
 <script src="scripts.js"></script>
 
 <!-- Action Star Choice Modal -->
