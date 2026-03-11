@@ -26,7 +26,7 @@ body.theme-mw:not(.mode-hc) { --pip-color: #ffb642; --pip-border: #3a2a1a; --pip
 body.mode-hc { 
     --pip-color: var(--danger-red); 
     --pip-border: #800; --pip-bg: #000; background-color: #000;
-    animation: hcBodyPulse 5s infinite ease-in-out, hcShake 7s infinite;
+    animation: hcBodyPulse 5s infinite ease-in-out;
     overflow: hidden;
 }
 
@@ -34,18 +34,6 @@ body.mode-hc {
 @keyframes hcBodyPulse {
     0%, 100% { box-shadow: inset 0 0 60px rgba(255,0,0,0); }
     45%, 55% { box-shadow: inset 0 0 100px rgba(200,0,0,0.22); }
-}
-
-/* Periodic screen shake — subtle but unmistakable */
-@keyframes hcShake {
-    0%, 72%, 100%         { transform: translate(0, 0); }
-    73%                   { transform: translate(-2px, 1px); }
-    74%                   { transform: translate(3px, -1px); }
-    75%                   { transform: translate(-1px, 2px); }
-    76%                   { transform: translate(2px, -2px); }
-    77%                   { transform: translate(-3px, 0px); }
-    78%                   { transform: translate(1px, 1px); }
-    79%                   { transform: translate(0, 0); }
 }
 
 /* Horizontal scanline flash that rips across the screen */
@@ -60,29 +48,6 @@ body.mode-hc::before {
         rgba(255,0,0,0.018) 3px,
         rgba(255,0,0,0.018) 4px
     );
-    animation: hcScanlines 0.08s steps(1) infinite;
-}
-@keyframes hcScanlines {
-    0%   { background-position: 0 0; }
-    100% { background-position: 0 4px; }
-}
-
-/* RGB-split glitch bar that occasionally tears through */
-body.mode-hc::after {
-    content: '';
-    position: fixed; left: 0; right: 0;
-    height: 3px; z-index: 9998;
-    pointer-events: none;
-    background: linear-gradient(90deg, transparent 20%, rgba(255,0,0,0.7) 40%, rgba(0,255,255,0.5) 60%, transparent 80%);
-    animation: hcTear 6s infinite;
-    top: 0; opacity: 0;
-}
-@keyframes hcTear {
-    0%, 68%, 100% { opacity: 0; top: 0; }
-    69%  { opacity: 1; top: 15%; height: 2px; }
-    70%  { opacity: 0.8; top: 45%; height: 4px; filter: blur(1px); }
-    71%  { opacity: 1; top: 72%; height: 1px; }
-    72%  { opacity: 0; }
 }
 
 /* HC banner — alarming and animated */
@@ -121,14 +86,9 @@ body.mode-hc::after {
 
 /* Glitch effect on hc banner text itself */
 body.mode-hc .hc-alert-bar {
-    animation: hcBannerFlicker 2.5s infinite, hcBannerGlow 3s infinite alternate, hcTextGlitch 8s infinite;
+    animation: hcBannerFlicker 2.5s infinite, hcBannerGlow 3s infinite alternate;
 }
-@keyframes hcTextGlitch {
-    0%, 88%, 100%  { clip-path: none; transform: none; }
-    89%  { clip-path: inset(20% 0 60% 0); transform: translateX(3px); }
-    90%  { clip-path: inset(50% 0 20% 0); transform: translateX(-3px); }
-    91%  { clip-path: none; transform: none; }
-}
+
 
 /* HC mode — sections get a red-tinted border pulse */
 body.mode-hc section {
@@ -840,7 +800,7 @@ h2 {
 .modal-box {
     border: 1px solid var(--pip-color); background: var(--pip-bg-2);
     padding: 22px; max-width: 480px; width: 90%;
-    box-shadow: 0 0 40px rgba(40,255,40,0.15), 0 0 80px rgba(0,0,0,0.8);
+    box-shadow: var(--glow-lg, 0 0 28px rgba(40,255,40,0.15)), 0 0 80px rgba(0,0,0,0.8);
 }
 .modal-box h2 { margin-top: 0; font-size: 1.05rem; letter-spacing: 2px; }
 .modal-box p { font-size: 0.93rem; opacity: 0.65; margin-bottom: 18px; }
@@ -2007,8 +1967,8 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
    PERK PICKER MODAL (LEVEL UP)
 ══════════════════════════════════════════════ */
 .perk-picker-box {
-    background: var(--panel-bg, #0a140a);
-    border: 1px solid var(--pip-color);
+    background: var(--pip-bg-2, var(--panel-bg, #0a140a));
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.35);
 }
 
 .perk-picker-grid {
@@ -2019,8 +1979,8 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 
 .pperk-card {
-    background: rgba(0,255,80,0.04);
-    border: 1px solid rgba(0,255,80,0.2);
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.03);
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.18);
     border-radius: 3px;
     padding: 10px 12px;
     display: flex;
@@ -2032,8 +1992,8 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 
 .pperk-card:hover {
-    background: rgba(0,255,80,0.1);
-    border-color: rgba(0,255,80,0.55);
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.10);
+    border-color: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.55);
 }
 
 .pperk-card:hover .pperk-take-btn {
@@ -2061,8 +2021,8 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     font-size: 0.68rem;
     padding: 1px 6px;
     border-radius: 2px;
-    background: rgba(0,255,80,0.1);
-    border: 1px solid rgba(0,255,80,0.3);
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.10);
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.30);
     color: var(--pip-color);
     white-space: nowrap;
     flex-shrink: 0;
@@ -2556,10 +2516,10 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     color: rgba(100,180,100,0.35) !important;
 }
 
-/* modal box backgrounds */
+/* modal box — use CSS vars so all themes apply correctly */
 .modal-box {
-    background: linear-gradient(160deg, #0a1810 0%, #070e09 100%) !important;
-    border: 1px solid rgba(40,255,40,0.25) !important;
+    background: var(--pip-bg-2, #071010) !important;
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.30) !important;
 }
 
 /* bonus perk row border */
@@ -3007,8 +2967,10 @@ body.theme-ncr:not(.mode-hc) {
         box-shadow: 0 0 9px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
     }
     /* modal */
-    & .modal-box, & .lvlup-box {
-        box-shadow: 0 0 40px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15), 0 0 80px rgba(0,0,0,.85);
+    & .modal-box, & .lvlup-box, & .perk-picker-box, & .perk-zoom-box {
+        background: var(--pip-bg-2) !important;
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35) !important;
+        box-shadow: var(--glow-lg), 0 0 80px rgba(0,0,0,.85) !important;
     }
     /* perk picker perk cards */
     & .pperk-card {
@@ -3299,3 +3261,948 @@ body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 
 
 /* (ASCII VAULT BOY NOT USED IN THIS VERSION) */
+
+/* ═══ TEMPLATE MODAL ═══ */
+.tpl-card { border:1px solid rgba(var(--pip-rgb,100,200,100),0.25); border-radius:3px; padding:14px; background:rgba(0,0,0,0.3); cursor:pointer; transition:background 0.15s, border-color 0.15s; display:flex; flex-direction:column; gap:8px; }
+.tpl-card:hover { background:rgba(var(--pip-rgb,100,200,100),0.07); border-color:rgba(var(--pip-rgb,100,200,100),0.5); }
+.tpl-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+.tpl-name { font-size:0.75rem; font-weight:bold; letter-spacing:0.12em; color:var(--pip-color); line-height:1.3; }
+.tpl-karma { font-size:0.52rem; letter-spacing:0.08em; padding:2px 6px; border:1px solid; border-radius:2px; flex-shrink:0; }
+.tpl-karma-good { color:#70d870; border-color:rgba(112,216,112,0.4); }
+.tpl-karma-neutral { color:#c8c888; border-color:rgba(200,200,136,0.4); }
+.tpl-karma-evil { color:#ff8040; border-color:rgba(255,128,64,0.4); }
+.tpl-archetype { font-size:0.58rem; opacity:0.55; letter-spacing:0.14em; margin-bottom:2px; }
+.tpl-desc { font-size:0.58rem; line-height:1.7; opacity:0.65; }
+.tpl-tags { display:flex; flex-wrap:wrap; gap:4px; }
+.tpl-tag { font-size:0.48rem; padding:2px 5px; border:1px solid rgba(var(--pip-rgb,100,200,100),0.25); border-radius:2px; letter-spacing:0.08em; opacity:0.7; }
+.tpl-weapons { font-size:0.52rem; opacity:0.5; letter-spacing:0.06em; line-height:1.6; border-top:1px solid rgba(255,255,255,0.06); padding-top:7px; }
+.tpl-load-btn { margin-top:2px; width:100%; background:rgba(var(--pip-rgb,100,200,100),0.1); border:1px solid rgba(var(--pip-rgb,100,200,100),0.4); color:var(--pip-color); font-family:inherit; font-size:0.62rem; font-weight:bold; letter-spacing:0.12em; padding:6px; cursor:pointer; border-radius:2px; transition:background 0.15s; }
+.tpl-load-btn:hover { background:rgba(var(--pip-rgb,100,200,100),0.2); }
+
+/* ===== TEMPLATE BUILD CARDS ===== */
+.template-card {
+    background: rgba(0,0,0,0.4);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+.template-card:hover {
+    border-color: var(--pip-color);
+    background: rgba(255,255,255,0.04);
+}
+.template-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+}
+.template-card-title {
+    font-size: 0.82rem;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    color: var(--pip-color);
+}
+.template-karma-badge {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+    font-weight: bold;
+    text-transform: uppercase;
+    white-space: nowrap;
+    padding: 2px 6px;
+    border: 1px solid currentColor;
+    border-radius: 2px;
+    opacity: 0.9;
+}
+.template-meta {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.template-origin-tag, .template-mode-tag {
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    opacity: 0.75;
+    padding: 1px 5px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 2px;
+}
+.template-tags-line {
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: rgba(255,255,255,0.5);
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 5px;
+}
+.template-desc {
+    font-size: 0.62rem;
+    line-height: 1.5;
+    opacity: 0.65;
+    flex: 1;
+}
+.template-load-btn {
+    font-size: 0.6rem;
+    letter-spacing: 0.18em;
+    color: var(--pip-color);
+    text-align: right;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 6px;
+    opacity: 0.6;
+    transition: opacity 0.15s;
+}
+.template-card:hover .template-load-btn {
+    opacity: 1;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   NEW FACTION THEMES — NUCLEAR SUNSET v2
+   All 8 canonical factions with distinctive visual identities
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Enclave (UPDATED) — Plasma Green on Black ─────────────────
+   "The Enclave is the last, best hope for humanity."
+   High-contrast authoritarian terminal. Scanlines. Sharp edges.
+──────────────────────────────────────────────────────────────── */
+body.theme-enclave:not(.mode-hc) {
+    --pip-color:  #39ff14;
+    --pip-bg:     #000300;
+    --pip-bg-2:   #000800;
+    --pip-bg-3:   #000e00;
+    --pip-border: #0a2a00;
+    --glow-sm:    0 0 6px  rgba(57,255,20,.35);
+    --glow-md:    0 0 18px rgba(57,255,20,.28);
+    --glow-lg:    0 0 36px rgba(57,255,20,.18);
+    --tc-r: 57; --tc-g: 255; --tc-b: 20;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+body.theme-enclave:not(.mode-hc) {
+    background-image:
+        /* heavy scanlines — authoritarian terminal feel */
+        repeating-linear-gradient(0deg, transparent, transparent 3px,
+            rgba(0,0,0,.35) 3px, rgba(0,0,0,.35) 4px),
+        /* vertical scan pulse */
+        repeating-linear-gradient(90deg, transparent, transparent 6px,
+            rgba(57,255,20,.006) 6px, rgba(57,255,20,.006) 7px),
+        radial-gradient(ellipse at 50% 0%, rgba(10,60,5,.7) 0%, transparent 70%);
+}
+body.theme-enclave:not(.mode-hc) header {
+    border-bottom: 2px solid #39ff14;
+    box-shadow: 0 0 30px rgba(57,255,20,.25), inset 0 0 60px rgba(0,0,0,.5);
+}
+body.theme-enclave:not(.mode-hc) .os-title {
+    text-shadow: 0 0 10px rgba(57,255,20,.6), 0 0 20px rgba(57,255,20,.3);
+    letter-spacing: 0.22em;
+}
+
+/* ── Brotherhood of Steel (UPDATED) — Steel Gray + Amber ──────
+   "Ad Victoriam. Knowledge is power."
+   Industrial riveted steel. Amber HUD. Military precision.
+──────────────────────────────────────────────────────────────── */
+body.theme-bos:not(.mode-hc) {
+    --pip-color:  #e8a020;
+    --pip-bg:     #060606;
+    --pip-bg-2:   #0d0d0d;
+    --pip-bg-3:   #121212;
+    --pip-border: #2a1e06;
+    --glow-sm:    0 0 5px  rgba(232,160,32,.25);
+    --glow-md:    0 0 14px rgba(232,160,32,.20);
+    --glow-lg:    0 0 28px rgba(232,160,32,.14);
+    --tc-r: 232; --tc-g: 160; --tc-b: 32;
+}
+body.theme-bos:not(.mode-hc) {
+    background-image:
+        /* riveted steel grid pattern */
+        radial-gradient(circle at 0% 0%, rgba(232,160,32,.03) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(232,160,32,.03) 0%, transparent 50%),
+        repeating-linear-gradient(90deg, transparent, transparent 48px,
+            rgba(120,100,60,.035) 48px, rgba(120,100,60,.035) 50px),
+        repeating-linear-gradient(0deg, transparent, transparent 48px,
+            rgba(120,100,60,.035) 48px, rgba(120,100,60,.035) 50px),
+        radial-gradient(ellipse at 50% 0%, rgba(40,30,5,.55) 0%, transparent 65%);
+}
+body.theme-bos:not(.mode-hc) header {
+    background: linear-gradient(180deg, #1a1500 0%, #0d0d0d 100%);
+    border-bottom: 2px solid rgba(232,160,32,.5);
+    box-shadow: 0 0 20px rgba(232,160,32,.15), inset 0 -1px 0 rgba(232,160,32,.2);
+}
+
+/* ── Mr. House / New Vegas — Art Deco Luxury ──────────────────
+   "The House always wins."
+   Gold, black, neon green accents. Geometric art deco patterns.
+──────────────────────────────────────────────────────────────── */
+body.theme-house:not(.mode-hc) {
+    --pip-color:  #c8a030;
+    --pip-bg:     #050300;
+    --pip-bg-2:   #0a0700;
+    --pip-bg-3:   #0f0c00;
+    --pip-border: #3a2a00;
+    --glow-sm:    0 0 8px  rgba(200,160,48,.30);
+    --glow-md:    0 0 20px rgba(200,160,48,.24);
+    --glow-lg:    0 0 40px rgba(200,160,48,.16);
+    --tc-r: 200; --tc-g: 160; --tc-b: 48;
+    --accent-neon: #39ff14;
+}
+body.theme-house:not(.mode-hc) {
+    background-image:
+        /* art deco geometric diamond pattern */
+        repeating-linear-gradient(45deg, transparent, transparent 20px,
+            rgba(200,160,48,.018) 20px, rgba(200,160,48,.018) 21px),
+        repeating-linear-gradient(-45deg, transparent, transparent 20px,
+            rgba(200,160,48,.018) 20px, rgba(200,160,48,.018) 21px),
+        repeating-linear-gradient(90deg, transparent, transparent 80px,
+            rgba(200,160,48,.012) 80px, rgba(200,160,48,.012) 82px),
+        radial-gradient(ellipse at 50% 0%, rgba(80,55,0,.60) 0%, transparent 65%);
+}
+body.theme-house:not(.mode-hc) header {
+    background: linear-gradient(180deg, #0f0a00 0%, #050300 100%);
+    border-bottom: 2px solid rgba(200,160,48,.6);
+    box-shadow: 0 0 30px rgba(200,160,48,.20), inset 0 -1px 0 rgba(200,160,48,.25);
+}
+body.theme-house:not(.mode-hc) .os-title {
+    color: #c8a030;
+    text-shadow: 0 0 12px rgba(200,160,48,.5);
+    letter-spacing: 0.2em;
+}
+body.theme-house:not(.mode-hc) .tab-nav button.active { 
+    background: linear-gradient(135deg, #c8a030 0%, #f0c840 100%);
+    color: #000;
+}
+
+/* ── The Unity / The Master — Organic Dark Biotech ───────────
+   "The Unity will bring about the end of suffering."
+   Dark purples, vat green, biomechanical textures.
+──────────────────────────────────────────────────────────────── */
+body.theme-unity:not(.mode-hc) {
+    --pip-color:  #8aff6a;
+    --pip-bg:     #060209;
+    --pip-bg-2:   #0a0412;
+    --pip-bg-3:   #0e061a;
+    --pip-border: #2a0a40;
+    --glow-sm:    0 0 8px  rgba(138,255,106,.28);
+    --glow-md:    0 0 20px rgba(138,255,106,.20);
+    --glow-lg:    0 0 40px rgba(138,255,106,.14);
+    --tc-r: 138; --tc-g: 255; --tc-b: 106;
+    --accent-purple: #9a40ff;
+}
+body.theme-unity:not(.mode-hc) {
+    background-image:
+        /* organic biomechanical cell-like texture */
+        radial-gradient(ellipse at 20% 30%, rgba(90,20,140,.20) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 70%, rgba(50,10,80,.25) 0%, transparent 50%),
+        repeating-conic-gradient(rgba(138,255,106,.008) 0deg, transparent 2deg,
+            transparent 60deg, rgba(90,20,140,.008) 62deg, transparent 64deg) center / 100px 100px,
+        radial-gradient(ellipse at 50% 0%, rgba(60,5,100,.65) 0%, transparent 65%);
+}
+body.theme-unity:not(.mode-hc) header {
+    background: linear-gradient(180deg, #10032a 0%, #060209 100%);
+    border-bottom: 2px solid rgba(138,255,106,.4);
+    box-shadow: 0 0 30px rgba(90,20,140,.35), 0 0 15px rgba(138,255,106,.15);
+}
+body.theme-unity:not(.mode-hc) .os-title {
+    color: #c0a0ff;
+    text-shadow: 0 0 12px rgba(138,255,106,.4), 0 0 6px rgba(90,20,140,.6);
+}
+body.theme-unity:not(.mode-hc) section {
+    background: linear-gradient(160deg, #0e061a 0%, #060209 60%);
+    border-color: rgba(90,20,140,.40) !important;
+}
+
+/* ── The Shi — Steel + Crimson Calligraphy ───────────────────
+   "The Emperor's calculations are absolute."
+   Sleek steel-gray, traditional crimson, calligraphy-inspired.
+──────────────────────────────────────────────────────────────── */
+body.theme-shi:not(.mode-hc) {
+    --pip-color:  #e83030;
+    --pip-bg:     #050507;
+    --pip-bg-2:   #090909;
+    --pip-bg-3:   #0e0e10;
+    --pip-border: #3a0808;
+    --glow-sm:    0 0 6px  rgba(232,48,48,.28);
+    --glow-md:    0 0 16px rgba(232,48,48,.22);
+    --glow-lg:    0 0 32px rgba(232,48,48,.15);
+    --tc-r: 232; --tc-g: 48; --tc-b: 48;
+}
+body.theme-shi:not(.mode-hc) {
+    background-image:
+        /* sleek vertical stripes - eastern steel */
+        repeating-linear-gradient(90deg, transparent, transparent 64px,
+            rgba(232,48,48,.012) 64px, rgba(232,48,48,.012) 66px),
+        /* subtle horizontal grid */
+        repeating-linear-gradient(0deg, transparent, transparent 64px,
+            rgba(180,180,180,.007) 64px, rgba(180,180,180,.007) 65px),
+        radial-gradient(ellipse at 50% 0%, rgba(80,5,5,.55) 0%, transparent 65%);
+}
+body.theme-shi:not(.mode-hc) header {
+    background: linear-gradient(180deg, #1a0303 0%, #050507 100%);
+    border-bottom: 3px solid #e83030;
+    box-shadow: 0 0 20px rgba(232,48,48,.2), inset 0 -1px 0 rgba(232,48,48,.3);
+}
+body.theme-shi:not(.mode-hc) .os-title { letter-spacing: 0.28em; }
+body.theme-shi:not(.mode-hc) h2 {
+    border-left: 3px solid #e83030;
+    padding-left: 8px;
+}
+
+/* ── Great Khans — Leather Black + Faded Red ─────────────────
+   "The Khans don't bow to anyone."
+   Biker-leather dark. Spray-painted stencil text. Gritty.
+──────────────────────────────────────────────────────────────── */
+body.theme-khans:not(.mode-hc) {
+    --pip-color:  #cc2020;
+    --pip-bg:     #050202;
+    --pip-bg-2:   #0a0404;
+    --pip-bg-3:   #0f0606;
+    --pip-border: #3a0808;
+    --glow-sm:    0 0 5px  rgba(204,32,32,.22);
+    --glow-md:    0 0 14px rgba(204,32,32,.18);
+    --glow-lg:    0 0 28px rgba(204,32,32,.12);
+    --tc-r: 204; --tc-g: 32; --tc-b: 32;
+    font-family: 'Courier New', Courier, monospace !important;
+}
+body.theme-khans:not(.mode-hc) {
+    background-image:
+        /* rough scratched leather texture */
+        repeating-linear-gradient(20deg, transparent, transparent 8px,
+            rgba(80,20,20,.04) 8px, rgba(80,20,20,.04) 9px),
+        repeating-linear-gradient(-20deg, transparent, transparent 12px,
+            rgba(0,0,0,.06) 12px, rgba(0,0,0,.06) 13px),
+        radial-gradient(ellipse at 30% 20%, rgba(80,10,10,.30) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 0%, rgba(50,5,5,.65) 0%, transparent 65%);
+}
+body.theme-khans:not(.mode-hc) header {
+    background: #0a0404;
+    border-bottom: 2px solid rgba(204,32,32,.5);
+    box-shadow: 0 2px 20px rgba(204,32,32,.15);
+}
+body.theme-khans:not(.mode-hc) .os-title {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+    text-shadow: 2px 2px 0 rgba(0,0,0,.8), 0 0 8px rgba(204,32,32,.4);
+}
+body.theme-khans:not(.mode-hc) .section-label,
+body.theme-khans:not(.mode-hc) h2 {
+    text-shadow: 1px 1px 0 rgba(0,0,0,.8);
+    letter-spacing: 0.15em;
+}
+
+/* ── Vault-Tec — Retro-Futurist Gleam ────────────────────────
+   "Revolutionizing safety for an uncertain future!"
+   Vault-Boy Blue + Yellow. Glossy 1950s plastic. Optimistic!
+──────────────────────────────────────────────────────────────── */
+body.theme-vaulttec:not(.mode-hc) {
+    --pip-color:  #ffd000;
+    --pip-bg:     #001a30;
+    --pip-bg-2:   #002040;
+    --pip-bg-3:   #002850;
+    --pip-border: #004070;
+    --glow-sm:    0 0 8px  rgba(255,208,0,.30);
+    --glow-md:    0 0 20px rgba(255,208,0,.24);
+    --glow-lg:    0 0 40px rgba(255,208,0,.16);
+    --tc-r: 255; --tc-g: 208; --tc-b: 0;
+    --vault-blue: #1066b8;
+}
+body.theme-vaulttec:not(.mode-hc) {
+    background-image:
+        /* retro-futurist hexagon/circle tech pattern */
+        radial-gradient(circle at 50% 50%, transparent 30%, rgba(16,102,184,.04) 30%,
+            rgba(16,102,184,.04) 31%, transparent 31%) center / 40px 40px,
+        repeating-linear-gradient(0deg, transparent, transparent 40px,
+            rgba(255,208,0,.018) 40px, rgba(255,208,0,.018) 41px),
+        radial-gradient(ellipse at 50% 0%, rgba(16,60,120,.70) 0%, #001a30 100%);
+}
+body.theme-vaulttec:not(.mode-hc) header {
+    background: linear-gradient(180deg, #1066b8 0%, #0a4080 30%, #001a30 100%);
+    border-bottom: 3px solid #ffd000;
+    box-shadow: 0 0 30px rgba(16,102,184,.4), 0 3px 0 #ffd000;
+}
+body.theme-vaulttec:not(.mode-hc) .os-title {
+    color: #ffd000;
+    text-shadow: 0 0 10px rgba(255,208,0,.5), 0 2px 0 rgba(0,0,0,.6);
+    letter-spacing: 0.2em;
+}
+body.theme-vaulttec:not(.mode-hc) .tab-nav button.active {
+    background: linear-gradient(135deg, #ffd000 0%, #ffec60 100%);
+    color: #001a30;
+    font-weight: bold;
+}
+body.theme-vaulttec:not(.mode-hc) section {
+    background: linear-gradient(160deg, #002850 0%, #001a30 60%);
+    border-color: rgba(16,102,184,.45) !important;
+}
+body.theme-vaulttec:not(.mode-hc) .perk-card { border-left-color: rgba(16,102,184,.6); }
+body.theme-vaulttec:not(.mode-hc) .perk-card:hover { border-left-color: #ffd000; }
+
+/* Include all new themes in the structural override block */
+body.theme-house:not(.mode-hc),
+body.theme-unity:not(.mode-hc),
+body.theme-shi:not(.mode-hc),
+body.theme-khans:not(.mode-hc),
+body.theme-vaulttec:not(.mode-hc) {
+    & header { box-shadow: var(--glow-md), inset 0 -1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10); }
+    & section {
+        background: linear-gradient(160deg, var(--pip-bg-3) 0%, var(--pip-bg) 60%);
+        box-shadow: inset 0 0 60px rgba(0,0,0,.22), 0 1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.05);
+    }
+    & h2 { background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07); }
+    & .ov-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.04);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15) !important;
+    }
+    & .ov-sub { border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15); }
+    & .tab-nav button.active {
+        box-shadow: 0 0 9px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+    }
+    & .scroll-v::-webkit-scrollbar-thumb { background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.30); }
+    /* all modal dialogs */
+    & .modal-box, & .lvlup-box, & .perk-picker-box, & .perk-zoom-box {
+        background: var(--pip-bg-2) !important;
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38) !important;
+        box-shadow: var(--glow-lg), 0 0 80px rgba(0,0,0,.85) !important;
+    }
+    /* perk picker cards */
+    & .pperk-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .pperk-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .pperk-name { color: var(--pip-color); }
+    & .pperk-rank-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35);
+        color: var(--pip-color);
+    }
+    /* trait picker cards */
+    & .ptrait-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.025);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .ptrait-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.09);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .ptrait-name, & .trait-card-name, & .trait-slot-name { color: var(--pip-color); }
+    & .ptrait-take-btn {
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38) !important;
+        color: var(--pip-color);
+    }
+    & .ptrait-elig-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+        color: var(--pip-color);
+    }
+    /* trait chips in traits tab */
+    & .trait-chip {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
+    }
+    & .action-btn {
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35);
+        color: var(--pip-color);
+    }
+    & .action-btn:hover { background: var(--pip-color) !important; color: #000 !important; box-shadow: 0 0 10px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.25); }
+    /* progression rows */
+    & .prog-row {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.018);
+        border-color:      rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15);
+    }
+    & .prog-row.has-perk {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.036) !important;
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55) !important;
+    }
+    & .lvl-tag {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.12);
+        color: var(--pip-color);
+    }
+    & .plab-perk { color: var(--pip-color); border-color: var(--pip-color); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.04); }
+    & .plab-trait { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.03); }
+    & #perk-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.50);
+        color: var(--pip-color);
+    }
+    & #trait-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+        color: var(--pip-color);
+    }
+    & .lvlup-btn-ready {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        box-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.22);
+    }
+    & .gear-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.020);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.14);
+    }
+    & #perk-zoom-name { color: var(--pip-color); }
+    & .spec-rank-title {
+        color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.70);
+        text-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+    }
+    & .scroll-v::-webkit-scrollbar-thumb:hover { background: var(--pip-color); }
+    & .ov-card { border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.30) !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   FACTION QUOTE BAR
+══════════════════════════════════════════════════════════════════ */
+.faction-quote-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 5px 16px;
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.06);
+    border-bottom: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.18);
+    animation: quoteSlideIn 0.4s ease;
+}
+@keyframes quoteSlideIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.faction-quote-text {
+    font-size: 0.68rem;
+    font-style: italic;
+    color: var(--pip-color);
+    opacity: 0.85;
+    letter-spacing: 0.05em;
+    flex: 1;
+}
+.faction-quote-label {
+    font-size: 0.55rem;
+    letter-spacing: 0.18em;
+    opacity: 0.45;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   CONDITIONAL TOGGLE SYSTEM
+══════════════════════════════════════════════════════════════════ */
+.cond-icon {
+    font-size: 0.75em;
+    color: #ffdd00;
+    opacity: 0.8;
+}
+.cond-toggle-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin: 0 4px;
+    vertical-align: middle;
+}
+.cond-toggle-lbl {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+}
+.cond-toggle-input {
+    position: absolute;
+    opacity: 0;
+    width: 0; height: 0;
+}
+.cond-toggle-track {
+    width: 28px; height: 14px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 7px;
+    position: relative;
+    transition: background 0.2s, border-color 0.2s;
+}
+.cond-toggle-input:checked + .cond-toggle-track {
+    background: rgba(57,255,14,.25);
+    border-color: rgba(57,255,14,.5);
+}
+.cond-toggle-thumb {
+    position: absolute;
+    top: 1px; left: 1px;
+    width: 10px; height: 10px;
+    background: rgba(255,255,255,.5);
+    border-radius: 50%;
+    transition: transform 0.2s, background 0.2s;
+}
+.cond-toggle-input:checked + .cond-toggle-track .cond-toggle-thumb {
+    transform: translateX(14px);
+    background: #39ff14;
+    box-shadow: 0 0 6px rgba(57,255,20,.6);
+}
+.cond-toggle-hint { font-size: 0.6rem; opacity: 0.5; }
+/* Perk row conditional toggle */
+.cond-toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 8px;
+    margin: 4px 0;
+    background: rgba(255,220,0,.05);
+    border: 1px dashed rgba(255,220,0,.2);
+    border-radius: 2px;
+    font-size: 0.65rem;
+}
+.cond-toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: rgba(255,220,80,.75);
+    flex: 1;
+    letter-spacing: 0.06em;
+}
+.cond-toggle-hint-text { font-size: 0.58rem; opacity: 0.6; }
+/* Chip with active conditional */
+.st-tag-chip.cond-active {
+    border-color: rgba(57,255,14,.4);
+    background: rgba(57,255,14,.06);
+}
+/* Modified SPECIAL badge */
+.spec-mod-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: bold;
+    padding: 1px 5px;
+    border-radius: 2px;
+    margin-left: 3px;
+    vertical-align: middle;
+    letter-spacing: 0.05em;
+}
+.spec-mod-pos {
+    color: #39ff14;
+    border: 1px solid rgba(57,255,20,.4);
+    background: rgba(57,255,20,.1);
+    text-shadow: 0 0 6px rgba(57,255,20,.5);
+}
+.spec-mod-neg {
+    color: #ff4444;
+    border: 1px solid rgba(255,68,68,.4);
+    background: rgba(255,68,68,.1);
+}
+/* Conditional toggle delta in SPECIAL list */
+.sdelta-cond-pos {
+    color: #39ff14 !important;
+    border-color: rgba(57,255,20,.3) !important;
+    box-shadow: 0 0 6px rgba(57,255,20,.2);
+}
+.sdelta-cond-neg {
+    color: #ff6666 !important;
+    border-color: rgba(255,102,102,.3) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   RESPONSIVE LAYOUT — FULL SYSTEM
+══════════════════════════════════════════════════════════════════ */
+
+/* ── Build Summary Drawer (Laptop/Tablet) ── */
+.build-summary-drawer {
+    display: none;
+    position: fixed;
+    top: 0; right: 0;
+    width: 280px;
+    height: 100vh;
+    background: var(--pip-bg-2);
+    border-left: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.2);
+    z-index: 500;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+    box-shadow: -4px 0 20px rgba(0,0,0,.5);
+}
+.build-summary-drawer.drawer-open {
+    transform: translateX(0);
+}
+.drawer-inner { padding: 16px; }
+.drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.2);
+    padding-bottom: 10px;
+    margin-bottom: 14px;
+}
+.drawer-title {
+    font-size: 0.72rem;
+    font-weight: bold;
+    letter-spacing: 0.18em;
+    color: var(--pip-color);
+}
+.drawer-close-btn {
+    background: none;
+    border: 1px solid rgba(255,80,80,.4);
+    color: rgba(255,80,80,.8);
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.7rem;
+}
+.drawer-section-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.18em;
+    opacity: 0.5;
+    margin: 10px 0 4px;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    padding-bottom: 3px;
+}
+.drawer-spec-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+    margin-bottom: 4px;
+}
+.drawer-stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.06);
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.15);
+    padding: 3px;
+}
+.drawer-stat-key { font-size: 0.55rem; opacity: 0.6; letter-spacing: 0.1em; }
+.drawer-stat-val { font-size: 0.95rem; font-weight: bold; color: var(--pip-color); }
+.drawer-value {
+    font-size: 0.65rem;
+    color: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.8);
+    line-height: 1.5;
+}
+
+.drawer-toggle-btn {
+    display: none;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%) rotate(-90deg);
+    transform-origin: right center;
+    background: var(--pip-bg-2);
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.3);
+    color: var(--pip-color);
+    padding: 5px 12px;
+    font-size: 0.6rem;
+    font-family: inherit;
+    letter-spacing: 0.12em;
+    cursor: pointer;
+    z-index: 501;
+    white-space: nowrap;
+}
+
+/* ── Mobile Bottom Navigation ── */
+.mobile-bottom-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: var(--pip-bg-2);
+    border-top: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.25);
+    z-index: 600;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    padding: 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,.5);
+}
+.mobile-nav-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+    height: 100%;
+    min-height: 44px;
+    background: transparent;
+    border: none;
+    color: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.45);
+    font-family: inherit;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: color 0.15s, background 0.15s;
+    padding: 0;
+}
+.mobile-nav-btn span {
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.mobile-nav-btn.mobile-nav-active {
+    color: var(--pip-color);
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.08);
+    border-top: 2px solid var(--pip-color);
+}
+
+/* ── Desktop > 1200px — 3-column optimized ── */
+@media (min-width: 1201px) {
+    .wrapper {
+        display: grid;
+        grid-template-columns: 260px 1fr 320px;
+        height: 100vh;
+        overflow: hidden;
+    }
+    .wrapper > section:last-of-type {
+        overflow-y: auto;
+        border-left: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.1);
+    }
+    .char-sheet-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+    }
+    .build-summary-drawer { display: none !important; }
+    .drawer-toggle-btn { display: none !important; }
+}
+
+/* ── Laptop / Tablet 768px–1200px ── */
+@media (min-width: 768px) and (max-width: 1200px) {
+    .wrapper {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+        min-height: 100vh;
+        padding: 8px;
+        gap: 8px;
+        box-sizing: border-box;
+    }
+    .wrapper > section:first-of-type {
+        /* left panel stays */
+        grid-row: 1 / 3;
+    }
+    .wrapper > section:last-of-type {
+        /* notes/summary panel */
+        grid-column: 2;
+        max-width: 100%;
+    }
+    .char-sheet-cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .char-sheet-skills-col {
+        grid-column: 1 / -1;
+    }
+    /* Show drawer toggle */
+    .drawer-toggle-btn {
+        display: block;
+        right: -32px;
+        top: 40%;
+    }
+    .build-summary-drawer {
+        display: block;
+    }
+    /* Stack right panel below center */
+    .wrapper > section:last-of-type {
+        border-top: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.1);
+        padding-top: 10px;
+    }
+}
+
+/* ── Mobile < 768px ── */
+@media (max-width: 767px) {
+    * { box-sizing: border-box; }
+    body { padding-bottom: 60px; } /* room for bottom nav */
+    .wrapper {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        padding: 6px;
+        gap: 6px;
+        max-width: 100%;
+        overflow-x: hidden;
+    }
+    /* Hide desktop tab nav - use mobile bottom nav instead */
+    .tab-nav {
+        display: none !important;
+    }
+    .mobile-bottom-nav { display: flex !important; }
+    
+    /* S.P.E.C.I.A.L. compact for mobile */
+    .special-compact-grid .special-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 0;
+        min-height: 44px;
+    }
+    .special-controls button.special-btn {
+        min-width: 44px;
+        min-height: 44px;
+        font-size: 1.1rem;
+    }
+    /* Char sheet - single column */
+    .char-sheet-cols {
+        display: flex !important;
+        flex-direction: column;
+        gap: 8px;
+    }
+    /* Perk category accordions */
+    .header-row {
+        min-height: 44px;
+        padding: 10px 12px;
+    }
+    /* Touch targets */
+    .action-btn, .sort-btn, .gear-add-btn, .cs-add-btn {
+        min-height: 44px;
+        padding: 10px 14px;
+    }
+    .karma-btn { min-height: 36px; }
+    /* Theme selector - wrap on mobile */
+    .theme-selector-wrap {
+        flex-wrap: wrap;
+        gap: 3px;
+    }
+    .theme-btn { min-height: 36px; min-width: 36px; }
+    /* Header controls stack */
+    .header-controls {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+    .settings-block {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    /* Prevent overflow */
+    .tab-content { overflow-x: hidden; }
+    .skill-list-2col { 
+        grid-template-columns: 1fr;
+    }
+    /* Build summary drawer hidden on mobile (use overview instead) */
+    .build-summary-drawer { display: none !important; }
+    .drawer-toggle-btn { display: none !important; }
+    /* Modal fullscreen on mobile */
+    .modal-overlay { padding: 0 !important; align-items: flex-end !important; }
+    .modal-box, .lvlup-box, .perk-picker-box {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        border-radius: 0;
+        max-height: 90vh;
+    }
+    /* Gear tab */
+    .gear-split-grid { grid-template-columns: 1fr; }
+    /* Unique items */
+    .uni-section-header { flex-direction: column; align-items: flex-start; gap: 4px; }
+    /* Landscape orientation */
+    @media (orientation: landscape) {
+        .mobile-bottom-nav { height: 48px; }
+        body { padding-bottom: 52px; }
+        .mobile-nav-btn { font-size: 0.9rem; }
+        .mobile-nav-btn span { display: none; }
+    }
+}
+
+/* ── New theme button styles ── */
+/* ── New faction theme button colours ───────────────────────── */
+.tbtn-house.active-theme  { background:#c8a030 !important; border-color:#c8a030 !important; color:#000 !important; }
+.tbtn-unity.active-theme  { background:#8aff6a !important; border-color:#8aff6a !important; color:#000 !important; }
+.tbtn-shi.active-theme    { background:#e83030 !important; border-color:#e83030 !important; }
+.tbtn-khans.active-theme  { background:#cc2020 !important; border-color:#cc2020 !important; }
+.tbtn-vtec.active-theme   { background:#ffd000 !important; border-color:#ffd000 !important; color:#001a30 !important; }
+
+.tbtn-house:hover  { color:#c8a030 !important; border-color:#c8a030 !important; border-bottom-color:#c8a030 !important; }
+.tbtn-unity:hover  { color:#8aff6a !important; border-color:#8aff6a !important; border-bottom-color:#8aff6a !important; }
+.tbtn-shi:hover    { color:#e83030 !important; border-color:#e83030 !important; border-bottom-color:#e83030 !important; }
+.tbtn-khans:hover  { color:#cc2020 !important; border-color:#cc2020 !important; border-bottom-color:#cc2020 !important; }
+.tbtn-vtec:hover   { color:#ffd000 !important; border-color:#ffd000 !important; border-bottom-color:#ffd000 !important; }

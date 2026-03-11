@@ -85,6 +85,85 @@
   </div>
 </div>
 
+<!-- ACTION STAR CHOICE MODAL -->
+<div class="modal-overlay" id="action-star-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:480px; width:92vw; border-color:rgba(255,200,50,0.4);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+      <div>
+        <div style="font-size:1.05rem; font-weight:bold; color:#ffd060; letter-spacing:0.12em; margin-bottom:6px;">★ ACTION STAR</div>
+        <div style="font-size:0.7rem; color:rgba(255,200,80,0.6); letter-spacing:0.06em;">SELECT YOUR RANK BONUS</div>
+      </div>
+      <button onclick="closeActionStarModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;">✕</button>
+    </div>
+    <div style="font-size:0.8rem; color:rgba(220,200,100,0.75); margin-bottom:16px; line-height:1.6; border-top:1px solid rgba(255,200,50,0.15); padding-top:12px;">
+      AS YOUR ACTION STAR CAREER DEVELOPS, CHOOSE ONE ENHANCEMENT FOR THIS RANK:
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px;">
+      <button onclick="confirmActionStarChoice('ap')" class="action-star-choice-btn">
+        <span class="asc-icon">⚡</span>
+        <div>
+          <div class="asc-title">+ TOTAL ACTION POINTS</div>
+          <div class="asc-desc">INCREASE YOUR MAXIMUM AP POOL</div>
+        </div>
+      </button>
+      <button onclick="confirmActionStarChoice('regen')" class="action-star-choice-btn">
+        <span class="asc-icon">↻</span>
+        <div>
+          <div class="asc-title">+ AP REGENERATION RATE</div>
+          <div class="asc-desc">REGENERATE ACTION POINTS FASTER</div>
+        </div>
+      </button>
+      <button onclick="confirmActionStarChoice('cost')" class="action-star-choice-btn">
+        <span class="asc-icon">▼</span>
+        <div>
+          <div class="asc-title">− WEAPON AP COST</div>
+          <div class="asc-desc">REDUCE THE AP COST OF WEAPON ATTACKS</div>
+        </div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HUMBLED / WASTELAND TRANSIT MODAL -->
+<div id="humbled-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,0.82); align-items:center; justify-content:center;">
+    <div class="modal-box" style="max-width:520px; width:92vw;">
+        <div class="modal-title" style="color:#ff6030;">☢ WASTELAND TRANSIT — HEAD TRAUMA</div>
+        <div style="font-size:0.78em; color:var(--pip-color); margin:10px 0 6px; line-height:1.6;">
+            Your level, skills, and karma are reset. You receive the <b>HEAD TRAUMA</b> perk.<br>
+            Select <b>4 S.P.E.C.I.A.L. stats</b> to permanently reduce by 1.<br>
+            <span style="color:#ff9060;">This action is permanent and cannot be undone.</span>
+        </div>
+        <div style="font-size:0.7em; color:#999; margin-bottom:12px; line-height:1.5;">
+            STD: Perks every 4 levels until pre-transit level &nbsp;|&nbsp; HC: No perks until pre-transit level.<br>
+            Traits &amp; perks retained. Skills from skill books retained. Power Armor Training removed.
+        </div>
+        <div style="font-size:0.75em; color:#aaa; margin-bottom:8px;">
+            STATS SELECTED: <b id="humbled-pick-count">0</b> / 4
+        </div>
+        <div id="humbled-special-grid" class="humbled-special-grid"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
+            <button class="action-btn" onclick="closeHumbledModal()">CANCEL</button>
+            <button class="action-btn" id="humbled-confirm-btn" disabled
+                onclick="confirmHumbled()"
+                style="border-color:#ff6030; color:#ff6030;">CONFIRM TRANSIT</button>
+        </div>
+    </div>
+</div>
+
+<!-- TEMPLATE BUILDS MODAL -->
+<div id="template-modal" style="display:none; position:fixed; inset:0; z-index:3100; background:rgba(0,0,0,0.88); align-items:flex-start; justify-content:center; padding-top:3vh; overflow-y:auto;">
+  <div style="width:min(900px,96vw); background:var(--pip-bg); border:1px solid var(--pip-color); border-radius:4px; padding:18px; position:relative;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
+      <div>
+        <div style="font-size:0.88rem; font-weight:bold; letter-spacing:0.2em; color:var(--pip-color);">📋 VAULT-TEC ARCHETYPE DATABASE</div>
+        <div style="font-size:0.55rem; opacity:0.5; margin-top:3px; letter-spacing:0.1em;">SELECT A PRE-BUILT ARCHETYPE TO LOAD — YOUR CURRENT BUILD WILL BE REPLACED</div>
+      </div>
+      <button onclick="closeTemplateModal()" style="background:transparent; border:1px solid rgba(255,80,80,0.5); color:rgba(255,80,80,0.8); cursor:pointer; font-family:inherit; font-size:0.7rem; padding:5px 10px; letter-spacing:0.1em;">✕ CLOSE</button>
+    </div>
+    <div id="template-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px;"></div>
+  </div>
+</div>
+
 <!-- TAG! SKILL PICKER MODAL -->
 <div class="modal-overlay" id="tag-pick-modal" style="display:none; align-items:center; justify-content:center;">
   <div class="modal-box" style="max-width:480px; width:95vw;">
@@ -175,8 +254,31 @@
 </div>
 
 <div class="wrapper">
+
+    <!-- BUILD SUMMARY DRAWER (Tablet/Laptop) -->
+    <div id="build-summary-drawer" class="build-summary-drawer">
+        <div class="drawer-inner">
+            <div class="drawer-header">
+                <span class="drawer-title">◈ BUILD SUMMARY</span>
+                <button onclick="toggleBuildSummaryDrawer()" class="drawer-close-btn">✕</button>
+            </div>
+            <div id="drawer-summary-content" class="drawer-summary-content"></div>
+        </div>
+    </div>
+    <button id="drawer-toggle-btn" class="drawer-toggle-btn" onclick="toggleBuildSummaryDrawer()">▶ BUILD SUMMARY</button>
+
+    <!-- MOBILE BOTTOM NAV -->
+    <nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+        <button class="mobile-nav-btn mobile-nav-active" data-tab="ov" onclick="showTab('ov')">🧑<span>BUILD</span></button>
+        <button class="mobile-nav-btn" data-tab="prog" onclick="showTab('prog')">🧬<span>TRAITS</span></button>
+        <button class="mobile-nav-btn" data-tab="perks" onclick="showTab('perks')">⭐<span>PERKS</span></button>
+        <button class="mobile-nav-btn" data-tab="gear" onclick="showTab('gear')">⚔️<span>GEAR</span></button>
+        <button class="mobile-nav-btn" data-tab="quests" onclick="showTab('quests')">📜<span>QUESTS</span></button>
+    </nav>
     <header>
         <div class="hc-alert-bar" id="hc-banner">⚠ HARDERCORE_OVERRIDE_ACTIVE — SYSTEM INTEGRITY COMPROMISED ⚠</div>
+        <!-- FACTION QUOTE BAR -->
+        <div id="faction-quote-bar" style="display:none;" class="faction-quote-bar"></div>
         <div class="header-controls">
             <div class="os-title">☢ NUCLEAR SUNSET — BUILD PLANNER <span class="os-title-sub">// TALE OF TWO WASTELANDS</span></div>
             <div class="settings-block">
@@ -188,10 +290,15 @@
                     <button class="theme-btn active-theme" data-theme=""      onclick="setCustomTheme('')"        title="NUCLEAR SUNSET — DEFAULT">NS</button>
                     <button class="theme-btn tbtn-fo3"     data-theme="fo3"   onclick="setCustomTheme('fo3')"     title="FALLOUT 3 PIP-BOY">FO3</button>
                     <button class="theme-btn tbtn-bos"     data-theme="bos"   onclick="setCustomTheme('bos')"     title="BROTHERHOOD OF STEEL">BoS</button>
-                    <button class="theme-btn tbtn-enc"     data-theme="enclave" onclick="setCustomTheme('enclave')" title="ENCLAVE">ENC</button>
+                    <button class="theme-btn tbtn-enc"     data-theme="enclave" onclick="setCustomTheme('enclave')" title="THE ENCLAVE">ENC</button>
                     <button class="theme-btn tbtn-v21"     data-theme="vault21" onclick="setCustomTheme('vault21')" title="VAULT 21">V21</button>
                     <button class="theme-btn tbtn-leg"     data-theme="legion"  onclick="setCustomTheme('legion')"  title="CAESAR'S LEGION">LEG</button>
                     <button class="theme-btn tbtn-ncr"     data-theme="ncr"     onclick="setCustomTheme('ncr')"     title="NEW CALIFORNIA REPUBLIC">NCR</button>
+                    <button class="theme-btn tbtn-house"   data-theme="house"   onclick="setCustomTheme('house')"   title="MR. HOUSE / NEW VEGAS">HOU</button>
+                    <button class="theme-btn tbtn-unity"   data-theme="unity"   onclick="setCustomTheme('unity')"   title="THE UNITY / THE MASTER">UNI</button>
+                    <button class="theme-btn tbtn-shi"     data-theme="shi"     onclick="setCustomTheme('shi')"     title="THE SHI">SHI</button>
+                    <button class="theme-btn tbtn-khans"   data-theme="khans"   onclick="setCustomTheme('khans')"   title="GREAT KHANS">KHN</button>
+                    <button class="theme-btn tbtn-vtec"    data-theme="vaulttec" onclick="setCustomTheme('vaulttec')" title="VAULT-TEC CORPORATION">VLT</button>
                 </div>
                 <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
             </div>
@@ -430,6 +537,7 @@
         <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:10px;">
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="openTemplateModal()">📋 TEMPLATES</button>
             <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
             <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
         </div>
@@ -462,72 +570,6 @@
 
 <script src="data.js"></script>
 <script src="scripts.js"></script>
-
-<!-- Action Star Choice Modal -->
-<div class="modal-overlay" id="action-star-modal" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-box" style="max-width:480px; width:92vw; border-color:rgba(255,200,50,0.4);">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
-      <div>
-        <div style="font-size:1.05rem; font-weight:bold; color:#ffd060; letter-spacing:0.12em; margin-bottom:6px;">★ ACTION STAR</div>
-        <div style="font-size:0.7rem; color:rgba(255,200,80,0.6); letter-spacing:0.06em;">SELECT YOUR RANK BONUS</div>
-      </div>
-      <button onclick="closeActionStarModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;">✕</button>
-    </div>
-    <div style="font-size:0.8rem; color:rgba(220,200,100,0.75); margin-bottom:16px; line-height:1.6; border-top:1px solid rgba(255,200,50,0.15); padding-top:12px;">
-      AS YOUR ACTION STAR CAREER DEVELOPS, CHOOSE ONE ENHANCEMENT FOR THIS RANK:
-    </div>
-    <div style="display:flex; flex-direction:column; gap:10px;">
-      <button onclick="confirmActionStarChoice('ap')" class="action-star-choice-btn">
-        <span class="asc-icon">⚡</span>
-        <div>
-          <div class="asc-title">+ TOTAL ACTION POINTS</div>
-          <div class="asc-desc">INCREASE YOUR MAXIMUM AP POOL</div>
-        </div>
-      </button>
-      <button onclick="confirmActionStarChoice('regen')" class="action-star-choice-btn">
-        <span class="asc-icon">↻</span>
-        <div>
-          <div class="asc-title">+ AP REGENERATION RATE</div>
-          <div class="asc-desc">REGENERATE ACTION POINTS FASTER</div>
-        </div>
-      </button>
-      <button onclick="confirmActionStarChoice('cost')" class="action-star-choice-btn">
-        <span class="asc-icon">▼</span>
-        <div>
-          <div class="asc-title">− WEAPON AP COST</div>
-          <div class="asc-desc">REDUCE THE AP COST OF WEAPON ATTACKS</div>
-        </div>
-      </button>
-    </div>
-  </div>
-</div>
-
-
-<!-- HUMBLED / WASTELAND TRANSIT MODAL -->
-<div id="humbled-modal" style="display:none; position:fixed; inset:0; z-index:3000; background:rgba(0,0,0,0.82); align-items:center; justify-content:center;">
-    <div class="modal-box" style="max-width:520px; width:92vw;">
-        <div class="modal-title" style="color:#ff6030;">☢ WASTELAND TRANSIT — HEAD TRAUMA</div>
-        <div style="font-size:0.78em; color:var(--pip-color); margin:10px 0 6px; line-height:1.6;">
-            Your level, skills, and karma are reset. You receive the <b>HEAD TRAUMA</b> perk.<br>
-            Select <b>4 S.P.E.C.I.A.L. stats</b> to permanently reduce by 1.<br>
-            <span style="color:#ff9060;">This action is permanent and cannot be undone.</span>
-        </div>
-        <div style="font-size:0.7em; color:#999; margin-bottom:12px; line-height:1.5;">
-            STD: Perks every 4 levels until pre-transit level &nbsp;|&nbsp; HC: No perks until pre-transit level.<br>
-            Traits &amp; perks retained. Skills from skill books retained. Power Armor Training removed.
-        </div>
-        <div style="font-size:0.75em; color:#aaa; margin-bottom:8px;">
-            STATS SELECTED: <b id="humbled-pick-count">0</b> / 4
-        </div>
-        <div id="humbled-special-grid" class="humbled-special-grid"></div>
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:14px;">
-            <button class="action-btn" onclick="closeHumbledModal()">CANCEL</button>
-            <button class="action-btn" id="humbled-confirm-btn" disabled
-                onclick="confirmHumbled()"
-                style="border-color:#ff6030; color:#ff6030;">CONFIRM TRANSIT</button>
-        </div>
-    </div>
-</div>
 
 </body>
 </html>

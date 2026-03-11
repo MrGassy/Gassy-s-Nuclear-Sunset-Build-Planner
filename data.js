@@ -5,7 +5,7 @@
 
 /* --- SKILL_GOVERNING --- */
 const SKILL_GOVERNING = {
-    'BARTER':'CHA','BIG GUNS':'STR','ENERGY WEAPONS':'PER','EXPLOSIVES':'PER',
+    'BARTER':'CHA','BIG GUNS':'END','ENERGY WEAPONS':'PER','EXPLOSIVES':'PER',
     'GUNS':'AGI','LOCKPICK':'PER','MEDICINE':'INT','MELEE WEAPONS':'STR',
     'REPAIR':'INT','SCIENCE':'INT','SNEAK':'AGI','SPEECH':'CHA','SURVIVAL':'END','UNARMED':'END'
 };
@@ -493,7 +493,75 @@ const SPECIAL_INFO = {
 };
 
 /* --- CUSTOM_THEMES --- */
-const CUSTOM_THEMES = ['fo3','bos','enclave','vault21','legion','ncr'];
+const CUSTOM_THEMES = ['fo3','bos','enclave','vault21','legion','ncr','house','unity','shi','khans','vaulttec'];
+
+/* --- FACTION_THEMES --- */
+const FACTION_THEMES = {
+    '':         { label: 'NUCLEAR SUNSET',           quote: '' },
+    'fo3':      { label: 'FALLOUT 3 — PIP-BOY',      quote: 'War. War never changes.' },
+    'bos':      { label: 'BROTHERHOOD OF STEEL',     quote: 'Ad Victoriam. Knowledge is power.' },
+    'enclave':  { label: 'THE ENCLAVE',              quote: 'The Enclave is the last, best hope for humanity.' },
+    'vault21':  { label: 'VAULT 21',                 quote: 'When the chips are down, the House always has more.' },
+    'legion':   { label: "CAESAR'S LEGION",          quote: 'The Legion does not retreat. Ave, true to Caesar.' },
+    'ncr':      { label: 'NEW CALIFORNIA REPUBLIC',  quote: 'Patrolling the Mojave almost makes you wish for a nuclear winter.' },
+    'house':    { label: 'MR. HOUSE / NEW VEGAS',    quote: 'The House always wins.' },
+    'unity':    { label: 'THE UNITY / THE MASTER',   quote: 'The Unity will bring about the end of suffering.' },
+    'shi':      { label: 'THE SHI',                  quote: "The Emperor's calculations are absolute." },
+    'khans':    { label: 'GREAT KHANS',              quote: "The Khans don't bow to anyone." },
+    'vaulttec': { label: 'VAULT-TEC',                quote: 'Revolutionizing safety for an uncertain future!' },
+};
+
+/* --- CONDITIONAL_PERK_NAMES (perks with toggleable situational SPECIAL/skill bonuses) --- */
+const CONDITIONAL_PERK_NAMES = new Set([
+    "Alertness",          // +2 PER when crouched & not moving
+    "Headless Courier",   // +2 PER when no headgear
+    "Irradiated Beauty",  // +1 CHA per 250/450/650 rads
+    "Thirsty",            // +2 CHA when dehydrated
+    "Fight Hungry",       // +1 END in combat when starving
+    "Walker Instinct",    // +1 PER, +1 AGI outside & crouched
+    "Boiadero",           // +1 CHA with many cigarettes
+    "Wasteland Masquerade", // +1 CHA, +1 INT with headwear
+    "My Own Master Now",  // +1 END per faction disliking you
+    "Collective Consciousness", // +2 Speech per allied faction
+]);
+
+/* --- CONDITIONAL_TOGGLE_BONUSES (what each conditional toggle adds when ON) --- */
+const CONDITIONAL_TOGGLE_BONUSES = {
+    /* === TRAITS === */
+    "Claustrophobia":       { special: { STR:+1,PER:+1,END:+1,CHA:+1,INT:+1,AGI:+1,LCK:+1 } },
+    "Early Bird":           { special: { STR:+1,PER:+1,END:+1,CHA:+1,INT:+1,AGI:+1,LCK:+1 } },
+    "Night Person":         { special: { INT:+1, PER:+1 } },
+    "Solar Powered":        { special: { STR:+1, AGI:+1, END:+1 } },
+    "War Child":            { special: { STR:+1,PER:+1,END:+1,CHA:+1,INT:+1,AGI:+1,LCK:+1 } },
+    "Four Eyes":            { special: { PER:+1 } },
+    "Blind Luck":           { special: { PER:+4 } },
+    "Impartial Mediation":  { skills:  { SPEECH:+10 } },
+    "Confirmed Bachelor":   { special: { CHA:+1 }, skills: { SPEECH:+5, BARTER:+5 } },
+    "Lady Killer":          { special: { CHA:+1 }, skills: { SPEECH:+5, BARTER:+5 } },
+    "Graceful":             { special: { CHA:+1 } },
+    "Ideologue":            { special: { LCK:+1 } },
+    "Twisted":              { special: { LCK:+1 } },
+    "Breakin' A Sweat":     { special: { AGI:+1 } },
+    "Masochist":            { special: { END:+3 } },
+    "Desert Rose":          { special: { CHA:+2 } },
+    "Hoarder":              { special: { STR:-1,PER:-1,END:-1,CHA:-1,INT:-1,AGI:-1,LCK:-1 } },
+    "Bankrupt":             { skills:  { BARTER:+10 } },
+    "Magnate":              { skills:  { BARTER:+10 } },
+    "Callous":              { skills:  { BARTER:+10 } },
+    "Assassin's Step":      { skills:  { SNEAK:+10 } },
+    "Polar Personality":    { skills:  { SPEECH:+4, BARTER:+4, MEDICINE:+4 } },
+    /* === PERKS === */
+    "Alertness":            { special: { PER:+2 } },
+    "Headless Courier":     { special: { PER:+2 } },
+    "Irradiated Beauty":    { special: { CHA:+1 } },
+    "Thirsty":              { special: { CHA:+2 } },
+    "Fight Hungry":         { special: { END:+1 } },
+    "Walker Instinct":      { special: { PER:+1, AGI:+1 } },
+    "Boiadero":             { special: { CHA:+1 } },
+    "Wasteland Masquerade": { special: { CHA:+1, INT:+1 } },
+    "My Own Master Now":    { special: { END:+1 } },
+    "Collective Consciousness": { skills: { SPEECH:+4 } },
+};
 
 /* --- KARMA_TIERS --- */
 const KARMA_TIERS = [
