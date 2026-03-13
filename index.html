@@ -48,9 +48,14 @@
       </div>
       <button class="lvlup-close" onclick="closeTraitModal()">✕</button>
     </div>
-    <div style="padding:8px 16px; flex-shrink:0; border-bottom:1px solid rgba(200,255,212,0.15);">
+    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(200,255,212,0.15); display:flex; flex-direction:column; gap:6px;">
       <input type="text" id="trait-modal-search" class="pip-search" placeholder="SEARCH TRAITS BY NAME OR EFFECT..."
         oninput="renderTraitGrid(this.value)" style="width:100%; box-sizing:border-box;">
+      <div class="picker-sort-row">
+        <span class="picker-sort-label">SORT:</span>
+        <button class="picker-sort-btn active" id="tpick-sort-az"  onclick="setTraitPickerSort('az')">A–Z</button>
+        <button class="picker-sort-btn"         id="tpick-sort-req" onclick="setTraitPickerSort('req')">BY REQUIREMENT</button>
+      </div>
     </div>
     <div id="trait-modal-grid" class="perk-picker-grid ptrait-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
     <div style="padding:10px 16px; border-top:1px solid rgba(200,255,212,0.15); flex-shrink:0; display:flex; justify-content:flex-end;">
@@ -150,20 +155,6 @@
     </div>
 </div>
 
-<!-- TEMPLATE BUILDS MODAL -->
-<div id="template-modal" style="display:none; position:fixed; inset:0; z-index:3100; background:rgba(0,0,0,0.88); align-items:flex-start; justify-content:center; padding-top:3vh; overflow-y:auto;">
-  <div style="width:min(900px,96vw); background:var(--pip-bg); border:1px solid var(--pip-color); border-radius:4px; padding:18px; position:relative;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:10px;">
-      <div>
-        <div style="font-size:0.88rem; font-weight:bold; letter-spacing:0.2em; color:var(--pip-color);">📋 VAULT-TEC ARCHETYPE DATABASE</div>
-        <div style="font-size:0.55rem; opacity:0.5; margin-top:3px; letter-spacing:0.1em;">SELECT A PRE-BUILT ARCHETYPE TO LOAD — YOUR CURRENT BUILD WILL BE REPLACED</div>
-      </div>
-      <button onclick="closeTemplateModal()" style="background:transparent; border:1px solid rgba(255,80,80,0.5); color:rgba(255,80,80,0.8); cursor:pointer; font-family:inherit; font-size:0.7rem; padding:5px 10px; letter-spacing:0.1em;">✕ CLOSE</button>
-    </div>
-    <div id="template-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px;"></div>
-  </div>
-</div>
-
 <!-- TAG! SKILL PICKER MODAL -->
 <div class="modal-overlay" id="tag-pick-modal" style="display:none; align-items:center; justify-content:center;">
   <div class="modal-box" style="max-width:480px; width:95vw;">
@@ -211,9 +202,14 @@
       </div>
       <button class="lvlup-close" onclick="closePerkPickerModal()">✕</button>
     </div>
-    <div style="padding:8px 16px; flex-shrink:0; border-bottom:1px solid rgba(100,255,100,0.15);">
+    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(100,255,100,0.15); display:flex; flex-direction:column; gap:6px;">
       <input type="text" id="perk-picker-search" class="pip-search" placeholder="SEARCH PERKS BY NAME OR EFFECT..."
         oninput="renderPerkPickerGrid()" style="width:100%; box-sizing:border-box;">
+      <div class="picker-sort-row">
+        <span class="picker-sort-label">SORT:</span>
+        <button class="picker-sort-btn active" id="ppick-sort-az"  onclick="setPerkPickerSort('az')">A–Z</button>
+        <button class="picker-sort-btn"         id="ppick-sort-lvl" onclick="setPerkPickerSort('lvl')">BY LEVEL</button>
+      </div>
     </div>
     <div id="perk-picker-grid" class="perk-picker-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
     <div style="padding:10px 16px; border-top:1px solid rgba(100,255,100,0.15); flex-shrink:0; display:flex; justify-content:flex-end;">
@@ -285,21 +281,6 @@
                 <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL WASTELAND</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE DESERT</button></div>
                 <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
                 <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled style="border:1px solid rgba(100,200,255,0.3)!important;color:rgba(100,200,255,0.5);padding:5px 12px;cursor:pointer;font-size:0.75rem;background:transparent;letter-spacing:1px;transition:all 0.2s;border-bottom:1px solid rgba(100,200,255,0.3)!important;">↩ UNDO</button>
-                <div class="theme-selector-wrap">
-                    <span class="theme-sel-label">HUD</span>
-                    <button class="theme-btn active-theme" data-theme=""      onclick="setCustomTheme('')"        title="NUCLEAR SUNSET — DEFAULT">NS</button>
-                    <button class="theme-btn tbtn-fo3"     data-theme="fo3"   onclick="setCustomTheme('fo3')"     title="FALLOUT 3 PIP-BOY">FO3</button>
-                    <button class="theme-btn tbtn-bos"     data-theme="bos"   onclick="setCustomTheme('bos')"     title="BROTHERHOOD OF STEEL">BoS</button>
-                    <button class="theme-btn tbtn-enc"     data-theme="enclave" onclick="setCustomTheme('enclave')" title="THE ENCLAVE">ENC</button>
-                    <button class="theme-btn tbtn-v21"     data-theme="vault21" onclick="setCustomTheme('vault21')" title="VAULT 21">V21</button>
-                    <button class="theme-btn tbtn-leg"     data-theme="legion"  onclick="setCustomTheme('legion')"  title="CAESAR'S LEGION">LEG</button>
-                    <button class="theme-btn tbtn-ncr"     data-theme="ncr"     onclick="setCustomTheme('ncr')"     title="NEW CALIFORNIA REPUBLIC">NCR</button>
-                    <button class="theme-btn tbtn-house"   data-theme="house"   onclick="setCustomTheme('house')"   title="MR. HOUSE / NEW VEGAS">HOU</button>
-                    <button class="theme-btn tbtn-unity"   data-theme="unity"   onclick="setCustomTheme('unity')"   title="THE UNITY / THE MASTER">UNI</button>
-                    <button class="theme-btn tbtn-shi"     data-theme="shi"     onclick="setCustomTheme('shi')"     title="THE SHI">SHI</button>
-                    <button class="theme-btn tbtn-khans"   data-theme="khans"   onclick="setCustomTheme('khans')"   title="GREAT KHANS">KHN</button>
-                    <button class="theme-btn tbtn-vtec"    data-theme="vaulttec" onclick="setCustomTheme('vaulttec')" title="VAULT-TEC CORPORATION">VLT</button>
-                </div>
                 <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
             </div>
         </div>
@@ -534,12 +515,53 @@
 
     <section>
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
-        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:5px; margin-bottom:10px;">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:0;">
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
-            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="openTemplateModal()">📋 TEMPLATES</button>
             <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
+            <button id="hud-theme-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="toggleThemePanel()">🎨 HUD THEME</button>
             <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
+        </div>
+        <!-- HUD THEME PANEL -->
+        <div id="hud-theme-panel" class="hud-theme-panel" style="display:none;">
+            <div class="hud-theme-grid">
+                <button class="hud-theme-tile" data-theme="" onclick="setCustomTheme(''); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#28ff28;"></span>
+                    <span class="hud-theme-name">NUCLEAR SUNSET</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="bos" onclick="setCustomTheme('bos'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#60a8f0;"></span>
+                    <span class="hud-theme-name">BROTHERHOOD</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="enclave" onclick="setCustomTheme('enclave'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#c8d8ec;"></span>
+                    <span class="hud-theme-name">THE ENCLAVE</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="vault21" onclick="setCustomTheme('vault21'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ff2880;"></span>
+                    <span class="hud-theme-name">VAULT 21</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="legion" onclick="setCustomTheme('legion'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#cc2800;"></span>
+                    <span class="hud-theme-name">THE LEGION</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="ncr" onclick="setCustomTheme('ncr'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#c8a840;"></span>
+                    <span class="hud-theme-name">N.C.R.</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="house" onclick="setCustomTheme('house'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#c060ff;"></span>
+                    <span class="hud-theme-name">MR. HOUSE</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="shi" onclick="setCustomTheme('shi'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#38c8a8;"></span>
+                    <span class="hud-theme-name">THE SHI</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="vaulttec" onclick="setCustomTheme('vaulttec'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ffd000;"></span>
+                    <span class="hud-theme-name">VAULT-TEC</span>
+                </button>
+            </div>
         </div>
         <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
             <button onclick="randomizeBuild()" class="randomize-btn">🎲 RANDOMIZE BUILD</button>

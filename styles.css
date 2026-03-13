@@ -143,7 +143,7 @@ body {
         );
     color: var(--pip-color); 
     font-family: var(--font-main); margin: 0; 
-    overflow: hidden; height: 100vh; font-size: 15px; 
+    overflow: hidden; height: 100vh; font-size: 16px; 
 }
 
 /* --- INPUTS & BUTTONS --- */
@@ -379,11 +379,11 @@ h2 {
 }
 .ov-sub { 
     font-weight: bold; border-bottom: 1px solid rgba(40,255,40,0.15); 
-    margin-bottom: 6px; font-size: 0.77rem; display: block; 
+    margin-bottom: 6px; font-size: 0.84rem; display: block; 
     letter-spacing: 2px; color: var(--pip-color); opacity: 0.7;
     padding-bottom: 5px; text-align: center;
 }
-.ov-entry { font-size: 0.82rem; padding: 3px 2px; display: flex; justify-content: space-between; align-items: center; color: var(--text-mid); line-height: 1.4; }
+.ov-entry { font-size: 0.88rem; padding: 3px 2px; display: flex; justify-content: space-between; align-items: center; color: var(--text-mid); line-height: 1.4; }
 .ov-entry-clickable {
     cursor: pointer;
     border-radius: 2px;
@@ -424,7 +424,7 @@ h2 {
     padding: 7px 10px 0;
 }
 .lvl-tag {
-    font-size: 0.8rem; font-weight: bold; letter-spacing: 1px;
+    font-size: 0.86rem; font-weight: bold; letter-spacing: 1px;
     background: rgba(40,255,40,0.12); padding: 3px 8px;
     color: var(--pip-color); text-align: center;
 }
@@ -436,7 +436,7 @@ h2 {
 }
 .prog-rank-badge.multi { animation: rankGlow 2s infinite ease-in-out; }
 .prog-clear-btn {
-    margin-left: auto; font-size: 0.75rem; border: 1px solid rgba(255,0,0,0.4);
+    margin-left: auto; font-size: 0.80rem; border: 1px solid rgba(255,0,0,0.4);
     color: rgba(255,80,80,0.8); padding: 2px 8px; cursor: pointer;
     background: rgba(255,0,0,0.05); display: none;
     border-bottom: 1px solid rgba(255,0,0,0.4) !important;
@@ -507,7 +507,7 @@ h2 {
     color: #ff6060; letter-spacing: 0.5px; margin-bottom: 2px;
 }
 .req-warn-item {
-    font-size: 0.64rem; color: #ff9090;
+    font-size: 0.73rem; color: #ff9090;
     padding-left: 6px; line-height: 1.5;
 }
 .req-warn-item::before { content: "— "; }
@@ -516,18 +516,18 @@ h2 {
 .prog-row.req-fail .prog-name-input { color: #ff9090 !important; }
 
 .prog-perk-req {
-    font-size: 0.77rem; font-weight: bold;
+    font-size: 0.83rem; font-weight: bold;
     color: var(--accent-gold); margin-bottom: 5px; letter-spacing: 0.3px; opacity: 0.8;
 }
 .prog-perk-desc {
-    font-size: 0.93rem; line-height: 1.55;
+    font-size: 0.98rem; line-height: 1.55;
     color: var(--pip-color); opacity: 0.72;
 }
 
 /* Zoom button inside prog perk info */
 .perk-zoom-btn {
     position: absolute; top: 6px; right: 8px;
-    font-size: 0.66rem; padding: 2px 6px;
+    font-size: 0.74rem; padding: 2px 6px;
     border: 1px solid rgba(255,255,255,0.15) !important;
     border-bottom: 1px solid rgba(255,255,255,0.15) !important;
     color: rgba(255,255,255,0.3);
@@ -552,7 +552,7 @@ h2 {
 .perks-sort-group { display: flex; gap: 3px; }
 .sort-btn { 
     padding: 5px 10px; border: 1px solid rgba(255,255,255,0.1); 
-    color: rgba(255,255,255,0.45); cursor: pointer; font-size: 0.77rem; font-weight: bold;
+    color: rgba(255,255,255,0.45); cursor: pointer; font-size: 0.82rem; font-weight: bold;
     background: rgba(255,255,255,0.02); letter-spacing: 1px; transition: all 0.15s;
 }
 .sort-btn.active { background: var(--pip-color); color: black; border-color: var(--pip-color); }
@@ -566,10 +566,10 @@ h2 {
 }
 .perk-card:hover { border-left-color: var(--pip-color); }
 .perk-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-.perk-card h3 { margin: 0; font-size: 0.88rem; flex: 1; border: none; padding: 0; }
+.perk-card h3 { margin: 0; font-size: 0.95rem; flex: 1; border: none; padding: 0; }
 .perk-rank-badge {
     background: var(--pip-color); color: black; 
-    padding: 2px 6px; font-size: 0.72rem; font-weight: bold;
+    padding: 2px 6px; font-size: 0.78rem; font-weight: bold;
     white-space: nowrap; flex-shrink: 0;
 }
 .perk-rank-badge.multi { animation: rankGlow 2.5s infinite ease-in-out; }
@@ -577,8 +577,8 @@ h2 {
     0%, 100% { box-shadow: 0 0 3px var(--pip-color); }
     50% { box-shadow: 0 0 10px var(--pip-color), 0 0 18px var(--pip-color); }
 }
-.perk-req { font-size: 0.83rem; margin-bottom: 7px; font-weight: bold; color: var(--accent-gold); opacity: 0.75; }
-.perk-desc { font-size: 0.97rem; line-height: 1.55; margin-bottom: 10px; flex-grow: 1; opacity: 0.78; }
+.perk-req { font-size: 0.88rem; margin-bottom: 7px; font-weight: bold; color: var(--accent-gold); opacity: 0.75; }
+.perk-desc { font-size: 1.0rem; line-height: 1.55; margin-bottom: 10px; flex-grow: 1; opacity: 0.78; }
 .perk-card-actions { display: flex; gap: 6px; }
 .perk-card .action-btn { margin-bottom: 0; font-size: 0.8rem; width: auto; align-self: flex-start; padding: 5px 12px; height: auto; }
 .perk-zoom-action { 
@@ -586,7 +586,7 @@ h2 {
     border-color: rgba(255,255,255,0.12) !important;
     border-bottom-color: rgba(255,255,255,0.12) !important;
     color: rgba(255,255,255,0.3) !important;
-    font-size: 0.77rem !important;
+    font-size: 0.82rem !important;
 }
 .perk-zoom-action:hover { 
     color: var(--pip-color) !important; 
@@ -605,8 +605,8 @@ h2 {
 .skill-row {
     display: grid; grid-template-columns: 1fr 80px 28px;
     align-items: center; gap: 6px;
-    padding: 3px 4px; border-radius: 2px;
-    font-size: 0.77rem; letter-spacing: 0.3px;
+    padding: 4px 4px; border-radius: 2px;
+    font-size: 0.84rem; letter-spacing: 0.3px;
     transition: background 0.15s;
 }
 .skill-row-tagged {
@@ -629,7 +629,7 @@ h2 {
 }
 .skill-row-tagged .skill-row-fill { background: #ffd700; }
 .skill-row-val {
-    text-align: right; font-weight: bold; font-size: 0.8rem;
+    text-align: right; font-weight: bold; font-size: 0.88rem;
     color: var(--pip-color);
 }
 .skill-row-tagged .skill-row-val { color: #ffd700; }
@@ -660,7 +660,7 @@ h2 {
 .lvlup-open-btn {
     display: flex; flex-direction: column; align-items: center;
     border: 1px solid var(--pip-color); padding: 4px 10px;
-    cursor: pointer; font-size: 0.8rem; font-weight: bold;
+    cursor: pointer; font-size: 0.86rem; font-weight: bold;
     letter-spacing: 0.5px; gap: 1px; white-space: nowrap;
     transition: all 0.2s;
 }
@@ -674,7 +674,7 @@ h2 {
     cursor: not-allowed;
 }
 .lvlup-btn-ready:hover { background: var(--pip-color); color: black; }
-.lvlup-pts-preview { font-size: 0.68rem; opacity: 0.7; }
+.lvlup-pts-preview { font-size: 0.76rem; opacity: 0.7; }
 
 @keyframes lvlReadyPulse {
     0%,100% { box-shadow: 0 0 5px var(--pip-color); }
@@ -992,7 +992,7 @@ h2 {
     margin-bottom: 14px;
 }
 .left-label {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     letter-spacing: 3px;
     opacity: 0.45;
     margin-bottom: 5px;
@@ -1119,7 +1119,7 @@ h2 {
     background: rgba(255,255,255,0.02);
 }
 .char-banner-stat-key {
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     opacity: 0.5;
     letter-spacing: 1px;
 }
@@ -1158,7 +1158,7 @@ h2 {
     letter-spacing: 2px;
 }
 .cs-sublabel {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     opacity: 0.45;
     letter-spacing: 1px;
 }
@@ -1182,8 +1182,8 @@ h2 {
 }
 .tag-grid .grid-item {
     border: 1px solid rgba(255,255,255,0.07);
-    padding: 4px 8px;
-    font-size: 0.83rem;
+    padding: 5px 8px;
+    font-size: 0.9rem;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1231,12 +1231,12 @@ h2 {
     margin-bottom: 10px;
 }
 .skill-list-2col .skill-row {
-    grid-template-columns: 1fr 50px 30px;
-    font-size: 0.85rem;
+    grid-template-columns: 1fr 54px 32px;
+    font-size: 0.86rem;
     padding: 5px 4px;
 }
 .skill-list-2col .skill-row-bar { height: 6px; }
-.skill-list-2col .skill-row-val { font-size: 0.76rem; }
+.skill-list-2col .skill-row-val { font-size: 0.82rem; }
 
 /* Level-up button in cs-header */
 #lvlup-open-btn {
@@ -1290,11 +1290,11 @@ h2 {
 .trait-card.taken { background: rgba(0,255,100,0.08); border-color:rgba(0,255,100,0.5); }
 .trait-card-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
 .trait-card-name { font-size: 0.97rem; font-weight:bold; color:#c8ffd4; letter-spacing:0.06em; flex:1; }
-.trait-badge { font-size: 0.68rem; padding:2px 6px; border-radius:2px; letter-spacing:0.08em; }
+.trait-badge { font-size: 0.76rem; padding:2px 6px; border-radius:2px; letter-spacing:0.08em; }
 .elig-badge { background:rgba(0,255,100,0.15); color:#00ff64; border:1px solid rgba(0,255,100,0.3); }
 .inelig-badge { background:rgba(255,80,80,0.1); color:#ff8080; border:1px solid rgba(255,80,80,0.2); }
 .taken-badge { background:rgba(0,200,255,0.1); color:#80e0ff; border:1px solid rgba(0,200,255,0.3); }
-.trait-req { font-size: 0.75rem; color:#aaa; margin-bottom:4px; letter-spacing:0.04em; }
+.trait-req { font-size: 0.82rem; color:#aaa; margin-bottom:4px; letter-spacing:0.04em; }
 .trait-card-desc { font-size: 0.8rem; color:#bbb; line-height:1.4; }
 .trait-slot-name { font-size: 0.97rem; color:#c8ffd4; padding:6px 10px; letter-spacing:0.04em; }
 .trait-slot-row .prog-card-header { border-bottom:1px solid rgba(0,255,100,0.1); }
@@ -1400,7 +1400,7 @@ h2 {
     border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .gear-card-type-badge {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-weight: bold;
     letter-spacing: 2px;
     color: var(--pip-color);
@@ -1410,7 +1410,7 @@ h2 {
     color: #80d8ff;
 }
 .gear-card-remove {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     background: none;
     border: 1px solid rgba(255,60,60,0.3);
     color: rgba(255,80,80,0.7);
@@ -1449,7 +1449,7 @@ h2 {
     gap: 3px;
 }
 .gear-field-label {
-    font-size: 0.66rem;
+    font-size: 0.73rem;
     letter-spacing: 2px;
     opacity: 0.4;
     font-weight: bold;
@@ -1459,7 +1459,7 @@ h2 {
     border: none;
     border-bottom: 1px solid rgba(255,255,255,0.15);
     color: rgba(255,255,255,0.8);
-    font-size: 0.83rem;
+    font-size: 0.9rem;
     padding: 3px 0;
     width: 100%;
     letter-spacing: 0.5px;
@@ -1488,7 +1488,7 @@ h2 {
 /* Empty state */
 .gear-empty-state {
     text-align: center;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     letter-spacing: 2px;
     opacity: 0.25;
     padding: 24px 0;
@@ -1501,7 +1501,7 @@ h2 {
     align-items: center;
     gap: 6px;
     padding: 3px 2px;
-    font-size: 0.8rem;
+    font-size: 0.87rem;
     border-bottom: 1px dotted rgba(200,255,200,0.1);
     color: #c8ffd4;
 }
@@ -1525,7 +1525,7 @@ h2 {
     margin-bottom: 14px;
 }
 .prog-legend-item {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     letter-spacing: 1.5px;
     opacity: 0.6;
     font-weight: bold;
@@ -1545,19 +1545,19 @@ h2 {
     gap: 8px;
     padding: 6px 12px;
     margin: 18px 0 7px;
-    font-size: 0.77rem;
+    font-size: 0.83rem;
     font-weight: bold;
     letter-spacing: 2px;
     border-left: 3px solid;
     position: relative;
 }
 .prog-section-icon {
-    font-size: 0.95rem;
+    font-size: 1.0rem;
     line-height: 1;
     margin-right: 1px;
 }
 .prog-section-sub {
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     opacity: 0.4;
     font-weight: normal;
     letter-spacing: 1px;
@@ -1565,7 +1565,7 @@ h2 {
     flex: 1;
 }
 .prog-section-btn {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     background: none;
     border: 1px solid currentColor !important;
     border-bottom: 1px solid currentColor !important;
@@ -1635,7 +1635,7 @@ h2 {
 /* Implant items */
 .implant-group { margin-bottom: 22px; }
 .implant-group-title {
-    font-size: 0.78rem;
+    font-size: 0.84rem;
     font-weight: bold;
     letter-spacing: 2px;
     padding: 5px 0 8px;
@@ -1647,7 +1647,7 @@ h2 {
     gap: 10px;
 }
 .implant-slot-counter {
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     background: rgba(128,216,255,0.1);
     color: #80d8ff;
     padding: 1px 8px;
@@ -1947,7 +1947,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 .skill-delta-badge {
     display: inline-flex;
     align-items: center;
-    font-size: 0.72rem;
+    font-size: 0.78rem;
     font-weight: bold;
     letter-spacing: 0.02em;
     padding: 1px 4px;
@@ -2018,7 +2018,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 
 .pperk-rank-badge {
-    font-size: 0.68rem;
+    font-size: 0.75rem;
     padding: 1px 6px;
     border-radius: 2px;
     background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),0.10);
@@ -2035,14 +2035,14 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 
 .pperk-req {
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     color: rgba(255,255,255,0.45);
     letter-spacing: 0.04em;
     line-height: 1.3;
 }
 
 .pperk-desc {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     color: rgba(255,255,255,0.65);
     line-height: 1.45;
     flex: 1;
@@ -2054,7 +2054,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     background: transparent;
     border: 1px solid var(--pip-color);
     color: var(--pip-color);
-    font-size: 0.77rem;
+    font-size: 0.83rem;
     letter-spacing: 0.08em;
     cursor: pointer;
     font-family: inherit;
@@ -2259,7 +2259,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     min-width: 20px;
 }
 .sinfo-slot-sub {
-    font-size: 0.65rem;
+    font-size: 0.72rem;
     color: rgba(255,255,255,0.55);
     letter-spacing: 0.04em;
 }
@@ -2269,13 +2269,13 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     padding-top: 8px;
 }
 .sinfo-thresh {
-    font-size: 0.62rem;
+    font-size: 0.72rem;
     color: rgba(255,255,255,0.3);
     padding: 2px 0;
     letter-spacing: 0.04em;
 }
 .sinfo-thresh-met {
-    font-size: 0.62rem;
+    font-size: 0.72rem;
     color: #ff88cc;
     padding: 2px 0;
     letter-spacing: 0.04em;
@@ -2289,7 +2289,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     background: rgba(100,255,100,0.1);
     border: 1px solid rgba(100,255,100,0.25);
     color: rgba(100,255,100,0.7);
-    font-size: 0.58rem;
+    font-size: 0.68rem;
     font-weight: bold;
     padding: 0 5px;
     cursor: pointer;
@@ -2343,7 +2343,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     color: rgba(255,160,50,0.7) !important;
 }
 .pperk-inelig-tag {
-    font-size: 0.55rem;
+    font-size: 0.66rem;
     background: rgba(255,100,50,0.15);
     border: 1px solid rgba(255,100,50,0.35);
     color: rgba(255,120,60,0.9);
@@ -2366,7 +2366,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     position: absolute;
     right: 0;
     bottom: -13px;
-    font-size: 0.52rem;
+    font-size: 0.66rem;
     letter-spacing: 0.08em;
     color: rgba(150,255,150,0.6);
     font-weight: bold;
@@ -2385,7 +2385,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
    DELTA SOURCE TAGS (T = TRAIT, P = PERK)
 ══════════════════════════════════════════════ */
 .delta-src-tag {
-    font-size: 0.48rem;
+    font-size: 0.64rem;
     font-weight: bold;
     letter-spacing: 0.02em;
     margin-left: 2px;
@@ -2740,7 +2740,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
     display: flex; align-items: center; gap: 3px; flex-shrink: 0;
 }
 .theme-sel-label {
-    font-size: 0.58rem; letter-spacing: 1.5px; opacity: 0.4;
+    font-size: 0.68rem; letter-spacing: 1.5px; opacity: 0.4;
     margin-right: 3px; white-space: nowrap;
 }
 .theme-btn {
@@ -2766,19 +2766,23 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 /* NS default */
 .theme-btn[data-theme=""].active-theme      { background: #28ff28 !important; border-color: #28ff28 !important; }
-.tbtn-fo3.active-theme                      { background: #24f024 !important; border-color: #24f024 !important; }
-.tbtn-bos.active-theme                      { background: #5ba8ff !important; border-color: #5ba8ff !important; }
-.tbtn-enc.active-theme                      { background: #f5c518 !important; border-color: #f5c518 !important; }
-.tbtn-v21.active-theme                      { background: #ff8c00 !important; border-color: #ff8c00 !important; }
+.tbtn-bos.active-theme                      { background: #60a8f0 !important; border-color: #60a8f0 !important; }
+.tbtn-enc.active-theme                      { background: #c8d8ec !important; border-color: #c8d8ec !important; }
+.tbtn-v21.active-theme                      { background: #ff2880 !important; border-color: #ff2880 !important; color: #fff !important; }
 .tbtn-leg.active-theme                      { background: #cc2800 !important; border-color: #cc2800 !important; color: #fff !important; }
 .tbtn-ncr.active-theme                      { background: #c8a840 !important; border-color: #c8a840 !important; }
 /* Hover accent hints */
-.tbtn-fo3:hover  { color: #24f024 !important; border-color: #24f024 !important; border-bottom-color: #24f024 !important; }
-.tbtn-bos:hover  { color: #5ba8ff !important; border-color: #5ba8ff !important; border-bottom-color: #5ba8ff !important; }
-.tbtn-enc:hover  { color: #f5c518 !important; border-color: #f5c518 !important; border-bottom-color: #f5c518 !important; }
-.tbtn-v21:hover  { color: #ff8c00 !important; border-color: #ff8c00 !important; border-bottom-color: #ff8c00 !important; }
+.tbtn-bos:hover  { color: #60a8f0 !important; border-color: #60a8f0 !important; border-bottom-color: #60a8f0 !important; }
+.tbtn-enc:hover  { color: #c8d8ec !important; border-color: #c8d8ec !important; border-bottom-color: #c8d8ec !important; }
+.tbtn-v21:hover  { color: #ff2880 !important; border-color: #ff2880 !important; border-bottom-color: #ff2880 !important; }
 .tbtn-leg:hover  { color: #cc2800 !important; border-color: #cc2800 !important; border-bottom-color: #cc2800 !important; }
 .tbtn-ncr:hover  { color: #c8a840 !important; border-color: #c8a840 !important; border-bottom-color: #c8a840 !important; }
+.tbtn-hou.active-theme                      { background: #c060ff !important; border-color: #c060ff !important; color: #fff !important; }
+.tbtn-shi.active-theme                      { background: #38c8a8 !important; border-color: #38c8a8 !important; }
+.tbtn-vtc.active-theme                      { background: #ffd000 !important; border-color: #ffd000 !important; }
+.tbtn-hou:hover  { color: #c060ff !important; border-color: #c060ff !important; border-bottom-color: #c060ff !important; }
+.tbtn-shi:hover  { color: #38c8a8 !important; border-color: #38c8a8 !important; border-bottom-color: #38c8a8 !important; }
+.tbtn-vtc:hover  { color: #ffd000 !important; border-color: #ffd000 !important; border-bottom-color: #ffd000 !important; }
 
 
 /* ═════════════════════════════════════════════════════════════════
@@ -2790,121 +2794,99 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
    We also set --tc-r/g/b per theme for the tint rebuilding.
 ═════════════════════════════════════════════════════════════════ */
 
-/* ── FO3 — Fallout 3 Pip-Boy 3000 ──────────────────────────────
-   Deeper jade-green CRT. Subtle amber phosphor edge glow.
-   More contrast, heavier scanlines — that chunky 2008 terminal feel.
-──────────────────────────────────────────────────────────────── */
-body.theme-fo3:not(.mode-hc) {
-    --pip-color:  #20e820;
-    --pip-bg:     #010806;
-    --pip-bg-2:   #020e08;
-    --pip-bg-3:   #041208;
-    --pip-border: #133313;
-    --glow-sm:    0 0 6px  rgba(32,232,32,.30);
-    --glow-md:    0 0 16px rgba(32,232,32,.24);
-    --glow-lg:    0 0 32px rgba(32,232,32,.16);
-    --tc-r: 32; --tc-g: 232; --tc-b: 32;  /* tint components */
-}
-body.theme-fo3:not(.mode-hc) {
-    background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(10,60,15,.55) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.10) 2px, rgba(0,0,0,.10) 4px);  /* heavier scanlines */
-}
 
-/* ── BoS — Brotherhood of Steel ────────────────────────────────
-   Cold military blue. Circuit-board grid whisper. Power armour HUD.
-──────────────────────────────────────────────────────────────── */
-body.theme-bos:not(.mode-hc) {
-    --pip-color:  #5ba8ff;
-    --pip-bg:     #020610;
-    --pip-bg-2:   #030b1c;
-    --pip-bg-3:   #051328;
-    --pip-border: #142a50;
-    --glow-sm:    0 0 6px  rgba(91,168,255,.28);
-    --glow-md:    0 0 16px rgba(91,168,255,.22);
-    --glow-lg:    0 0 32px rgba(91,168,255,.15);
-    --tc-r: 91; --tc-g: 168; --tc-b: 255;
-}
-body.theme-bos:not(.mode-hc) {
-    background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(8,25,70,.60) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.065) 2px, rgba(0,0,0,.065) 4px),
-        repeating-linear-gradient(90deg, transparent, transparent 40px,
-            rgba(91,168,255,.015) 40px, rgba(91,168,255,.015) 41px),
-        repeating-linear-gradient(0deg, transparent, transparent 40px,
-            rgba(91,168,255,.015) 40px, rgba(91,168,255,.015) 41px);  /* circuit grid */
-}
 
-/* ── Enclave — United States Government Remnant ────────────────
-   Gold authority on near-black. Institutional. Clean, imposing.
-──────────────────────────────────────────────────────────────── */
-body.theme-enclave:not(.mode-hc) {
-    --pip-color:  #f5c518;
-    --pip-bg:     #080602;
-    --pip-bg-2:   #0e0b03;
-    --pip-bg-3:   #140f04;
-    --pip-border: #3e2e00;
-    --glow-sm:    0 0 6px  rgba(245,197,24,.28);
-    --glow-md:    0 0 16px rgba(245,197,24,.22);
-    --glow-lg:    0 0 32px rgba(245,197,24,.15);
-    --tc-r: 245; --tc-g: 197; --tc-b: 24;
-}
-body.theme-enclave:not(.mode-hc) {
-    background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(60,42,0,.58) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px),
-        repeating-linear-gradient(45deg, transparent, transparent 60px,
-            rgba(245,197,24,.013) 60px, rgba(245,197,24,.013) 62px);  /* diagonal stamp */
-}
 
-/* ── Vault 21 — Lucky House Casino ─────────────────────────────
-   Warm amber-orange neon. Vegas glow. Warm dark backgrounds.
+/* ── Vault 21 — Vegas Strip Magenta Neon ────────────────────────
+   "When the chips are down, the House always has more."
+   Hot pink neon on pitch black. Garish, glamorous, electric.
+   Tight diamond lattice — casino floor tile pattern.
 ──────────────────────────────────────────────────────────────── */
 body.theme-vault21:not(.mode-hc) {
-    --pip-color:  #ff8c00;
-    --pip-bg:     #0a0602;
-    --pip-bg-2:   #130904;
-    --pip-bg-3:   #1b0d05;
-    --pip-border: #4a2200;
-    --glow-sm:    0 0 6px  rgba(255,140,0,.30);
-    --glow-md:    0 0 18px rgba(255,140,0,.25);
-    --glow-lg:    0 0 36px rgba(255,140,0,.18);
-    --tc-r: 255; --tc-g: 140; --tc-b: 0;
+    --pip-color:  #ff2880;
+    --pip-bg:     #080006;
+    --pip-bg-2:   #100010;
+    --pip-bg-3:   #180018;
+    --pip-border: #500030;
+    --glow-sm:    0 0 8px  rgba(255,40,128,.32);
+    --glow-md:    0 0 20px rgba(255,40,128,.26);
+    --glow-lg:    0 0 42px rgba(255,40,128,.18);
+    --tc-r: 255; --tc-g: 40; --tc-b: 128;
+    --accent-gold: #ffd040;
 }
 body.theme-vault21:not(.mode-hc) {
     background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(80,35,0,.62) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.075) 2px, rgba(0,0,0,.075) 4px),
-        repeating-linear-gradient(135deg, transparent, transparent 20px,
-            rgba(255,140,0,.013) 20px, rgba(255,140,0,.013) 21px),  /* diamond pattern */
-        repeating-linear-gradient(45deg, transparent, transparent 20px,
-            rgba(255,140,0,.013) 20px, rgba(255,140,0,.013) 21px);
+        /* casino diamond tile lattice */
+        repeating-linear-gradient(45deg, transparent, transparent 14px,
+            rgba(255,40,128,.018) 14px, rgba(255,40,128,.018) 16px),
+        repeating-linear-gradient(-45deg, transparent, transparent 14px,
+            rgba(255,40,128,.018) 14px, rgba(255,40,128,.018) 16px),
+        /* gold accent rule */
+        repeating-linear-gradient(90deg, transparent, transparent 90px,
+            rgba(255,208,64,.010) 90px, rgba(255,208,64,.010) 91px),
+        radial-gradient(ellipse at 50% 0%, rgba(100,0,80,.72) 0%, transparent 65%);
+}
+body.theme-vault21:not(.mode-hc) header {
+    background: linear-gradient(180deg, #300020 0%, #080006 100%);
+    border-bottom: 2px solid rgba(255,40,128,.65);
+    box-shadow: 0 0 36px rgba(255,40,128,.30), 0 0 6px rgba(255,208,64,.08), inset 0 -1px 0 rgba(255,40,128,.30);
+}
+body.theme-vault21:not(.mode-hc) .os-title {
+    color: #ff2880;
+    text-shadow: 0 0 14px rgba(255,40,128,.65), 0 0 32px rgba(255,40,128,.28);
+    letter-spacing: 0.2em;
+}
+body.theme-vault21:not(.mode-hc) .tab-nav button.active {
+    background: rgba(255,40,128,.14);
+    border-color: rgba(255,40,128,.65);
+    color: #ff70a8;
 }
 
-/* ── Legion — Caesar's Legion SPQR ─────────────────────────────
-   Crimson blood & aged brass. Roman severity. Maroon darkness.
+/* ── Legion — SPQR Blood & Stone ───────────────────────────────
+   "The Legion does not retreat. Ave, true to Caesar."
+   Blood crimson on deep maroon-black. Roman severity.
+   Cross-hatch stone carving texture — chiselled in war.
 ──────────────────────────────────────────────────────────────── */
 body.theme-legion:not(.mode-hc) {
-    --pip-color:  #d43000;
-    --pip-bg:     #080302;
-    --pip-bg-2:   #110504;
-    --pip-bg-3:   #190706;
-    --pip-border: #541208;
-    --glow-sm:    0 0 6px  rgba(212,48,0,.30);
-    --glow-md:    0 0 16px rgba(212,48,0,.25);
-    --glow-lg:    0 0 32px rgba(212,48,0,.18);
-    --tc-r: 212; --tc-g: 48; --tc-b: 0;
-    --accent-gold: #b88a10;  /* brass instead of bright gold */
+    --pip-color:  #cc2800;
+    --pip-bg:     #0a0100;
+    --pip-bg-2:   #140200;
+    --pip-bg-3:   #1e0300;
+    --pip-border: #5a1000;
+    --glow-sm:    0 0 6px  rgba(204,40,0,.30);
+    --glow-md:    0 0 16px rgba(204,40,0,.25);
+    --glow-lg:    0 0 32px rgba(204,40,0,.18);
+    --tc-r: 204; --tc-g: 40; --tc-b: 0;
+    --accent-gold: #a87818;  /* aged brass */
 }
 body.theme-legion:not(.mode-hc) {
     background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(72,10,5,.65) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.09) 2px, rgba(0,0,0,.09) 4px);
+        /* cross-hatch stone carving — Roman chisel marks */
+        repeating-linear-gradient(45deg, transparent, transparent 10px,
+            rgba(80,10,0,.05) 10px, rgba(80,10,0,.05) 11px),
+        repeating-linear-gradient(-45deg, transparent, transparent 10px,
+            rgba(0,0,0,.06) 10px, rgba(0,0,0,.06) 11px),
+        /* heavy maroon vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(90,10,0,.75) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(60,5,0,.40) 0%, transparent 60%);
+}
+body.theme-legion:not(.mode-hc) header {
+    background: linear-gradient(180deg, #2a0400 0%, #0a0100 100%);
+    border-bottom: 3px solid rgba(204,40,0,.70);
+    border-top: 1px solid rgba(168,120,24,.25);
+    box-shadow: 0 0 24px rgba(204,40,0,.22), inset 0 -2px 0 rgba(100,10,0,.50);
+}
+body.theme-legion:not(.mode-hc) .os-title {
+    color: #cc2800;
+    text-shadow: 0 0 10px rgba(204,40,0,.55), 0 0 22px rgba(204,40,0,.22);
+    letter-spacing: 0.22em;
+}
+body.theme-legion:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(204,40,0,.55);
+    padding-left: 8px;
+}
+body.theme-legion:not(.mode-hc) section {
+    background: linear-gradient(160deg, #1e0300 0%, #0a0100 60%) !important;
 }
 
 /* ── NCR — New California Republic ─────────────────────────────
@@ -2938,7 +2920,6 @@ body.theme-ncr:not(.mode-hc) {
    Everything that used hard-coded rgba(40,255,40,…) gets swapped
    to use var(--pip-color) tints or the --tc-r/g/b rebuild trick.
 ═════════════════════════════════════════════════════════════════ */
-body.theme-fo3:not(.mode-hc),
 body.theme-bos:not(.mode-hc),
 body.theme-enclave:not(.mode-hc),
 body.theme-vault21:not(.mode-hc),
@@ -3077,11 +3058,13 @@ body.theme-ncr:not(.mode-hc) .skill-delta-badge.sdelta-pos,
 body.theme-ncr:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #c8a840; border-color: rgba(200,168,64,.40); }
 
 /* ── plab-trait colour per theme (these have their own identity hue) ── */
-body.theme-bos:not(.mode-hc)     .plab-trait { color: #8ec8ff; }
-body.theme-enclave:not(.mode-hc) .plab-trait { color: #ffe580; }
-body.theme-vault21:not(.mode-hc) .plab-trait { color: #ffcc66; }
+body.theme-bos:not(.mode-hc)     .plab-trait { color: #90c0f0; }
+body.theme-enclave:not(.mode-hc) .plab-trait { color: #a8c0d8; }
+body.theme-vault21:not(.mode-hc) .plab-trait { color: #ff70a8; }
 body.theme-legion:not(.mode-hc)  .plab-trait { color: #c8960c; }
 body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
+body.theme-house:not(.mode-hc)    .plab-trait { color: #c060ff; }
+body.theme-shi:not(.mode-hc)      .plab-trait { color: #38c8a8; }
 
 
 /* ═══════════════════════════════════════════════════════
@@ -3209,44 +3192,156 @@ body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 
 /* ═══ KARMA FACE ═══ */
 .karma-face { text-align:center; padding:5px 0 4px; line-height:1.35; min-height:32px; }
-.kface-halo { font-size:0.55rem; letter-spacing:0.35em; opacity:0.75; margin-bottom:1px; }
+.kface-halo { font-size:0.65rem; letter-spacing:0.35em; opacity:0.75; margin-bottom:1px; }
 .kface-glyph { font-size:1.0rem; letter-spacing:0.08em; transition:color 0.3s,text-shadow 0.3s; }
-.kface-sub { font-size:0.48rem; letter-spacing:0.22em; opacity:0.6; margin-top:2px; text-transform:uppercase; }
+.kface-sub { font-size:0.6rem; letter-spacing:0.22em; opacity:0.6; margin-top:2px; text-transform:uppercase; }
 
 /* ═══ COMMENDATIONS ═══ */
-.commend-wrap { margin-top:14px; padding-top:10px; border-top:1px solid rgba(var(--pip-rgb,100,200,100),0.18); }
-.commend-header { font-size:0.56rem; font-weight:bold; letter-spacing:0.2em; color:var(--pip-color); opacity:0.5; padding:0 2px 6px; text-transform:uppercase; }
-#badge-panel { padding:0 1px; }
-.badge-empty { font-size:0.5rem; color:rgba(255,255,255,0.18); letter-spacing:0.1em; text-align:center; padding:4px 0; }
-.badge-group-label { font-size:0.49rem; letter-spacing:0.16em; opacity:0.38; color:var(--pip-color); padding:6px 3px 3px; text-transform:uppercase; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.1); margin-bottom:2px; }
-.badge-row { display:flex; align-items:center; gap:5px; padding:3px; font-size:0.57rem; letter-spacing:0.05em; color:var(--pip-color); border-radius:2px; opacity:0.85; }
-.badge-row:hover { background:rgba(var(--pip-rgb,100,200,100),0.07); opacity:1; }
-.badge-icon { font-size:0.68rem; width:15px; text-align:center; flex-shrink:0; }
-.badge-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; flex:1; }
+.commend-wrap {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(var(--pip-rgb,100,200,100), 0.20);
+}
+.commend-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.68rem;
+    font-weight: bold;
+    letter-spacing: 0.22em;
+    color: var(--pip-color);
+    opacity: 0.7;
+    padding: 0 2px 8px;
+    text-transform: uppercase;
+}
+.commend-header::before {
+    content: '';
+    display: block;
+    width: 12px;
+    height: 1px;
+    background: var(--pip-color);
+    opacity: 0.6;
+}
+.commend-header::after {
+    content: '';
+    display: block;
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, var(--pip-color), transparent);
+    opacity: 0.3;
+}
+#badge-panel { padding: 0 1px; display: flex; flex-direction: column; gap: 6px; }
+.badge-empty {
+    font-size: 0.66rem;
+    color: rgba(255,255,255,0.15);
+    letter-spacing: 0.12em;
+    text-align: center;
+    padding: 10px 4px;
+    border: 1px dashed rgba(255,255,255,0.08);
+    border-radius: 2px;
+}
+.badge-group-block { display: flex; flex-direction: column; gap: 3px; }
+.badge-group-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    font-weight: bold;
+    color: var(--pip-color);
+    opacity: 0.45;
+    padding: 2px 4px;
+    text-transform: uppercase;
+    border-bottom: 1px solid rgba(var(--pip-rgb,100,200,100), 0.12);
+    margin-bottom: 2px;
+}
+/* Per-group accent colours */
+.badge-group-block[data-group="ARSENAL"]      { --badge-accent: #ffd060; --badge-rgb: 255,208,96; }
+.badge-group-block[data-group="COLLECTIBLES"] { --badge-accent: #60d8ff; --badge-rgb: 96,216,255; }
+.badge-group-block[data-group="BODY MODS"]    { --badge-accent: #80b8ff; --badge-rgb: 128,184,255; }
+.badge-group-block[data-group="CHRONICLE"]    { --badge-accent: #ff9840; --badge-rgb: 255,152,64; }
+.badge-group-block[data-group="LIBRARIAN"]    { --badge-accent: #a8d880; --badge-rgb: 168,216,128; }
+/* Fallback if group unknown */
+.badge-group-block { --badge-accent: var(--pip-color); --badge-rgb: var(--tc-r,100),var(--tc-g,200),var(--tc-b,100); }
+.badge-card {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border: 1px solid rgba(var(--badge-rgb), 0.25);
+    border-left: 2px solid var(--badge-accent);
+    border-radius: 2px;
+    background: rgba(var(--badge-rgb), 0.05);
+    position: relative;
+    overflow: hidden;
+    transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.badge-card::before {
+    /* subtle top-edge highlight */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--badge-accent), transparent 80%);
+    opacity: 0.25;
+}
+.badge-card:hover {
+    background: rgba(var(--badge-rgb), 0.10);
+    border-color: rgba(var(--badge-rgb), 0.5);
+    border-left-color: var(--badge-accent);
+    box-shadow: 0 0 6px rgba(var(--badge-rgb), 0.12);
+}
+.badge-icon-wrap {
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(var(--badge-rgb), 0.10);
+    border: 1px solid rgba(var(--badge-rgb), 0.25);
+    border-radius: 2px;
+    font-size: 0.72rem;
+    flex-shrink: 0;
+    color: var(--badge-accent);
+}
+.badge-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.07em;
+    color: var(--badge-accent);
+    font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    line-height: 1.3;
+}
+.badge-check {
+    font-size: 0.64rem;
+    color: var(--badge-accent);
+    opacity: 0.6;
+    flex-shrink: 0;
+}
 
 /* ═══ UNIQUES COLLAPSE BUTTON ═══ */
 .uni-section-header { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:4px; }
 .uni-section-header h2 { margin:0; }
-.uni-toggle-all-btn { font-family:inherit; font-size:0.62rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; padding:4px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.35); color:var(--pip-color); border-radius:2px; opacity:0.7; transition:opacity 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; }
+.uni-toggle-all-btn { font-family:inherit; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; padding:4px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.35); color:var(--pip-color); border-radius:2px; opacity:0.7; transition:opacity 0.15s,background 0.15s; white-space:nowrap; flex-shrink:0; }
 .uni-toggle-all-btn:hover { opacity:1; background:rgba(var(--pip-rgb,100,200,100),0.08); }
 
 
 /* ═══ BOOKS TAB ═══ */
 .books-header { padding:10px 0 14px; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.18); margin-bottom:14px; }
-.books-title { font-size:0.85rem; font-weight:bold; letter-spacing:0.18em; color:var(--pip-color); margin-bottom:4px; }
-.books-sub { font-size:0.57rem; opacity:0.7; letter-spacing:0.07em; margin-bottom:6px; line-height:1.6; }
+.books-title { font-size:0.92rem; font-weight:bold; letter-spacing:0.18em; color:var(--pip-color); margin-bottom:4px; }
+.books-sub { font-size:0.68rem; opacity:0.7; letter-spacing:0.07em; margin-bottom:6px; line-height:1.6; }
 .books-ideologue-active { color:#ffd060; margin-left:8px; letter-spacing:0.1em; }
-.books-count { font-size:0.65rem; letter-spacing:0.14em; color:var(--pip-color); opacity:0.8; }
+.books-count { font-size:0.74rem; letter-spacing:0.14em; color:var(--pip-color); opacity:0.8; }
 .books-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:8px; }
 .book-card { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid rgba(var(--pip-rgb,100,200,100),0.22); border-radius:3px; background:rgba(0,0,0,0.25); transition:background 0.15s,border-color 0.15s; }
 .book-card.book-found { background:rgba(var(--pip-rgb,100,200,100),0.08); border-color:rgba(var(--pip-rgb,100,200,100),0.5); }
 .book-icon { font-size:1.4rem; flex-shrink:0; }
 .book-info { flex:1; min-width:0; overflow:hidden; }
-.book-name { font-size:0.68rem; font-weight:bold; letter-spacing:0.06em; color:var(--pip-color); white-space:normal; word-break:break-word; line-height:1.4; margin-bottom:3px; }
-.book-skill-label { font-size:0.52rem; opacity:0.5; letter-spacing:0.15em; margin-bottom:4px; text-transform:uppercase; }
+.book-name { font-size:0.78rem; font-weight:bold; letter-spacing:0.06em; color:var(--pip-color); white-space:normal; word-break:break-word; line-height:1.4; margin-bottom:3px; }
+.book-skill-label { font-size:0.65rem; opacity:0.5; letter-spacing:0.15em; margin-bottom:4px; text-transform:uppercase; }
 .book-bonus { margin-top:2px; }
-.book-bonus-val { font-size:0.6rem; font-weight:bold; color:#7eff7e; letter-spacing:0.08em; }
-.book-bonus-none { font-size:0.52rem; opacity:0.28; letter-spacing:0.1em; }
+.book-bonus-val { font-size:0.70rem; font-weight:bold; color:#7eff7e; letter-spacing:0.08em; }
+.book-bonus-none { font-size:0.65rem; opacity:0.28; letter-spacing:0.1em; }
 .book-controls { display:flex; flex-direction:column; align-items:center; gap:4px; flex-shrink:0; }
 .book-count-num { font-size:0.75rem; font-weight:bold; color:var(--pip-color); letter-spacing:0.05em; min-width:16px; text-align:center; line-height:1; }
 .book-btn { width:22px; height:22px; display:flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.4); color:var(--pip-color); cursor:pointer; font-size:0.85rem; font-family:inherit; font-weight:bold; border-radius:2px; padding:0; transition:background 0.12s,opacity 0.12s; line-height:1; }
@@ -3262,332 +3357,189 @@ body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
 
 /* (ASCII VAULT BOY NOT USED IN THIS VERSION) */
 
-/* ═══ TEMPLATE MODAL ═══ */
-.tpl-card { border:1px solid rgba(var(--pip-rgb,100,200,100),0.25); border-radius:3px; padding:14px; background:rgba(0,0,0,0.3); cursor:pointer; transition:background 0.15s, border-color 0.15s; display:flex; flex-direction:column; gap:8px; }
-.tpl-card:hover { background:rgba(var(--pip-rgb,100,200,100),0.07); border-color:rgba(var(--pip-rgb,100,200,100),0.5); }
-.tpl-card-header { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
-.tpl-name { font-size:0.75rem; font-weight:bold; letter-spacing:0.12em; color:var(--pip-color); line-height:1.3; }
-.tpl-karma { font-size:0.52rem; letter-spacing:0.08em; padding:2px 6px; border:1px solid; border-radius:2px; flex-shrink:0; }
-.tpl-karma-good { color:#70d870; border-color:rgba(112,216,112,0.4); }
-.tpl-karma-neutral { color:#c8c888; border-color:rgba(200,200,136,0.4); }
-.tpl-karma-evil { color:#ff8040; border-color:rgba(255,128,64,0.4); }
-.tpl-archetype { font-size:0.58rem; opacity:0.55; letter-spacing:0.14em; margin-bottom:2px; }
-.tpl-desc { font-size:0.58rem; line-height:1.7; opacity:0.65; }
-.tpl-tags { display:flex; flex-wrap:wrap; gap:4px; }
-.tpl-tag { font-size:0.48rem; padding:2px 5px; border:1px solid rgba(var(--pip-rgb,100,200,100),0.25); border-radius:2px; letter-spacing:0.08em; opacity:0.7; }
-.tpl-weapons { font-size:0.52rem; opacity:0.5; letter-spacing:0.06em; line-height:1.6; border-top:1px solid rgba(255,255,255,0.06); padding-top:7px; }
-.tpl-load-btn { margin-top:2px; width:100%; background:rgba(var(--pip-rgb,100,200,100),0.1); border:1px solid rgba(var(--pip-rgb,100,200,100),0.4); color:var(--pip-color); font-family:inherit; font-size:0.62rem; font-weight:bold; letter-spacing:0.12em; padding:6px; cursor:pointer; border-radius:2px; transition:background 0.15s; }
-.tpl-load-btn:hover { background:rgba(var(--pip-rgb,100,200,100),0.2); }
-
-/* ===== TEMPLATE BUILD CARDS ===== */
-.template-card {
-    background: rgba(0,0,0,0.4);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 4px;
-    padding: 14px;
-    cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-}
-.template-card:hover {
-    border-color: var(--pip-color);
-    background: rgba(255,255,255,0.04);
-}
-.template-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 8px;
-}
-.template-card-title {
-    font-size: 0.82rem;
-    font-weight: bold;
-    letter-spacing: 0.15em;
-    color: var(--pip-color);
-}
-.template-karma-badge {
-    font-size: 0.58rem;
-    letter-spacing: 0.12em;
-    font-weight: bold;
-    text-transform: uppercase;
-    white-space: nowrap;
-    padding: 2px 6px;
-    border: 1px solid currentColor;
-    border-radius: 2px;
-    opacity: 0.9;
-}
-.template-meta {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-.template-origin-tag, .template-mode-tag {
-    font-size: 0.58rem;
-    letter-spacing: 0.1em;
-    opacity: 0.75;
-    padding: 1px 5px;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 2px;
-}
-.template-tags-line {
-    font-size: 0.6rem;
-    letter-spacing: 0.08em;
-    color: rgba(255,255,255,0.5);
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 5px;
-}
-.template-desc {
-    font-size: 0.62rem;
-    line-height: 1.5;
-    opacity: 0.65;
-    flex: 1;
-}
-.template-load-btn {
-    font-size: 0.6rem;
-    letter-spacing: 0.18em;
-    color: var(--pip-color);
-    text-align: right;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    padding-top: 6px;
-    opacity: 0.6;
-    transition: opacity 0.15s;
-}
-.template-card:hover .template-load-btn {
-    opacity: 1;
-}
-
 /* ══════════════════════════════════════════════════════════════════
    NEW FACTION THEMES — NUCLEAR SUNSET v2
    All 8 canonical factions with distinctive visual identities
 ══════════════════════════════════════════════════════════════════ */
 
-/* ── Enclave (UPDATED) — Plasma Green on Black ─────────────────
+/* ── Enclave — Icy Institutional Terminal ───────────────────────
    "The Enclave is the last, best hope for humanity."
-   High-contrast authoritarian terminal. Scanlines. Sharp edges.
+   Cold steel-white on true near-black. Clinical authority.
+   Fine ruled government-form lines — federal data terminal.
 ──────────────────────────────────────────────────────────────── */
 body.theme-enclave:not(.mode-hc) {
-    --pip-color:  #39ff14;
-    --pip-bg:     #000300;
-    --pip-bg-2:   #000800;
-    --pip-bg-3:   #000e00;
-    --pip-border: #0a2a00;
-    --glow-sm:    0 0 6px  rgba(57,255,20,.35);
-    --glow-md:    0 0 18px rgba(57,255,20,.28);
-    --glow-lg:    0 0 36px rgba(57,255,20,.18);
-    --tc-r: 57; --tc-g: 255; --tc-b: 20;
-    font-family: 'Courier New', Courier, monospace !important;
+    --pip-color:  #c8d8ec;
+    --pip-bg:     #010204;
+    --pip-bg-2:   #020408;
+    --pip-bg-3:   #03060c;
+    --pip-border: #182838;
+    --glow-sm:    0 0 5px  rgba(200,216,236,.22);
+    --glow-md:    0 0 14px rgba(200,216,236,.16);
+    --glow-lg:    0 0 28px rgba(200,216,236,.10);
+    --tc-r: 200; --tc-g: 216; --tc-b: 236;
 }
 body.theme-enclave:not(.mode-hc) {
     background-image:
-        /* heavy scanlines — authoritarian terminal feel */
-        repeating-linear-gradient(0deg, transparent, transparent 3px,
-            rgba(0,0,0,.35) 3px, rgba(0,0,0,.35) 4px),
-        /* vertical scan pulse */
-        repeating-linear-gradient(90deg, transparent, transparent 6px,
-            rgba(57,255,20,.006) 6px, rgba(57,255,20,.006) 7px),
-        radial-gradient(ellipse at 50% 0%, rgba(10,60,5,.7) 0%, transparent 70%);
+        /* fine ruled data-terminal lines — government form */
+        repeating-linear-gradient(0deg, transparent, transparent 18px,
+            rgba(200,216,236,.008) 18px, rgba(200,216,236,.008) 19px),
+        /* vertical column markers */
+        repeating-linear-gradient(90deg, transparent, transparent 120px,
+            rgba(200,216,236,.007) 120px, rgba(200,216,236,.007) 121px),
+        /* cold top vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(10,25,50,.80) 0%, transparent 65%);
 }
 body.theme-enclave:not(.mode-hc) header {
-    border-bottom: 2px solid #39ff14;
-    box-shadow: 0 0 30px rgba(57,255,20,.25), inset 0 0 60px rgba(0,0,0,.5);
+    background: linear-gradient(180deg, #0a1828 0%, #010204 100%);
+    border-bottom: 1px solid rgba(200,216,236,.50);
+    border-top: 2px solid rgba(200,216,236,.30);
+    box-shadow: 0 0 20px rgba(200,216,236,.10), inset 0 -1px 0 rgba(200,216,236,.15);
 }
 body.theme-enclave:not(.mode-hc) .os-title {
-    text-shadow: 0 0 10px rgba(57,255,20,.6), 0 0 20px rgba(57,255,20,.3);
-    letter-spacing: 0.22em;
+    color: #c8d8ec;
+    text-shadow: 0 0 8px rgba(200,216,236,.35);
+    letter-spacing: 0.28em;
+    font-variant: small-caps;
 }
-
-/* ── Brotherhood of Steel (UPDATED) — Steel Gray + Amber ──────
-   "Ad Victoriam. Knowledge is power."
-   Industrial riveted steel. Amber HUD. Military precision.
-──────────────────────────────────────────────────────────────── */
-body.theme-bos:not(.mode-hc) {
-    --pip-color:  #e8a020;
-    --pip-bg:     #060606;
-    --pip-bg-2:   #0d0d0d;
-    --pip-bg-3:   #121212;
-    --pip-border: #2a1e06;
-    --glow-sm:    0 0 5px  rgba(232,160,32,.25);
-    --glow-md:    0 0 14px rgba(232,160,32,.20);
-    --glow-lg:    0 0 28px rgba(232,160,32,.14);
-    --tc-r: 232; --tc-g: 160; --tc-b: 32;
-}
-body.theme-bos:not(.mode-hc) {
-    background-image:
-        /* riveted steel grid pattern */
-        radial-gradient(circle at 0% 0%, rgba(232,160,32,.03) 0%, transparent 50%),
-        radial-gradient(circle at 100% 100%, rgba(232,160,32,.03) 0%, transparent 50%),
-        repeating-linear-gradient(90deg, transparent, transparent 48px,
-            rgba(120,100,60,.035) 48px, rgba(120,100,60,.035) 50px),
-        repeating-linear-gradient(0deg, transparent, transparent 48px,
-            rgba(120,100,60,.035) 48px, rgba(120,100,60,.035) 50px),
-        radial-gradient(ellipse at 50% 0%, rgba(40,30,5,.55) 0%, transparent 65%);
-}
-body.theme-bos:not(.mode-hc) header {
-    background: linear-gradient(180deg, #1a1500 0%, #0d0d0d 100%);
-    border-bottom: 2px solid rgba(232,160,32,.5);
-    box-shadow: 0 0 20px rgba(232,160,32,.15), inset 0 -1px 0 rgba(232,160,32,.2);
-}
-
-/* ── Mr. House / New Vegas — Art Deco Luxury ──────────────────
-   "The House always wins."
-   Gold, black, neon green accents. Geometric art deco patterns.
-──────────────────────────────────────────────────────────────── */
-body.theme-house:not(.mode-hc) {
-    --pip-color:  #c8a030;
-    --pip-bg:     #050300;
-    --pip-bg-2:   #0a0700;
-    --pip-bg-3:   #0f0c00;
-    --pip-border: #3a2a00;
-    --glow-sm:    0 0 8px  rgba(200,160,48,.30);
-    --glow-md:    0 0 20px rgba(200,160,48,.24);
-    --glow-lg:    0 0 40px rgba(200,160,48,.16);
-    --tc-r: 200; --tc-g: 160; --tc-b: 48;
-    --accent-neon: #39ff14;
-}
-body.theme-house:not(.mode-hc) {
-    background-image:
-        /* art deco geometric diamond pattern */
-        repeating-linear-gradient(45deg, transparent, transparent 20px,
-            rgba(200,160,48,.018) 20px, rgba(200,160,48,.018) 21px),
-        repeating-linear-gradient(-45deg, transparent, transparent 20px,
-            rgba(200,160,48,.018) 20px, rgba(200,160,48,.018) 21px),
-        repeating-linear-gradient(90deg, transparent, transparent 80px,
-            rgba(200,160,48,.012) 80px, rgba(200,160,48,.012) 82px),
-        radial-gradient(ellipse at 50% 0%, rgba(80,55,0,.60) 0%, transparent 65%);
-}
-body.theme-house:not(.mode-hc) header {
-    background: linear-gradient(180deg, #0f0a00 0%, #050300 100%);
-    border-bottom: 2px solid rgba(200,160,48,.6);
-    box-shadow: 0 0 30px rgba(200,160,48,.20), inset 0 -1px 0 rgba(200,160,48,.25);
-}
-body.theme-house:not(.mode-hc) .os-title {
-    color: #c8a030;
-    text-shadow: 0 0 12px rgba(200,160,48,.5);
-    letter-spacing: 0.2em;
-}
-body.theme-house:not(.mode-hc) .tab-nav button.active { 
-    background: linear-gradient(135deg, #c8a030 0%, #f0c840 100%);
-    color: #000;
-}
-
-/* ── The Unity / The Master — Organic Dark Biotech ───────────
-   "The Unity will bring about the end of suffering."
-   Dark purples, vat green, biomechanical textures.
-──────────────────────────────────────────────────────────────── */
-body.theme-unity:not(.mode-hc) {
-    --pip-color:  #8aff6a;
-    --pip-bg:     #060209;
-    --pip-bg-2:   #0a0412;
-    --pip-bg-3:   #0e061a;
-    --pip-border: #2a0a40;
-    --glow-sm:    0 0 8px  rgba(138,255,106,.28);
-    --glow-md:    0 0 20px rgba(138,255,106,.20);
-    --glow-lg:    0 0 40px rgba(138,255,106,.14);
-    --tc-r: 138; --tc-g: 255; --tc-b: 106;
-    --accent-purple: #9a40ff;
-}
-body.theme-unity:not(.mode-hc) {
-    background-image:
-        /* organic biomechanical cell-like texture */
-        radial-gradient(ellipse at 20% 30%, rgba(90,20,140,.20) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 70%, rgba(50,10,80,.25) 0%, transparent 50%),
-        repeating-conic-gradient(rgba(138,255,106,.008) 0deg, transparent 2deg,
-            transparent 60deg, rgba(90,20,140,.008) 62deg, transparent 64deg) center / 100px 100px,
-        radial-gradient(ellipse at 50% 0%, rgba(60,5,100,.65) 0%, transparent 65%);
-}
-body.theme-unity:not(.mode-hc) header {
-    background: linear-gradient(180deg, #10032a 0%, #060209 100%);
-    border-bottom: 2px solid rgba(138,255,106,.4);
-    box-shadow: 0 0 30px rgba(90,20,140,.35), 0 0 15px rgba(138,255,106,.15);
-}
-body.theme-unity:not(.mode-hc) .os-title {
-    color: #c0a0ff;
-    text-shadow: 0 0 12px rgba(138,255,106,.4), 0 0 6px rgba(90,20,140,.6);
-}
-body.theme-unity:not(.mode-hc) section {
-    background: linear-gradient(160deg, #0e061a 0%, #060209 60%);
-    border-color: rgba(90,20,140,.40) !important;
-}
-
-/* ── The Shi — Steel + Crimson Calligraphy ───────────────────
-   "The Emperor's calculations are absolute."
-   Sleek steel-gray, traditional crimson, calligraphy-inspired.
-──────────────────────────────────────────────────────────────── */
-body.theme-shi:not(.mode-hc) {
-    --pip-color:  #e83030;
-    --pip-bg:     #050507;
-    --pip-bg-2:   #090909;
-    --pip-bg-3:   #0e0e10;
-    --pip-border: #3a0808;
-    --glow-sm:    0 0 6px  rgba(232,48,48,.28);
-    --glow-md:    0 0 16px rgba(232,48,48,.22);
-    --glow-lg:    0 0 32px rgba(232,48,48,.15);
-    --tc-r: 232; --tc-g: 48; --tc-b: 48;
-}
-body.theme-shi:not(.mode-hc) {
-    background-image:
-        /* sleek vertical stripes - eastern steel */
-        repeating-linear-gradient(90deg, transparent, transparent 64px,
-            rgba(232,48,48,.012) 64px, rgba(232,48,48,.012) 66px),
-        /* subtle horizontal grid */
-        repeating-linear-gradient(0deg, transparent, transparent 64px,
-            rgba(180,180,180,.007) 64px, rgba(180,180,180,.007) 65px),
-        radial-gradient(ellipse at 50% 0%, rgba(80,5,5,.55) 0%, transparent 65%);
-}
-body.theme-shi:not(.mode-hc) header {
-    background: linear-gradient(180deg, #1a0303 0%, #050507 100%);
-    border-bottom: 3px solid #e83030;
-    box-shadow: 0 0 20px rgba(232,48,48,.2), inset 0 -1px 0 rgba(232,48,48,.3);
-}
-body.theme-shi:not(.mode-hc) .os-title { letter-spacing: 0.28em; }
-body.theme-shi:not(.mode-hc) h2 {
-    border-left: 3px solid #e83030;
+body.theme-enclave:not(.mode-hc) h2 {
+    border-left: 2px solid rgba(200,216,236,.40);
     padding-left: 8px;
 }
 
-/* ── Great Khans — Leather Black + Faded Red ─────────────────
-   "The Khans don't bow to anyone."
-   Biker-leather dark. Spray-painted stencil text. Gritty.
+/* ── Brotherhood of Steel — Cold Power-Armour Blue ─────────────
+   "Ad Victoriam. Knowledge is power."
+   Icy steel blue HUD. Dark navy chassis. Military hardtech.
+   Circuit-board grid with structural corner rivets.
 ──────────────────────────────────────────────────────────────── */
-body.theme-khans:not(.mode-hc) {
-    --pip-color:  #cc2020;
-    --pip-bg:     #050202;
-    --pip-bg-2:   #0a0404;
-    --pip-bg-3:   #0f0606;
-    --pip-border: #3a0808;
-    --glow-sm:    0 0 5px  rgba(204,32,32,.22);
-    --glow-md:    0 0 14px rgba(204,32,32,.18);
-    --glow-lg:    0 0 28px rgba(204,32,32,.12);
-    --tc-r: 204; --tc-g: 32; --tc-b: 32;
-    font-family: 'Courier New', Courier, monospace !important;
+body.theme-bos:not(.mode-hc) {
+    --pip-color:  #60a8f0;
+    --pip-bg:     #010408;
+    --pip-bg-2:   #020810;
+    --pip-bg-3:   #030d18;
+    --pip-border: #0c2240;
+    --glow-sm:    0 0 6px  rgba(96,168,240,.28);
+    --glow-md:    0 0 16px rgba(96,168,240,.22);
+    --glow-lg:    0 0 32px rgba(96,168,240,.15);
+    --tc-r: 96; --tc-g: 168; --tc-b: 240;
 }
-body.theme-khans:not(.mode-hc) {
+body.theme-bos:not(.mode-hc) {
     background-image:
-        /* rough scratched leather texture */
-        repeating-linear-gradient(20deg, transparent, transparent 8px,
-            rgba(80,20,20,.04) 8px, rgba(80,20,20,.04) 9px),
-        repeating-linear-gradient(-20deg, transparent, transparent 12px,
-            rgba(0,0,0,.06) 12px, rgba(0,0,0,.06) 13px),
-        radial-gradient(ellipse at 30% 20%, rgba(80,10,10,.30) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 0%, rgba(50,5,5,.65) 0%, transparent 65%);
+        /* circuit-board grid — hardtech military */
+        repeating-linear-gradient(90deg, transparent, transparent 40px,
+            rgba(96,168,240,.018) 40px, rgba(96,168,240,.018) 42px),
+        repeating-linear-gradient(0deg, transparent, transparent 40px,
+            rgba(96,168,240,.018) 40px, rgba(96,168,240,.018) 42px),
+        /* structural corner corner-rivet dots at grid intersections */
+        radial-gradient(circle at 0% 0%, rgba(96,168,240,.05) 0%, transparent 45%),
+        radial-gradient(circle at 100% 0%, rgba(96,168,240,.04) 0%, transparent 40%),
+        radial-gradient(ellipse at 50% 0%, rgba(4,20,60,.70) 0%, transparent 65%);
 }
-body.theme-khans:not(.mode-hc) header {
-    background: #0a0404;
-    border-bottom: 2px solid rgba(204,32,32,.5);
-    box-shadow: 0 2px 20px rgba(204,32,32,.15);
+body.theme-bos:not(.mode-hc) header {
+    background: linear-gradient(180deg, #061828 0%, #010408 100%);
+    border-bottom: 2px solid rgba(96,168,240,.60);
+    border-top: 1px solid rgba(96,168,240,.15);
+    box-shadow: 0 0 28px rgba(96,168,240,.18), inset 0 -1px 0 rgba(96,168,240,.25);
 }
-body.theme-khans:not(.mode-hc) .os-title {
-    text-transform: uppercase;
+body.theme-bos:not(.mode-hc) .os-title {
+    color: #60a8f0;
+    text-shadow: 0 0 10px rgba(96,168,240,.5), 0 0 22px rgba(96,168,240,.22);
     letter-spacing: 0.18em;
-    text-shadow: 2px 2px 0 rgba(0,0,0,.8), 0 0 8px rgba(204,32,32,.4);
 }
-body.theme-khans:not(.mode-hc) .section-label,
-body.theme-khans:not(.mode-hc) h2 {
-    text-shadow: 1px 1px 0 rgba(0,0,0,.8);
-    letter-spacing: 0.15em;
+body.theme-bos:not(.mode-hc) .tab-nav button.active {
+    background: rgba(96,168,240,.12);
+    border-color: rgba(96,168,240,.6);
+    color: #a0c8ff;
 }
+
+/* ── Mr. House / New Vegas — Neon Strip Luxury ─────────────────
+   "The House always wins."
+   Deep midnight with electric violet neon. Vegas Strip at night.
+   Art deco geometry, casino shimmer, pure decadence.
+──────────────────────────────────────────────────────────────── */
+body.theme-house:not(.mode-hc) {
+    --pip-color:  #c060ff;
+    --pip-bg:     #04000e;
+    --pip-bg-2:   #08001a;
+    --pip-bg-3:   #0d0022;
+    --pip-border: #300050;
+    --glow-sm:    0 0 8px  rgba(192,96,255,.32);
+    --glow-md:    0 0 22px rgba(192,96,255,.25);
+    --glow-lg:    0 0 44px rgba(192,96,255,.17);
+    --tc-r: 192; --tc-g: 96; --tc-b: 255;
+    --accent-gold: #e8c040;
+}
+body.theme-house:not(.mode-hc) {
+    background-image:
+        /* neon diagonal casino diamond lattice */
+        repeating-linear-gradient(45deg, transparent, transparent 18px,
+            rgba(192,96,255,.016) 18px, rgba(192,96,255,.016) 20px),
+        repeating-linear-gradient(-45deg, transparent, transparent 18px,
+            rgba(192,96,255,.016) 18px, rgba(192,96,255,.016) 20px),
+        /* gold pin-stripe accent */
+        repeating-linear-gradient(90deg, transparent, transparent 100px,
+            rgba(232,192,64,.010) 100px, rgba(232,192,64,.010) 101px),
+        radial-gradient(ellipse at 50% 0%, rgba(80,10,140,.65) 0%, transparent 65%);
+}
+body.theme-house:not(.mode-hc) header {
+    background: linear-gradient(180deg, #160030 0%, #04000e 100%);
+    border-bottom: 2px solid rgba(192,96,255,.7);
+    box-shadow: 0 0 36px rgba(192,96,255,.30), 0 0 8px rgba(232,192,64,.12), inset 0 -1px 0 rgba(192,96,255,.28);
+}
+body.theme-house:not(.mode-hc) .os-title {
+    color: #c060ff;
+    text-shadow: 0 0 14px rgba(192,96,255,.6), 0 0 30px rgba(192,96,255,.3);
+    letter-spacing: 0.2em;
+}
+body.theme-house:not(.mode-hc) .tab-nav button.active {
+    background: linear-gradient(135deg, #9030cc 0%, #c060ff 100%);
+    color: #fff;
+    font-weight: bold;
+}
+
+
+/* ── The Shi — Eastern Steel & Jade ─────────────────────────
+   "The Emperor's calculations are absolute."
+   Cold steel-gray with jade-teal accent. Eastern precision.
+   Clean vertical grid, tightly controlled, ancient-modern fusion.
+──────────────────────────────────────────────────────────────── */
+body.theme-shi:not(.mode-hc) {
+    --pip-color:  #38c8a8;
+    --pip-bg:     #020508;
+    --pip-bg-2:   #04090e;
+    --pip-bg-3:   #060e14;
+    --pip-border: #0a2a28;
+    --glow-sm:    0 0 6px  rgba(56,200,168,.28);
+    --glow-md:    0 0 16px rgba(56,200,168,.22);
+    --glow-lg:    0 0 32px rgba(56,200,168,.15);
+    --tc-r: 56; --tc-g: 200; --tc-b: 168;
+    --accent-crimson: #cc2020;
+}
+body.theme-shi:not(.mode-hc) {
+    background-image:
+        /* eastern vertical column grid */
+        repeating-linear-gradient(90deg, transparent, transparent 56px,
+            rgba(56,200,168,.014) 56px, rgba(56,200,168,.014) 58px),
+        /* subtle horizontal dividers */
+        repeating-linear-gradient(0deg, transparent, transparent 56px,
+            rgba(56,200,168,.008) 56px, rgba(56,200,168,.008) 57px),
+        radial-gradient(ellipse at 50% 0%, rgba(4,40,50,.65) 0%, transparent 65%);
+}
+body.theme-shi:not(.mode-hc) header {
+    background: linear-gradient(180deg, #040e14 0%, #020508 100%);
+    border-bottom: 3px solid rgba(56,200,168,.7);
+    border-top: 1px solid rgba(204,32,32,.35);
+    box-shadow: 0 0 22px rgba(56,200,168,.20), inset 0 -1px 0 rgba(56,200,168,.28);
+}
+body.theme-shi:not(.mode-hc) .os-title {
+    color: #38c8a8;
+    letter-spacing: 0.28em;
+    text-shadow: 0 0 10px rgba(56,200,168,.5);
+}
+body.theme-shi:not(.mode-hc) h2 {
+    border-left: 3px solid #38c8a8;
+    padding-left: 8px;
+}
+
 
 /* ── Vault-Tec — Retro-Futurist Gleam ────────────────────────
    "Revolutionizing safety for an uncertain future!"
@@ -3638,9 +3590,7 @@ body.theme-vaulttec:not(.mode-hc) .perk-card:hover { border-left-color: #ffd000;
 
 /* Include all new themes in the structural override block */
 body.theme-house:not(.mode-hc),
-body.theme-unity:not(.mode-hc),
 body.theme-shi:not(.mode-hc),
-body.theme-khans:not(.mode-hc),
 body.theme-vaulttec:not(.mode-hc) {
     & header { box-shadow: var(--glow-md), inset 0 -1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10); }
     & section {
@@ -3768,7 +3718,7 @@ body.theme-vaulttec:not(.mode-hc) {
     to   { opacity: 1; transform: translateY(0); }
 }
 .faction-quote-text {
-    font-size: 0.68rem;
+    font-size: 0.78rem;
     font-style: italic;
     color: var(--pip-color);
     opacity: 0.85;
@@ -3776,7 +3726,7 @@ body.theme-vaulttec:not(.mode-hc) {
     flex: 1;
 }
 .faction-quote-label {
-    font-size: 0.55rem;
+    font-size: 0.65rem;
     letter-spacing: 0.18em;
     opacity: 0.45;
     white-space: nowrap;
@@ -3817,10 +3767,6 @@ body.theme-vaulttec:not(.mode-hc) {
     position: relative;
     transition: background 0.2s, border-color 0.2s;
 }
-.cond-toggle-input:checked + .cond-toggle-track {
-    background: rgba(57,255,14,.25);
-    border-color: rgba(57,255,14,.5);
-}
 .cond-toggle-thumb {
     position: absolute;
     top: 1px; left: 1px;
@@ -3829,12 +3775,40 @@ body.theme-vaulttec:not(.mode-hc) {
     border-radius: 50%;
     transition: transform 0.2s, background 0.2s;
 }
+.cond-toggle-hint { font-size: 0.68rem; opacity: 0.5; }
+/* Context label shown beside the toggle (e.g. "INDOORS", "IN COMBAT") */
+.cond-toggle-ctx-label {
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    color: var(--pip-color);
+    opacity: 0.75;
+    white-space: nowrap;
+}
+/* Trait-row toggle wrapper — sits inline in the trait row */
+.trait-row-toggle {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid rgba(var(--pip-rgb,100,200,100), 0.2);
+    border-radius: 3px;
+    background: rgba(var(--pip-rgb,100,200,100), 0.04);
+}
+/* Active conditional — highlight the whole trait-slot-row */
+.trait-slot-row.cond-active {
+    background: rgba(var(--pip-rgb,40,255,40), 0.04) !important;
+    border-left-color: rgba(var(--pip-rgb,40,255,40), 0.6) !important;
+}
+/* Toggle track uses theme pip-color when checked */
+.cond-toggle-input:checked + .cond-toggle-track {
+    background: rgba(var(--pip-rgb,57,255,14), 0.25);
+    border-color: rgba(var(--pip-rgb,57,255,14), 0.55);
+}
 .cond-toggle-input:checked + .cond-toggle-track .cond-toggle-thumb {
     transform: translateX(14px);
-    background: #39ff14;
-    box-shadow: 0 0 6px rgba(57,255,20,.6);
+    background: var(--pip-color);
+    box-shadow: 0 0 6px rgba(var(--pip-rgb,57,255,20), 0.6);
 }
-.cond-toggle-hint { font-size: 0.6rem; opacity: 0.5; }
 /* Perk row conditional toggle */
 .cond-toggle-row {
     display: flex;
@@ -3855,7 +3829,7 @@ body.theme-vaulttec:not(.mode-hc) {
     flex: 1;
     letter-spacing: 0.06em;
 }
-.cond-toggle-hint-text { font-size: 0.58rem; opacity: 0.6; }
+.cond-toggle-hint-text { font-size: 0.68rem; opacity: 0.6; }
 /* Chip with active conditional */
 .st-tag-chip.cond-active {
     border-color: rgba(57,255,14,.4);
@@ -3941,7 +3915,7 @@ body.theme-vaulttec:not(.mode-hc) {
     font-size: 0.7rem;
 }
 .drawer-section-label {
-    font-size: 0.58rem;
+    font-size: 0.68rem;
     letter-spacing: 0.18em;
     opacity: 0.5;
     margin: 10px 0 4px;
@@ -3962,7 +3936,7 @@ body.theme-vaulttec:not(.mode-hc) {
     border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.15);
     padding: 3px;
 }
-.drawer-stat-key { font-size: 0.55rem; opacity: 0.6; letter-spacing: 0.1em; }
+.drawer-stat-key { font-size: 0.65rem; opacity: 0.6; letter-spacing: 0.1em; }
 .drawer-stat-val { font-size: 0.95rem; font-weight: bold; color: var(--pip-color); }
 .drawer-value {
     font-size: 0.65rem;
@@ -4023,7 +3997,7 @@ body.theme-vaulttec:not(.mode-hc) {
     padding: 0;
 }
 .mobile-nav-btn span {
-    font-size: 0.5rem;
+    font-size: 0.62rem;
     letter-spacing: 0.1em;
     text-transform: uppercase;
 }
@@ -4206,3 +4180,261 @@ body.theme-vaulttec:not(.mode-hc) {
 .tbtn-shi:hover    { color:#e83030 !important; border-color:#e83030 !important; border-bottom-color:#e83030 !important; }
 .tbtn-khans:hover  { color:#cc2020 !important; border-color:#cc2020 !important; border-bottom-color:#cc2020 !important; }
 .tbtn-vtec:hover   { color:#ffd000 !important; border-color:#ffd000 !important; border-bottom-color:#ffd000 !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   HUD THEME PANEL (notes section dropdown)
+══════════════════════════════════════════════════════════════════ */
+.hud-theme-panel {
+    margin: 5px 0 10px;
+    border: 1px solid rgba(var(--pip-rgb,40,255,40), 0.25);
+    border-radius: 3px;
+    background: rgba(0,0,0,0.45);
+    padding: 8px;
+    animation: themePanelSlide 0.18s ease;
+}
+@keyframes themePanelSlide {
+    from { opacity: 0; transform: translateY(-6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.hud-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+.hud-theme-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 7px 5px 6px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 2px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.14s, border-color 0.14s, box-shadow 0.14s;
+}
+.hud-theme-tile:hover {
+    background: rgba(255,255,255,0.08);
+    border-color: rgba(255,255,255,0.35);
+}
+.hud-theme-tile.active-tile {
+    border-color: var(--pip-color) !important;
+    box-shadow: 0 0 6px rgba(var(--pip-rgb,40,255,40),0.35);
+    background: rgba(var(--pip-rgb,40,255,40),0.06) !important;
+}
+.hud-theme-swatch {
+    display: block;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.2);
+    box-shadow: 0 0 6px currentColor;
+    flex-shrink: 0;
+}
+.hud-theme-name {
+    font-size: 0.63rem;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.55);
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.3;
+    white-space: normal;
+    word-break: break-word;
+    width: 100%;
+}
+.hud-theme-tile.active-tile .hud-theme-name {
+    color: var(--pip-color);
+    opacity: 1;
+}
+/* HUD THEME button shows active theme color */
+#hud-theme-btn.theme-active {
+    border-color: var(--pip-color) !important;
+    color: var(--pip-color) !important;
+    box-shadow: 0 0 6px rgba(var(--pip-rgb,40,255,40),0.22);
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PER-THEME DECORATIVE ADDITIONS
+   Each faction gets a unique structural flourish beyond the quote.
+══════════════════════════════════════════════════════════════════ */
+
+/* ── BoS: classified stamp watermark on left panel ── */
+body.theme-bos:not(.mode-hc) .left-panel::after {
+    content: 'AD VICTORIAM';
+    position: absolute; bottom: 60px; right: 8px;
+    font-size: 0.55rem; font-weight: bold;
+    letter-spacing: 0.35em; color: rgba(96,168,240,.08);
+    transform: rotate(-25deg);
+    pointer-events: none; z-index: 0;
+    white-space: nowrap;
+}
+body.theme-bos:not(.mode-hc) .left-panel { position: relative; }
+/* BoS: steel corner brackets on section h2 */
+body.theme-bos:not(.mode-hc) h2::before {
+    content: '[ '; color: rgba(96,168,240,.45); letter-spacing: 0;
+}
+body.theme-bos:not(.mode-hc) h2::after {
+    content: ' ]'; color: rgba(96,168,240,.45); letter-spacing: 0;
+}
+
+/* ── Enclave: ruled government-form underlines on labels ── */
+body.theme-enclave:not(.mode-hc) .section-label,
+body.theme-enclave:not(.mode-hc) .cs-label {
+    border-bottom: 1px solid rgba(200,216,236,.20);
+    padding-bottom: 2px;
+}
+body.theme-enclave:not(.mode-hc) .left-panel::after {
+    content: 'CLASSIFIED';
+    position: absolute; top: 50%; right: 6px;
+    font-size: 1.1rem; font-weight: bold;
+    letter-spacing: 0.4em; color: rgba(200,216,236,.04);
+    transform: rotate(-90deg) translateX(-50%);
+    pointer-events: none; z-index: 0;
+    white-space: nowrap;
+}
+body.theme-enclave:not(.mode-hc) .left-panel { position: relative; overflow: hidden; }
+
+/* ── Vault 21: neon hot-pink pulse on active tab ── */
+body.theme-vault21:not(.mode-hc) .tab-nav button.active {
+    animation: v21TabPulse 2.4s infinite;
+}
+@keyframes v21TabPulse {
+    0%, 100% { box-shadow: 0 0 6px rgba(255,40,128,.35); }
+    50%       { box-shadow: 0 0 18px rgba(255,40,128,.65), 0 0 4px rgba(255,208,64,.2); }
+}
+/* Vault 21: gold rule above section headers */
+body.theme-vault21:not(.mode-hc) h2 {
+    border-top: 1px solid rgba(255,208,64,.18);
+    padding-top: 4px;
+}
+
+/* ── Legion: Roman numerals section counter via CSS ── */
+body.theme-legion:not(.mode-hc) .tab-content h2::before {
+    content: 'SPQR · ';
+    color: rgba(168,120,24,.55);
+    font-size: 0.8em;
+    letter-spacing: 0.12em;
+}
+/* Legion: heavy left margin accent on skill rows */
+body.theme-legion:not(.mode-hc) .skill-row {
+    border-left: 2px solid rgba(204,40,0,.18);
+}
+body.theme-legion:not(.mode-hc) .skill-row:hover {
+    border-left-color: rgba(204,40,0,.55);
+}
+
+/* ── NCR: ranger badge star on section headers ── */
+body.theme-ncr:not(.mode-hc) h2::before {
+    content: '✦ ';
+    color: rgba(200,168,64,.55);
+    font-size: 0.85em;
+}
+/* NCR: dusty parchment tint on ov-cards */
+body.theme-ncr:not(.mode-hc) .ov-card {
+    background: rgba(200,168,64,.04) !important;
+}
+
+/* ── Mr. House: glowing neon tile borders on perk cards ── */
+body.theme-house:not(.mode-hc) .perk-card {
+    border-left-color: rgba(192,96,255,.35);
+    transition: border-left-color 0.2s, box-shadow 0.2s;
+}
+body.theme-house:not(.mode-hc) .perk-card:hover {
+    border-left-color: #c060ff;
+    box-shadow: -2px 0 8px rgba(192,96,255,.30);
+}
+/* Mr. House: neon title glow on char banner */
+body.theme-house:not(.mode-hc) .char-banner-name {
+    text-shadow: 0 0 12px rgba(192,96,255,.55);
+}
+
+/* ── Shi: eastern thin divider lines on prog-section labels ── */
+body.theme-shi:not(.mode-hc) .prog-section-label {
+    border-bottom: 1px solid rgba(56,200,168,.25);
+    border-top: 1px solid rgba(56,200,168,.10);
+}
+/* Shi: kanji-style corner mark on left panel header */
+body.theme-shi:not(.mode-hc) .left-identity-block::before {
+    content: '極';
+    position: absolute; top: 4px; right: 6px;
+    font-size: 1.6rem; color: rgba(56,200,168,.06);
+    pointer-events: none; z-index: 0;
+    font-family: serif;
+}
+body.theme-shi:not(.mode-hc) .left-identity-block { position: relative; overflow: hidden; }
+
+/* ── Vault-Tec: cheerful rounded corners on action buttons ── */
+body.theme-vaulttec:not(.mode-hc) .action-btn {
+    border-radius: 4px !important;
+}
+body.theme-vaulttec:not(.mode-hc) .tab-nav button {
+    border-radius: 4px 4px 0 0;
+}
+/* Vault-Tec: Vault-Boy blue band on left panel top */
+body.theme-vaulttec:not(.mode-hc) .left-panel::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: linear-gradient(90deg, #1066b8, #ffd000, #1066b8);
+    margin: -1px -1px 8px;
+    opacity: 0.6;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PICKER MODAL SORT CONTROLS (perk picker + trait picker)
+══════════════════════════════════════════════════════════════════ */
+.picker-sort-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.picker-sort-label {
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.15em;
+    opacity: 0.5;
+    margin-right: 2px;
+    white-space: nowrap;
+}
+.picker-sort-btn {
+    font-size: 0.68rem;
+    font-weight: bold;
+    letter-spacing: 0.1em;
+    padding: 3px 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-bottom: 1px solid rgba(255,255,255,0.15) !important;
+    background: rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.45);
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.13s;
+    border-radius: 2px;
+}
+.picker-sort-btn:hover:not(.active) {
+    background: rgba(255,255,255,0.07);
+    color: rgba(255,255,255,0.75);
+    border-color: rgba(255,255,255,0.3) !important;
+}
+.picker-sort-btn.active {
+    background: var(--pip-color);
+    color: #000;
+    border-color: var(--pip-color) !important;
+    font-weight: bold;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   PERK LEVEL BADGE (shown in perk picker cards)
+══════════════════════════════════════════════════════════════════ */
+.pperk-lvl-badge {
+    font-size: 0.65rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    padding: 1px 6px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.55);
+    white-space: nowrap;
+    flex-shrink: 0;
+}

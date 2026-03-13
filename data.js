@@ -69,7 +69,6 @@ const TRAIT_BONUSES = {
     "Educated":                  { skills:{"SURVIVAL":-30} },
     "Law-Jaw":                   { skills:{"SPEECH":-15} },
     "Shhh!":                     { skills:{"SPEECH":-7,"BARTER":-7,"SNEAK":+10} },
-    "Sex Appeal":                { special:{CHA:+2}, skills:{"BARTER":-10,"SPEECH":-10} },
     "Silver Tongue, Lead Pocket":{ skills:{"BARTER":+20} },
     "Phillistine":               { skills:{"ENERGY WEAPONS":-10,"SCIENCE":-10,"MEDICINE":-10} },
 };
@@ -80,7 +79,7 @@ const TRAIT_CONDITIONAL_NAMES = new Set([
     "Four Eyes","Hoarder","Blind Luck","Impartial Mediation","Confirmed Bachelor",
     "Lady Killer","Graceful","Ideologue","Twisted","Assassin's Step",
     "Breakin' A Sweat","Masochist","Desert Rose","Polar Personality",
-    "Bankrupt","Magnate","Callous"
+    "Bankrupt","Magnate","Callous","Architect"
 ]);
 
 /* --- SPECIAL_RANKS --- */
@@ -92,38 +91,6 @@ const SPECIAL_RANKS = {
     INT: ["SUB-BRICK","VEGETABLE","CRETIN","KNUCKLE HEAD","KNOWLEDGEABLE","GIFTED","SMARTYPANTS","KNOW-IT-ALL","GENIUS","OMNISCIENT"],
     AGI: ["WALKING DISASTER","ACCIDENT PRONE","OAF","BUTTERFINGERS","UNDER CONTROL","CATLIKE","KNIFE THROWER","KNIFE CATCHER","ACROBATIC MARVEL","WALKS ON WATER"],
     LCK: ["13 PITCH-BLACK CATS","BROKEN GYPSY MIRROR","SICKLY ALBATROSS","SPILLED SALT","COIN FLIP","STACKED DECK","LUCKY 7","LEPRECHAUN'S FOOT","21 LEAF CLOVER","TWO-HEADED COIN FLIP"]
-};
-
-/* --- PERK_BONUSES --- */
-const PERK_BONUSES = {
-    // Skill perks
-    "A Stranger I Remain":          { skills: { "SNEAK": +26 } },
-    "Applied Ballistics":           { skills: { "BIG GUNS": +25 } },
-    "Alertness":                    { special: { PER: +2 } }, // conditional (crouched) but shown as ref
-    "Daddy's Boy/Girl":             { skills: {} }, // hacking — no direct skill number
-    "Gun Guru":                     { skills: { "REPAIR": +30 } }, // conditional (bench) but shown
-    "Headless Courier":             { special: { PER: +2 } }, // conditional (no helmet) — ref
-    "Stoicism":                     { skills: { "SURVIVAL": +3 } },
-    "Big Brained":                  { special: { INT: +1 } },
-    "Brainless":                    { special: { PER: -1 } },
-    "Reinforced Spine":             { special: { END: +1 } },
-    "Cardiac Arrest":               { skills: {} },
-    "My Own Master Now":            { special: { END: +1 } },
-    "Nerd Rage!":                   { skills: {} },
-    "Wasteland Masquerade":         { special: { CHA: +1, INT: +1 } }, // conditional (headwear)
-    "Irradiated Beauty":            { special: { CHA: +1 } }, // conditional (rads)
-    "Thirsty":                      { special: { CHA: +2 } }, // conditional (dehydration)
-    "Fight Hungry":                 { special: { END: +1 } }, // conditional
-    "Walker Instinct":              { special: { PER: +1, AGI: +1 } }, // conditional
-    "Boiadero":                     { special: { CHA: +1 } }, // conditional
-    "Coiled Snake":                 { skills: {} },
-    "Collective Consciousness":     { skills: { "SPEECH": +2 } }, // conditional
-    // Perks with clean flat skill bonuses (permanent/unconditional)
-    "Thief":                        { skills: { "SNEAK": +15 } }, // rank 3 = +15
-    "Iron Fist":                    { skills: {} },
-    "Swift Learner":                { skills: {} },
-    "Scoundrel":                    { skills: {} },
-    "Silver Tongue, Lead Pocket":   { skills: { "BARTER": +20 } }, // this is a TRAIT, already in TRAIT_BONUSES
 };
 
 /* --- PERK_SKILL_BONUSES --- */
@@ -493,21 +460,18 @@ const SPECIAL_INFO = {
 };
 
 /* --- CUSTOM_THEMES --- */
-const CUSTOM_THEMES = ['fo3','bos','enclave','vault21','legion','ncr','house','unity','shi','khans','vaulttec'];
+const CUSTOM_THEMES = ['bos','enclave','vault21','legion','ncr','house','shi','vaulttec'];
 
 /* --- FACTION_THEMES --- */
 const FACTION_THEMES = {
     '':         { label: 'NUCLEAR SUNSET',           quote: '' },
-    'fo3':      { label: 'FALLOUT 3 — PIP-BOY',      quote: 'War. War never changes.' },
     'bos':      { label: 'BROTHERHOOD OF STEEL',     quote: 'Ad Victoriam. Knowledge is power.' },
     'enclave':  { label: 'THE ENCLAVE',              quote: 'The Enclave is the last, best hope for humanity.' },
     'vault21':  { label: 'VAULT 21',                 quote: 'When the chips are down, the House always has more.' },
     'legion':   { label: "CAESAR'S LEGION",          quote: 'The Legion does not retreat. Ave, true to Caesar.' },
     'ncr':      { label: 'NEW CALIFORNIA REPUBLIC',  quote: 'Patrolling the Mojave almost makes you wish for a nuclear winter.' },
-    'house':    { label: 'MR. HOUSE / NEW VEGAS',    quote: 'The House always wins.' },
-    'unity':    { label: 'THE UNITY / THE MASTER',   quote: 'The Unity will bring about the end of suffering.' },
-    'shi':      { label: 'THE SHI',                  quote: "The Emperor's calculations are absolute." },
-    'khans':    { label: 'GREAT KHANS',              quote: "The Khans don't bow to anyone." },
+    'house':    { label: 'MR. HOUSE / NEW VEGAS',    quote: 'The House always wins. Welcome to the Strip.' },
+    'shi':      { label: 'THE SHI',                  quote: "The Emperor's calculations are absolute. Steel endures." },
     'vaulttec': { label: 'VAULT-TEC',                quote: 'Revolutionizing safety for an uncertain future!' },
 };
 
@@ -550,6 +514,7 @@ const CONDITIONAL_TOGGLE_BONUSES = {
     "Callous":              { skills:  { BARTER:+10 } },
     "Assassin's Step":      { skills:  { SNEAK:+10 } },
     "Polar Personality":    { skills:  { SPEECH:+4, BARTER:+4, MEDICINE:+4 } },
+    "Architect":            { skillPtsPerLevel: true },  /* +floor(INT/2) skill pts/level when indoors */
     /* === PERKS === */
     "Alertness":            { special: { PER:+2 } },
     "Headless Courier":     { special: { PER:+2 } },

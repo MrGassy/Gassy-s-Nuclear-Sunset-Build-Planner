@@ -62,8 +62,15 @@ function skillBaseForEligibility(s) {
 // HC uses a reduced base of 3 with similar scaling
 function pointsPerLevel() {
     const int = Math.max(1, special.INT || 1);
-    if (mode === 'hc') return Math.floor(Math.min(int, 9) * 0.5) + 3;
-    return Math.floor(Math.min(int, 9) * 0.5 + 10);
+    let base;
+    if (mode === 'hc') {
+        base = Math.floor(Math.min(int, 9) * 0.5) + 3;
+    } else {
+        base = Math.floor(Math.min(int, 9) * 0.5 + 10);
+    }
+    // Architect toggle: +floor(INT/2) when indoors
+    const { skillPtsPerLevel } = getConditionalToggleDelta();
+    return base + (skillPtsPerLevel || 0);
 }
 
 /* --- PERSISTENCE OBJECT --- */
@@ -84,7 +91,7 @@ let regionalStorage = { 'CW': { quests: [], colls: [] }, 'MW': { quests: [], col
 
 
 
-/* ===== UNDO SYSTEM (last 5 states) ===== */
+/* ===== UNDO SYSTEM (unlimited states) ===== */
 let _undoStack = [];  // each entry = JSON string of collectData()
 let _undoPaused = false;  // prevent capture during hydrate
 
@@ -94,7 +101,6 @@ function pushUndoState() {
     // Don't push duplicate of the last state
     if (_undoStack.length && _undoStack[_undoStack.length - 1] === snap) return;
     _undoStack.push(snap);
-    if (_undoStack.length > 5) _undoStack.shift();
     updateUndoBtn();
 }
 
@@ -136,10 +142,6 @@ function getSpecialRank(k) {
 
 /* ===== PERK SKILL/SPECIAL BONUSES (permanent unconditional) ===== */
 // Source tag: 'P' = perk, used to distinguish from trait 'T' deltas
-/* [PERK_BONUSES — moved to data.js] */
-
-// Cleaner map — ONLY perks with definitive, flat, always-on skill or SPECIAL bonuses
-// (conditional ones already shown via tooltip note)
 /* [PERK_SKILL_BONUSES — moved to data.js] */
 
 function getActivePerkBonuses() {
@@ -228,6 +230,7 @@ function isConditionalActive(name) {
 function getConditionalToggleDelta() {
     const specDelta = {};
     const skillDelta = {};
+    let skillPtsPerLevel = 0;
     for (const [name, isOn] of Object.entries(conditionalToggles)) {
         if (!isOn) continue;
         const bonus = CONDITIONAL_TOGGLE_BONUSES[name];
@@ -242,8 +245,12 @@ function getConditionalToggleDelta() {
                 skillDelta[k] = (skillDelta[k] || 0) + v;
             }
         }
+        if (bonus.skillPtsPerLevel) {
+            // Architect: +floor(INT / 2) skill points per level when indoors
+            skillPtsPerLevel += Math.floor((special.INT || 1) / 2);
+        }
     }
-    return { specDelta, skillDelta };
+    return { specDelta, skillDelta, skillPtsPerLevel };
 }
 
 /* ===== TRAIT REQUIREMENTS ===== */
@@ -259,6 +266,21 @@ function getChosenTraitNames() {
     });
     startingTraits.forEach(t => { if (t.name) names.push(t.name); });
     return names;
+}
+
+/* Returns a Map of UPPERCASE perk name → number of times it appears in the build */
+function getTakenPerkCounts() {
+    const counts = new Map();
+    document.querySelectorAll(
+        '#prog-list .prog-row:not(.trait-slot-row) .prog-name-input, #extra-perk-list .prog-row .prog-name-input'
+    ).forEach(input => {
+        const raw = (input.value || '').trim();
+        if (!raw) return;
+        // Strip rank suffix like " (Rank 2)" added by selectPerkInRow
+        const name = raw.replace(/\s*\(Rank\s+\d+\)\s*$/i, '').trim().toUpperCase();
+        if (name) counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    return counts;
 }
 
 function checkTraitEligible(trait) {
@@ -323,6 +345,11 @@ function openTraitModal(slotId) {
     document.getElementById('trait-modal').style.display = 'flex';
     const srch = document.getElementById('trait-modal-search');
     if (srch) srch.value = '';
+    _traitPickerSort = 'az';
+    const azBtn = document.getElementById('tpick-sort-az');
+    const reqBtn = document.getElementById('tpick-sort-req');
+    if (azBtn) { azBtn.classList.add('active'); }
+    if (reqBtn) { reqBtn.classList.remove('active'); }
     renderTraitGrid('');
 }
 
@@ -351,6 +378,11 @@ function showTraitLevelUpPrompt(lvl) {
     if (titleEl) titleEl.textContent = `LEVEL ${lvl} — SELECT YOUR TRAIT`;
     const srch = document.getElementById('trait-modal-search');
     if (srch) srch.value = '';
+    _traitPickerSort = 'az';
+    const azBtn2 = document.getElementById('tpick-sort-az');
+    const reqBtn2 = document.getElementById('tpick-sort-req');
+    if (azBtn2) { azBtn2.classList.add('active'); }
+    if (reqBtn2) { reqBtn2.classList.remove('active'); }
     renderTraitGrid('');
     document.getElementById('trait-modal').style.display = 'flex';
     // Hide the banner while modal is open
@@ -359,51 +391,63 @@ function showTraitLevelUpPrompt(lvl) {
 }
 
 let _traitPickerLevel = null;
-let _traitPickerList = [];
+let _traitPickerList  = [];
+let _traitPickerSort  = 'az';   // 'az' | 'req'
 
 function renderTraitGrid(search) {
     const container = document.getElementById('trait-modal-grid');
     if (!container) return;
     const q = (search || '').toLowerCase();
     const chosen = getChosenTraitNames();
+    const chosenUp = chosen.map(c => c.toUpperCase());
 
+    // Exclude traits that are already taken — they can't be taken again
     let filtered = TRAITS_DATA.filter(t => {
+        if (chosenUp.includes(t.name.toUpperCase())) return false;
         if (q && !t.name.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
         return true;
     });
 
-    // Sort: eligible A-Z, then ineligible A-Z, taken always last
+    // Helper: count how many SPECIAL/skill tokens a trait req has (proxy for complexity)
+    function reqWeight(t) {
+        if (!t.req) return 0;
+        const tokens = t.req.split(',').map(s => s.trim()).filter(Boolean);
+        return tokens.length;
+    }
+
+    // Sort: eligible group first, then ineligible — within each group apply chosen sort
     filtered = filtered.slice().sort((a, b) => {
-        const takenA = chosen.some(c => c.toLowerCase() === a.name.toLowerCase());
-        const takenB = chosen.some(c => c.toLowerCase() === b.name.toLowerCase());
         const eligA = checkTraitEligible(a);
         const eligB = checkTraitEligible(b);
-        if (takenA !== takenB) return takenA ? 1 : -1;
-        if (eligA !== eligB) return eligA ? -1 : 1;
+        // Tier ordering: eligible=0, ineligible=1
+        const tierA = eligA ? 0 : 1;
+        const tierB = eligB ? 0 : 1;
+        if (tierA !== tierB) return tierA - tierB;
+        // Within tier apply chosen sort
+        if (_traitPickerSort === 'req') {
+            const wa = reqWeight(a), wb = reqWeight(b);
+            if (wa !== wb) return wa - wb;
+        }
         return a.name.localeCompare(b.name);
     });
 
     _traitPickerList = filtered;
 
     // Update count
-    const eligible = filtered.filter(t => checkTraitEligible(t) && !chosen.some(c => c.toLowerCase() === t.name.toLowerCase()));
-    const ineligible = filtered.filter(t => !checkTraitEligible(t) && !chosen.some(c => c.toLowerCase() === t.name.toLowerCase()));
-    const takenCount = filtered.filter(t => chosen.some(c => c.toLowerCase() === t.name.toLowerCase())).length;
+    const eligible   = filtered.filter(t =>  checkTraitEligible(t));
+    const ineligible = filtered.filter(t => !checkTraitEligible(t));
     const countEl = document.getElementById('trait-picker-count');
-    if (countEl) countEl.textContent = `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE · ${takenCount} TAKEN`;
+    if (countEl) countEl.textContent = `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE · ${chosen.length} TAKEN`;
 
     container.innerHTML = _traitPickerList.map((t, i) => {
-        const alreadyTaken = chosen.some(c => c.toUpperCase() === t.name.toUpperCase());
         const isElig = checkTraitEligible(t);
-        const cardCls = alreadyTaken ? 'ptrait-card ptrait-taken' : isElig ? 'ptrait-card' : 'ptrait-card ptrait-ineligible';
-        const badge = alreadyTaken
-            ? `<span class="ptrait-badge ptrait-taken-badge">TAKEN</span>`
-            : isElig
+        const cardCls = isElig ? 'ptrait-card' : 'ptrait-card ptrait-ineligible';
+        const badge = isElig
             ? `<span class="ptrait-badge ptrait-elig-badge">✓ ELIGIBLE</span>`
             : `<span class="ptrait-badge ptrait-inelig-badge">REQ NOT MET</span>`;
         const reqText = t.req ? `<div class="pperk-req">${t.req}</div>` : `<div class="pperk-req" style="opacity:0.3;">NO REQUIREMENTS</div>`;
-        const btnLabel = alreadyTaken ? '✓ ALREADY TAKEN' : isElig ? '◈ TAKE THIS TRAIT' : '⚠ TAKE ANYWAY';
-        return `<div class="${cardCls}" onclick="selectTraitByIndex(${i})" title="${alreadyTaken ? 'ALREADY IN USE' : isElig ? 'TAKE TRAIT' : 'REQUIREMENTS NOT MET'}">
+        const btnLabel = isElig ? '◈ TAKE THIS TRAIT' : '⚠ TAKE ANYWAY';
+        return `<div class="${cardCls}" onclick="selectTraitByIndex(${i})" title="${isElig ? 'TAKE TRAIT' : 'REQUIREMENTS NOT MET'}">
             <div class="pperk-card-top">
                 <span class="ptrait-name">${t.name}</span>
                 ${badge}
@@ -454,20 +498,67 @@ function clearTraitSlot(slotId) {
     triggerAutosave();
 }
 
+/* ===== CONDITIONAL TOGGLE CONTEXT LABELS =====
+ * Short label shown next to the toggle so the player knows what scenario is active.
+ */
+const COND_TOGGLE_LABELS = {
+    "Claustrophobia":    "OUTDOORS",
+    "Solar Powered":     "IN SUNLIGHT",
+    "Early Bird":        "5AM–12PM",
+    "Night Person":      "NIGHT",
+    "War Child":         "IN COMBAT",
+    "Hoarder":           "< 160 LBS",
+    "Blind Luck":        "IN COMBAT",
+    "Impartial Mediation": "NEUTRAL KARMA",
+    "Confirmed Bachelor":  "TALKING TO MEN",
+    "Lady Killer":       "TALKING TO WOMEN",
+    "Graceful":          "SOBER",
+    "Ideologue":         "GOOD KARMA",
+    "Twisted":           "EVIL KARMA",
+    "Breakin' A Sweat":  "MOVING",
+    "Masochist":         "< 25% HP",
+    "Desert Rose":       "> 50% HP",
+    "Bankrupt":          "LOW CAPS",
+    "Magnate":           "> 3000 CAPS",
+    "Callous":           "ACTIVE",
+    "Assassin's Step":   "SNEAKING",
+    "Polar Personality": "EVEN LEVEL",
+    "Four Eyes":         "WEARING GLASSES",
+    "Architect":         "INDOORS",
+};
+
 /* ===== TRAIT ROW BUILDER ===== */
 function makeTraitRow(slotId, levelLabel, chosenName) {
     const name = chosenName || '';
     const displayName = name || 'NONE SELECTED';
     const clearDisplay = name ? 'inline-block' : 'none';
     const btnLabel = name ? 'CHANGE' : 'SELECT';
-    return `<div class="prog-row trait-slot-row" id="${slotId}" data-chosen="${name.replace(/"/g,'&quot;')}">
+    const isConditional = name && TRAIT_CONDITIONAL_NAMES.has(name);
+    const isActive = isConditional && isConditionalActive(name);
+    const ctxLabel = isConditional ? (COND_TOGGLE_LABELS[name] || 'ACTIVE') : '';
+
+    const toggleHtml = isConditional ? `
+        <span class="cond-toggle-wrap trait-row-toggle" title="Toggle: ${ctxLabel} (display only — never affects eligibility)">
+            <label class="cond-toggle-lbl">
+                <input type="checkbox" class="cond-toggle-input" ${isActive ? 'checked' : ''}
+                    onchange="setConditionalToggle('${name.replace(/'/g,"\\'")}', this.checked)">
+                <span class="cond-toggle-track"><span class="cond-toggle-thumb"></span></span>
+            </label>
+            <span class="cond-toggle-hint" title="${ctxLabel}">⚡</span>
+            <span class="cond-toggle-ctx-label">${ctxLabel}</span>
+        </span>` : '';
+
+    return `<div class="prog-row trait-slot-row ${isActive ? 'cond-active' : ''}" id="${slotId}" data-chosen="${name.replace(/"/g,'&quot;')}">
         <div class="prog-card-header">
             <span class="lvl-tag is-trait">${levelLabel}</span>
             <button class="trait-slot-btn prog-clear-btn" onclick="openTraitModal('${slotId}')">${btnLabel}</button>
             <button class="trait-slot-clear prog-clear-btn" onclick="clearTraitSlot('${slotId}')" style="display:${clearDisplay}; color:rgba(255,80,80,0.8);">✕ CLEAR</button>
         </div>
-        <div class="trait-slot-name" style="padding:6px 10px; font-size:0.85rem; color:#c8ffd4; letter-spacing:0.05em; cursor:${name?'pointer':'default'};" ${name?`onclick="openTraitDetailModal('${name}', {type:'level', slotId:'${slotId}'})" title="Click for trait details"`:''}>
-            ${displayName}${name?' <span style="font-size:0.6rem; opacity:0.4; margin-left:4px;">[INFO]</span>':''}
+        <div style="display:flex; align-items:center; gap:10px; padding:6px 10px;">
+            <div class="trait-slot-name" style="flex:1; font-size:0.85rem; color:#c8ffd4; letter-spacing:0.05em; cursor:${name?'pointer':'default'};" ${name?`onclick="openTraitDetailModal('${name}', {type:'level', slotId:'${slotId}'})" title="Click for trait details"`:''}>
+                ${displayName}${name?' <span style="font-size:0.6rem; opacity:0.4; margin-left:4px;">[INFO]</span>':''}
+            </div>
+            ${toggleHtml}
         </div>
     </div>`;
 }
@@ -596,19 +687,6 @@ function ovPerkClick(encodedName) {
         box.removeAttribute('data-type');
         if (trait || intTrait) box.setAttribute('data-type', 'trait');
     }
-    document.getElementById('perk-zoom-modal').style.display = 'flex';
-}
-
-function ovTraitClick(encodedName) {
-    const name = decodeURIComponent(encodedName);
-    const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase())
-             || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase());
-    if (!td) return;
-    document.getElementById('perk-zoom-name').textContent = td.name;
-    document.getElementById('perk-zoom-req').textContent = td.req ? 'REQ: ' + td.req : 'NO REQUIREMENTS';
-    document.getElementById('perk-zoom-desc').textContent = td.desc;
-    const box = document.getElementById('perk-zoom-modal').querySelector('.perk-zoom-box');
-    if (box) box.setAttribute('data-type', 'trait');
     document.getElementById('perk-zoom-modal').style.display = 'flex';
 }
 
@@ -783,14 +861,16 @@ function renderStartingTraitsList() {
     container.innerHTML = startingTraits.map((t, idx) => {
         const isConditional = TRAIT_CONDITIONAL_NAMES.has(t.name);
         const isActive = isConditional && isConditionalActive(t.name);
+        const ctxLabel = isConditional ? (COND_TOGGLE_LABELS[t.name] || 'ACTIVE') : '';
         const toggleHtml = isConditional ? `
-            <span class="cond-toggle-wrap" title="Toggle conditional effect (DISPLAY ONLY — never affects perk eligibility)">
+            <span class="cond-toggle-wrap" title="Toggle: ${ctxLabel} (display only — never affects eligibility)">
                 <label class="cond-toggle-lbl">
                     <input type="checkbox" class="cond-toggle-input" ${isActive?'checked':''}
                         onchange="setConditionalToggle('${t.name.replace(/'/g,"\\'")}', this.checked)">
                     <span class="cond-toggle-track"><span class="cond-toggle-thumb"></span></span>
                 </label>
-                <span class="cond-toggle-hint">◆</span>
+                <span class="cond-toggle-hint">⚡</span>
+                <span class="cond-toggle-ctx-label">${ctxLabel}</span>
             </span>` : '';
         return `
         <div class="st-tag-chip ${isActive ? 'cond-active' : ''}">
@@ -1357,7 +1437,7 @@ function addPerkToBuild(name, req, isIT) {
     showPerkToast(name);
 }
 
-function showPerkToast(name) {
+function _getPerkToast() {
     let toast = document.getElementById('perk-added-toast');
     if (!toast) {
         toast = document.createElement('div');
@@ -1365,6 +1445,13 @@ function showPerkToast(name) {
         toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--pip-bg-2);border:1px solid var(--pip-color);color:var(--pip-color);padding:10px 18px;font-size:0.7rem;font-family:var(--font-main);letter-spacing:1px;box-shadow:0 0 20px rgba(40,255,40,0.2);transition:opacity 0.4s;opacity:0;pointer-events:none;text-transform:uppercase;';
         document.body.appendChild(toast);
     }
+    return toast;
+}
+
+function showPerkToast(name) {
+    const toast = _getPerkToast();
+    toast.style.color = '';
+    toast.style.borderColor = '';
     toast.textContent = '✓ PERK ADDED: ' + name;
     toast.style.opacity = '1';
     clearTimeout(toast._timer);
@@ -1372,14 +1459,16 @@ function showPerkToast(name) {
 }
 
 function showPerkBlockedToast(name, reason) {
-    let t=document.getElementById('perk-added-toast');
-    if(!t){t=document.createElement('div');t.id='perk-added-toast';
-    t.style.cssText='position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--pip-bg-2);border:1px solid var(--pip-color);color:var(--pip-color);padding:10px 18px;font-size:0.7rem;font-family:var(--font-main);letter-spacing:1px;transition:opacity 0.4s;opacity:0;pointer-events:none;text-transform:uppercase;';
-    document.body.appendChild(t);}
-    t.style.color='#ff6060';t.style.borderColor='rgba(255,80,60,0.7)';
-    t.textContent='✕ '+reason+': '+name;
-    t.style.opacity='1';clearTimeout(t._timer);
-    t._timer=setTimeout(()=>{t.style.opacity='0';setTimeout(()=>{t.style.color='';t.style.borderColor='';},450);},2800);
+    const toast = _getPerkToast();
+    toast.style.color = '#ff6060';
+    toast.style.borderColor = 'rgba(255,80,60,0.7)';
+    toast.textContent = '✕ ' + reason + ': ' + name;
+    toast.style.opacity = '1';
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => {
+        toast.style.opacity = '0';
+        setTimeout(() => { toast.style.color = ''; toast.style.borderColor = ''; }, 450);
+    }, 2800);
 }
 
 /* ===== LEVEL UP MODAL ===== */
@@ -1539,6 +1628,10 @@ function closeITModal() {
 }
 
 function confirmIT(name, req, statKey) {
+    // Capture the state BEFORE any mutation so this action is always undoable,
+    // even if the player hasn't done anything else since opening the modal.
+    pushUndoState();
+
     if (special[statKey] < 10) special[statKey] += 1;
     closeITModal();
     const label = `${name} (+1 ${statKey})`;
@@ -1557,27 +1650,52 @@ function confirmIT(name, req, statKey) {
         return;
     }
 
-    // Fallback: find first empty prog row
+    // Fallback: find first empty prog row.
+    // NOTE: Do NOT call selectPerkInRow here — it detects "Intense Training" by name
+    // and would re-open the IT modal, causing a second nested modal invocation.
+    // Instead, set the value and info directly.
     const rows = document.querySelectorAll('#prog-list .prog-row');
     for (const row of rows) {
         const nameInput = row.querySelector('.prog-name-input');
-        if (!nameInput.value.trim()) {
-            selectPerkInRow(row, name);
+        if (nameInput && !nameInput.value.trim()) {
             nameInput.value = label;
-            const ni = row.querySelector('.prog-notes-input'); if(ni) ni.value = req;
+            const notesInput = row.querySelector('.prog-notes-input');
+            if (notesInput && !notesInput.value) notesInput.value = req;
+            // Show perk info block so it renders correctly
+            const info = row.querySelector('.prog-perk-info');
+            const reqEl = row.querySelector('.prog-perk-req');
+            const descEl = row.querySelector('.prog-perk-desc');
+            const badge = row.querySelector('.prog-rank-badge');
+            const clearBtn = row.querySelector('.prog-clear-btn');
+            const pd = PERKS_DATA.find(p => p.name.toUpperCase() === name.toUpperCase());
+            if (info) info.style.display = 'block';
+            if (reqEl) reqEl.textContent = req;
+            if (descEl && pd) descEl.textContent = pd.desc;
+            if (badge) { badge.textContent = '1 RANK'; badge.style.display = 'inline'; }
+            if (clearBtn) clearBtn.style.display = 'inline';
+            row.classList.add('has-perk');
+            updateAll();
+            reCheckAllPerkRows();
             triggerAutosave();
             showPerkToast(label);
             return;
         }
     }
+
+    // Last resort: add an extra perk row
     addExtraPerk();
     const extras = document.querySelectorAll('#extra-perk-list .prog-row');
     const last = extras[extras.length - 1];
     if (last) {
-        selectPerkInRow(last, name);
-        last.querySelector('.prog-name-input').value = label;
-        const ni = last.querySelector('.prog-notes-input'); if(ni) ni.value = req;
+        const ni = last.querySelector('.prog-name-input');
+        if (ni) ni.value = label;
+        const notesInput = last.querySelector('.prog-notes-input');
+        if (notesInput) notesInput.value = req;
+        last.classList.add('has-perk');
+        const clearBtn = last.querySelector('.prog-clear-btn');
+        if (clearBtn) clearBtn.style.display = 'inline';
     }
+    updateAll();
     triggerAutosave();
     showPerkToast(label);
 }
@@ -1641,11 +1759,7 @@ function addUniqueArmorToLoadout(name) {
         }
         triggerAutosave();
     }
-    const btn = document.getElementById('tab-btn-gear');
-    btn.style.boxShadow = '0 0 12px var(--pip-color)';
-    btn.style.background = 'var(--pip-color)';
-    btn.style.color = 'black';
-    setTimeout(() => { if (!btn.classList.contains('active')) { btn.style.boxShadow = ''; btn.style.background = ''; btn.style.color = ''; } }, 800);
+    _flashGearTabBtn();
 }
 
 function updateUniqueMarker(cb) {
@@ -1680,16 +1794,7 @@ function renderUniques() {
     });
 }
 
-function addUniqueToLoadout(name) {
-    addWeapon();
-    const cards = document.querySelectorAll('#weapon-list .gear-card');
-    const card = cards[cards.length - 1];
-    if (card) {
-        const ins = card.querySelectorAll('.gear-field-input');
-        if(ins[0]) ins[0].value = name;
-        triggerAutosave();
-    }
-    // Flash the loadout tab button briefly to guide the user
+function _flashGearTabBtn() {
     const btn = document.getElementById('tab-btn-gear');
     btn.style.boxShadow = '0 0 12px var(--pip-color)';
     btn.style.background = 'var(--pip-color)';
@@ -1701,6 +1806,19 @@ function addUniqueToLoadout(name) {
             btn.style.color = '';
         }
     }, 800);
+}
+
+function addUniqueToLoadout(name) {
+    addWeapon();
+    const cards = document.querySelectorAll('#weapon-list .gear-card');
+    const card = cards[cards.length - 1];
+    if (card) {
+        const ins = card.querySelectorAll('.gear-field-input');
+        if(ins[0]) ins[0].value = name;
+        triggerAutosave();
+    }
+    // Flash the loadout tab button briefly to guide the user
+    _flashGearTabBtn();
 }
 
 /* ===== RENDER: COLLECTIBLES ===== */
@@ -1797,6 +1915,19 @@ function computeBadges(){
      {safe:'dlc-honest-hearts',l:'HONEST HEARTS'},{safe:'dlc-old-world-blues',l:'OLD WORLD BLUES'},
      {safe:'dlc-lonesome-road',l:'LONESOME ROAD'},{safe:'companion-quests',l:'ALL COMPANIONS'}]
     .forEach(b=>{if(_catComplete('#quest-list-container',b.safe))e.push({group:'CHRONICLE',label:b.l,icon:'◆'});});
+    // ── LIBRARIAN: 5+ of any skill book ──────────────────────────
+    const libSkillNames = {
+        'BARTER':'Barter','BIG GUNS':'Big Guns','ENERGY WEAPONS':'Energy Weapons',
+        'EXPLOSIVES':'Explosives','GUNS':'Guns','LOCKPICK':'Lockpick',
+        'MEDICINE':'Medicine','MELEE WEAPONS':'Melee Weapons','REPAIR':'Repair',
+        'SCIENCE':'Science','SNEAK':'Sneak','SPEECH':'Speech',
+        'SURVIVAL':'Survival','UNARMED':'Unarmed'
+    };
+    Object.entries(skillBooksFound).forEach(([skill, count]) => {
+        if (count >= 5) {
+            e.push({ group: 'LIBRARIAN', label: libSkillNames[skill] || skill, icon: '📖' });
+        }
+    });
     return e;
 }
 function renderBadges(){
@@ -1807,8 +1938,16 @@ function renderBadges(){
     badges.forEach(b=>{if(!grps[b.group])grps[b.group]=[];grps[b.group].push(b);});
     let h='';
     for(const g in grps){
-        h+='<div class="badge-group-label">'+g+'</div>';
-        grps[g].forEach(b=>{h+='<div class="badge-row"><span class="badge-icon">'+b.icon+'</span><span class="badge-label">'+b.label+'</span></div>';});
+        h+=`<div class="badge-group-block" data-group="${g}">`;
+        h+=`<div class="badge-group-label">${g}</div>`;
+        grps[g].forEach(b=>{
+            h+=`<div class="badge-card">`;
+            h+=`<span class="badge-icon-wrap">${b.icon}</span>`;
+            h+=`<span class="badge-label">${b.label}</span>`;
+            h+=`<span class="badge-check">✓</span>`;
+            h+=`</div>`;
+        });
+        h+='</div>';
     }
     el.innerHTML=h;
 }
@@ -2378,12 +2517,14 @@ function selectPerkInRow(row, perkName) {
     if (CONDITIONAL_PERK_NAMES && CONDITIONAL_PERK_NAMES.has(perk.name)) {
         const isActive = isConditionalActive(perk.name);
         const safeName = perk.name.replace(/'/g, "\\'");
+        const ctxLabel = (typeof COND_TOGGLE_LABELS !== 'undefined' && COND_TOGGLE_LABELS[perk.name]) || 'ACTIVE';
         const condDiv = document.createElement('div');
         condDiv.className = 'cond-toggle-row';
         condDiv.innerHTML = `
             <span class="cond-toggle-label">
-                <span class="cond-icon">⚡</span> CONDITIONAL EFFECT
-                <span class="cond-toggle-hint-text">(toggle for display — never affects eligibility)</span>
+                <span class="cond-icon">⚡</span>
+                <span class="cond-toggle-ctx-label">${ctxLabel}</span>
+                <span class="cond-toggle-hint-text">(display only)</span>
             </span>
             <label class="cond-toggle-lbl">
                 <input type="checkbox" class="cond-toggle-input" ${isActive?'checked':''}
@@ -2812,6 +2953,12 @@ function openTraitPerkPickerModal(traitName) {
     if (titleEl) titleEl.innerHTML = `◈ TRAIT BONUS &mdash; <span style="color:#c8ffd4;">${traitName}</span>: SELECT A FREE PERK`;
     const srchEl = document.getElementById('perk-picker-search');
     if (srchEl) srchEl.value = '';
+    // Reset sort
+    _perkPickerSort = 'az';
+    const azP = document.getElementById('ppick-sort-az');
+    const lvlP = document.getElementById('ppick-sort-lvl');
+    if (azP) azP.classList.add('active');
+    if (lvlP) lvlP.classList.remove('active');
     // Set mode flag so renderer knows
     const modal = document.getElementById('perk-picker-modal');
     if (modal) {
@@ -2823,7 +2970,8 @@ function openTraitPerkPickerModal(traitName) {
 }
 
 let _perkPickerLevel = null;
-let _perkPickerList = [];
+let _perkPickerList  = [];
+let _perkPickerSort  = 'az';    // 'az' | 'lvl'
 
 function openPerkPickerModal(lvl) {
     _perkPickerLevel = lvl;
@@ -2831,6 +2979,12 @@ function openPerkPickerModal(lvl) {
     if (titleEl) titleEl.textContent = `LEVEL ${lvl} — SELECT YOUR PERK`;
     const srchEl = document.getElementById('perk-picker-search');
     if (srchEl) srchEl.value = '';
+    // Reset sort to A-Z on each open
+    _perkPickerSort = 'az';
+    const azP = document.getElementById('ppick-sort-az');
+    const lvlP = document.getElementById('ppick-sort-lvl');
+    if (azP) azP.classList.add('active');
+    if (lvlP) lvlP.classList.remove('active');
     renderPerkPickerGrid();
     const modal = document.getElementById('perk-picker-modal');
     if (modal) modal.style.display = 'flex';
@@ -2866,16 +3020,38 @@ function renderPerkPickerGrid() {
     const grid = document.getElementById('perk-picker-grid');
     if (!grid) return;
 
+    // How many times is this perk already in the build?
+    const takenCounts = getTakenPerkCounts();
+    function takenCount(p) { return takenCounts.get(p.name.toUpperCase()) || 0; }
+    // Is every rank of this perk already filled?
+    function isFullyTaken(p) { return takenCount(p) >= p.ranks; }
+
+    // Helper: parse the minimum level from a perk's req string
+    function perkLevel(p) {
+        const m = (p.req || '').match(/Level\s+(\d+)/i);
+        return m ? parseInt(m[1]) : 0;
+    }
+
+    // Comparator respecting _perkPickerSort
+    function sortPerks(a, b) {
+        if (_perkPickerSort === 'lvl') {
+            const la = perkLevel(a), lb = perkLevel(b);
+            if (la !== lb) return la - lb;
+        }
+        return a.name.localeCompare(b.name);
+    }
+
     if (isTraitMode) {
-        // Show ALL perks: eligible A-Z first, then ineligible A-Z (dimmed, still selectable)
-        const eligible = PERKS_DATA
+        // Trait mode: show all perks except fully-taken ones
+        const available = PERKS_DATA.filter(p => !isFullyTaken(p));
+        const eligible = available
             .filter(p => meetsRequirements(p))
             .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
-            .sort((a,b) => a.name.localeCompare(b.name));
-        const ineligible = PERKS_DATA
+            .sort(sortPerks);
+        const ineligible = available
             .filter(p => !meetsRequirements(p))
             .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
-            .sort((a,b) => a.name.localeCompare(b.name));
+            .sort(sortPerks);
 
         _perkPickerList = [...eligible, ...ineligible];
         const countEl = document.getElementById('perk-picker-count');
@@ -2883,12 +3059,16 @@ function renderPerkPickerGrid() {
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
             const isElig = i < eligible.length;
+            const taken = takenCount(p);
+            const lvlNum = perkLevel(p);
+            const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
             const rankBadge = p.ranks > 1
-                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${p.ranks} RANKS</span>`
+                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${taken}/${p.ranks} RANKS</span>`
                 : `<span class="pperk-rank-badge">1 RANK</span>`;
             return `<div class="pperk-card pperk-trait-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${isElig ? 'TAKE THIS PERK' : 'REQUIREMENTS NOT MET — YOU MAY STILL SELECT AS A TRAIT REWARD'}">
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
+                    ${lvlBadge}
                     ${rankBadge}
                     ${!isElig ? '<span class="pperk-inelig-tag">REQ NOT MET</span>' : ''}
                 </div>
@@ -2898,22 +3078,28 @@ function renderPerkPickerGrid() {
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     } else {
-        // Level-up mode: eligible only
-        const eligible = PERKS_DATA.filter(p => meetsRequirements(p));
-        _perkPickerList = search ? eligible.filter(p =>
+        // Level-up mode: eligible only, exclude fully-taken perks
+        const eligible = PERKS_DATA.filter(p => meetsRequirements(p) && !isFullyTaken(p));
+        let list = search ? eligible.filter(p =>
             p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
         ) : eligible;
+        list = list.slice().sort(sortPerks);
+        _perkPickerList = list;
 
         const countEl = document.getElementById('perk-picker-count');
         if (countEl) countEl.textContent = `${_perkPickerList.length} ELIGIBLE`;
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
+            const taken = takenCount(p);
+            const lvlNum = perkLevel(p);
+            const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
             const rankBadge = p.ranks > 1
-                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${p.ranks} RANKS</span>`
+                ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${taken}/${p.ranks} RANKS</span>`
                 : `<span class="pperk-rank-badge">1 RANK</span>`;
             return `<div class="pperk-card" onclick="takePerkFromModal(${i})">
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
+                    ${lvlBadge}
                     ${rankBadge}
                 </div>
                 <div class="pperk-req">${p.req}</div>
@@ -2922,6 +3108,21 @@ function renderPerkPickerGrid() {
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO ELIGIBLE PERKS FOUND</div>';
     }
+}
+
+function setPerkPickerSort(mode) {
+    _perkPickerSort = mode;
+    document.getElementById('ppick-sort-az')  && document.getElementById('ppick-sort-az').classList.toggle('active',  mode === 'az');
+    document.getElementById('ppick-sort-lvl') && document.getElementById('ppick-sort-lvl').classList.toggle('active', mode === 'lvl');
+    renderPerkPickerGrid();
+}
+
+function setTraitPickerSort(mode) {
+    _traitPickerSort = mode;
+    document.getElementById('tpick-sort-az')  && document.getElementById('tpick-sort-az').classList.toggle('active',  mode === 'az');
+    document.getElementById('tpick-sort-req') && document.getElementById('tpick-sort-req').classList.toggle('active', mode === 'req');
+    const search = (document.getElementById('trait-modal-search') || {}).value || '';
+    renderTraitGrid(search);
 }
 
 function takePerkFromModal(idx) {
@@ -3180,18 +3381,53 @@ function setCustomTheme(name, skipSave) {
             quoteBar.style.display = 'none';
         }
     }
+    // Play theme jingle on switch (not on initial load via skipSave)
+    if (!skipSave) {
+        nsAudio.playThemeJingle(_activeCustomTheme);
+    }
+    // Sync HUD THEME panel tile highlight + button state
+    document.querySelectorAll('.hud-theme-tile').forEach(tile => {
+        tile.classList.toggle('active-tile', (tile.dataset.theme || '') === _activeCustomTheme);
+    });
+    const hudBtn = document.getElementById('hud-theme-btn');
+    if (hudBtn) {
+        if (_activeCustomTheme) {
+            hudBtn.classList.add('theme-active');
+        } else {
+            hudBtn.classList.remove('theme-active');
+        }
+    }
 }
 
 function applyStoredTheme() {
     const saved = localStorage.getItem('NS_CustomTheme') || '';
     if (saved) {
-        setCustomTheme(saved, true); // use setCustomTheme so quote bar is populated
+        setCustomTheme(saved, true);
     } else {
         _activeCustomTheme = '';
         document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active-theme'));
     }
+    // Sync HUD panel tiles
+    document.querySelectorAll('.hud-theme-tile').forEach(tile => {
+        tile.classList.toggle('active-tile', (tile.dataset.theme || '') === _activeCustomTheme);
+    });
 }
 
+function toggleThemePanel() {
+    const panel = document.getElementById('hud-theme-panel');
+    if (!panel) return;
+    const open = panel.style.display !== 'none';
+    panel.style.display = open ? 'none' : 'block';
+    const btn = document.getElementById('hud-theme-btn');
+    if (btn) btn.textContent = open ? '🎨 HUD THEME' : '🎨 CLOSE THEME';
+}
+
+function closeThemePanel() {
+    const panel = document.getElementById('hud-theme-panel');
+    if (panel) panel.style.display = 'none';
+    const btn = document.getElementById('hud-theme-btn');
+    if (btn) btn.textContent = '🎨 HUD THEME';
+}
 
 /* ═══════════════════════════════════════════════
    KARMA SYSTEM
@@ -3363,8 +3599,45 @@ const nsAudio = (() => {
     return {
         click() {
             if (muted) return;
-            playNoise(0.04, 0.15, 1200);
-            playTone(1200, 'square', 0.03, 0.06);
+            // Theme-specific click SFX
+            const t = typeof _activeCustomTheme !== 'undefined' ? _activeCustomTheme : '';
+            if (t === 'bos') {
+                // Heavy armoured clunk — low square thud
+                playNoise(0.035, 0.18, 500);
+                playTone(180, 'square', 0.04, 0.08);
+            } else if (t === 'enclave') {
+                // Cold institutional beep — clean sine double-tap
+                playTone(1800, 'sine', 0.02, 0.05);
+                playTone(2200, 'sine', 0.015, 0.03, 0.002, 0.025);
+            } else if (t === 'vault21') {
+                // Vegas coin-drop chime — bright triangle ping
+                playTone(1046, 'triangle', 0.06, 0.09);
+                playTone(1318, 'sine', 0.04, 0.04, 0.002, 0.03);
+            } else if (t === 'legion') {
+                // Roman war drum snap — sharp noise burst
+                playNoise(0.05, 0.22, 350);
+                playTone(90, 'sawtooth', 0.03, 0.07);
+            } else if (t === 'ncr') {
+                // Frontier typewriter clack
+                playNoise(0.045, 0.16, 900);
+                playTone(600, 'square', 0.025, 0.04);
+            } else if (t === 'house') {
+                // Neon flicker buzz — quick electric zap
+                playTone(440, 'sawtooth', 0.025, 0.06);
+                playNoise(0.02, 0.10, 3000);
+            } else if (t === 'shi') {
+                // Soft bamboo knock — muted sine tap
+                playTone(320, 'sine', 0.045, 0.07);
+                playNoise(0.02, 0.06, 400);
+            } else if (t === 'vaulttec') {
+                // Cheerful plastic click — high sine pop
+                playTone(1400, 'sine', 0.025, 0.07);
+                playTone(1800, 'triangle', 0.015, 0.03, 0.002, 0.018);
+            } else {
+                // Default NS green terminal click
+                playNoise(0.04, 0.15, 1200);
+                playTone(1200, 'square', 0.03, 0.06);
+            }
         },
         clack() {
             if (muted) return;
@@ -3394,6 +3667,96 @@ const nsAudio = (() => {
                 playTone(freq * 2, 'sine', durs[i], 0.022, 0.005, t);
                 t += durs[i] + 0.03;
             });
+        },
+        // ── Faction theme switch jingles ────────────────────────────────────
+        bosJingle() {
+            if (muted) return;
+            // Heavy march motif — low square tones with metallic noise
+            playNoise(0.12, 0.12, 300);
+            const notes = [196, 220, 196, 262];
+            const durs  = [0.14, 0.10, 0.10, 0.32];
+            let t = 0.05;
+            notes.forEach((f, i) => { playTone(f, 'square', durs[i]+0.06, 0.07, 0.01, t); t += durs[i]+0.04; });
+        },
+        enclaveJingle() {
+            if (muted) return;
+            // Cold military fanfare — clean sine fourths
+            const notes = [880, 1174, 1318, 1760];
+            const durs  = [0.08, 0.08, 0.08, 0.22];
+            let t = 0;
+            notes.forEach((f, i) => { playTone(f, 'sine', durs[i]+0.04, 0.06, 0.005, t); t += durs[i]+0.03; });
+        },
+        vault21Jingle() {
+            if (muted) return;
+            // Vegas coin cascade — descending triangle glitter
+            const notes = [1318, 1174, 1046, 880, 1046, 1318];
+            const durs  = [0.06, 0.06, 0.06, 0.06, 0.08, 0.22];
+            let t = 0;
+            notes.forEach((f, i) => {
+                playTone(f, 'triangle', durs[i]+0.04, 0.08, 0.004, t);
+                playNoise(0.03, 0.05, 4000, t);
+                t += durs[i]+0.02;
+            });
+        },
+        legionJingle() {
+            if (muted) return;
+            // Roman war drums — low sawtooth march
+            playNoise(0.3, 0.14, 250);
+            const beats = [0, 0.18, 0.32, 0.46];
+            beats.forEach(bt => { playTone(80, 'sawtooth', 0.10, 0.10, 0.005, bt); playNoise(0.05, 0.12, 300, bt); });
+        },
+        ncrJingle() {
+            if (muted) return;
+            // Frontier harmonica riff — sine slides
+            const notes = [392, 440, 494, 440, 523];
+            const durs  = [0.12, 0.10, 0.12, 0.10, 0.35];
+            let t = 0;
+            notes.forEach((f, i) => { playTone(f, 'sine', durs[i]+0.08, 0.06, 0.02, t); t += durs[i]+0.04; });
+        },
+        houseJingle() {
+            if (muted) return;
+            // Neon casino arpeggio — electric sawtooth glimmer
+            const notes = [494, 622, 784, 988, 784, 622, 784];
+            const durs  = [0.06, 0.06, 0.06, 0.10, 0.06, 0.06, 0.22];
+            let t = 0;
+            notes.forEach((f, i) => {
+                playTone(f, 'sawtooth', durs[i]+0.03, 0.055, 0.006, t);
+                t += durs[i]+0.02;
+            });
+        },
+        shiJingle() {
+            if (muted) return;
+            // Pentatonic eastern motif — soft sine
+            const notes = [523, 587, 659, 784, 659, 523];
+            const durs  = [0.14, 0.10, 0.12, 0.20, 0.10, 0.32];
+            let t = 0;
+            notes.forEach((f, i) => { playTone(f, 'sine', durs[i]+0.10, 0.055, 0.025, t); t += durs[i]+0.05; });
+        },
+        vaulttecJingle() {
+            if (muted) return;
+            // Cheerful retro major arpeggio — triangle waves
+            const notes = [523, 659, 784, 1046, 784, 1046, 1318];
+            const durs  = [0.07, 0.07, 0.07, 0.12, 0.07, 0.07, 0.28];
+            let t = 0;
+            notes.forEach((f, i) => {
+                playTone(f, 'triangle', durs[i]+0.04, 0.08, 0.006, t);
+                playTone(f*2, 'sine', durs[i]+0.02, 0.02, 0.003, t);
+                t += durs[i]+0.02;
+            });
+        },
+        playThemeJingle(themeName) {
+            const jingles = {
+                'bos':      () => this.bosJingle(),
+                'enclave':  () => this.enclaveJingle(),
+                'vault21':  () => this.vault21Jingle(),
+                'legion':   () => this.legionJingle(),
+                'ncr':      () => this.ncrJingle(),
+                'house':    () => this.houseJingle(),
+                'shi':      () => this.shiJingle(),
+                'vaulttec': () => this.vaulttecJingle(),
+                '':         () => this.cwMotif(),
+            };
+            if (jingles[themeName] !== undefined) jingles[themeName]();
         },
         // Slow descending minor melody with low rumble & geiger ticks (Capital Wasteland)
         cwMotif() {
@@ -3544,55 +3907,9 @@ window.onload = () => {
     renderBooksTab();
 };
 
-/* ===== TEMPLATE BUILDS ===== */
-const TEMPLATE_BUILDS = [{"id":"ghost","name":"THE GHOST","subtitle":"CW · HC · Evil","desc":"A paranoid hunter-killer lurking in the shadows of the Capital Wasteland. Sneak attacks with Energy Weapons. Lowest gear counts, highest threat. ☢ HARDCORE MODE.","tags_short":"SNEAK / ENERGY WPN / LOCKPICK","karma_color":"#c0392b","data":{"name":"The Ghost","mode":"hc","origin":"CW","buildKarma":"evil","special":{"STR":3,"PER":9,"END":5,"CHA":3,"INT":5,"AGI":9,"LCK":6},"tags":[false,false,true,false,false,true,false,false,false,false,true,false,false,false],"traits":["Kamikaze","","","","","",""],"startingTraits":[{"name":"Kamikaze"}],"perks":[["Friend of the Night",""],["Thief",""],["Mister Sandman",""],["Silent Running",""],["The Professional ",""],["Laser Commander",""],["Ninja",""],["Better Criticals",""],["Finesse",""],["Sniper",""],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":58,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":7,"MEDICINE":16,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":12,"SNEAK":42,"SPEECH":10,"SURVIVAL":0,"UNARMED":0},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":3,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":4,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":5,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":6,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":7,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":8,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":9,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":10,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":11,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":12,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":13,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":14,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":4,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":15,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":16,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":17,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":18,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":19,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":20,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":1,"SNEAK":2,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":21,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":22,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":23,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":24,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":25,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":26,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":27,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":28,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":29,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5},{"level":30,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":2,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":4,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":1,"SURVIVAL":0,"UNARMED":0},"tagged":["ENERGY WEAPONS","LOCKPICK","SNEAK"],"pointsTotal":5}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Passive playstyle. Stay crouched, exploit sneak attacks.\nPrioritize Sneak to 50 ASAP for Mister Sandman.\nLaser Rifle + Recharger Pistol as sidearm.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}},{"id":"butcher","name":"THE BUTCHER","subtitle":"MW · HC · Very Evil","desc":"A Legion-aligned berserker who carves his way through the Mojave with blade and fist. Fewest words. Loudest message. ☢ HARDCORE MODE.","tags_short":"MELEE WPN / UNARMED / SURVIVAL","karma_color":"#8B0000","data":{"name":"The Butcher","mode":"hc","origin":"MW","buildKarma":"very-evil","special":{"STR":8,"PER":5,"END":8,"CHA":2,"INT":5,"AGI":6,"LCK":6},"tags":[false,false,false,false,false,false,false,true,false,false,false,false,true,true],"traits":["Kamikaze","","","","","",""],"startingTraits":[{"name":"Kamikaze"}],"perks":[["Blunt Force Trauma",""],["Butcher",""],["Piercing Strike",""],["Super Slam",""],["Slayer",""],["Iron Fist",""],["Unstoppable Force",""],["Chainsaw Carnage",""],["Overkiller",""],["Slayer","Rank 2"],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":22,"MELEE WEAPONS":58,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":13,"UNARMED":44},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":3,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":4,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":5,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":6,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":7,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":8,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":9,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":10,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":11,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":12,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":13,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":14,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":1,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":2,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":15,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":16,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":17,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":18,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":19,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":20,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":21,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":22,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":4},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":23,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":24,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":25,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":26,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":27,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":28,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":29,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5},{"level":30,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":2,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":1},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":4,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":2},"tagged":["SURVIVAL","MELEE WEAPONS","UNARMED"],"pointsTotal":5}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Get Melee Weapons to 35 by LV6 for Butcher perk.\nUse two-handed heavy melee (Chainsaw, Thermic Lance).\nSurvival keeps you alive without fast travel.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}},{"id":"ranger","name":"THE DESERT RANGER","subtitle":"MW · STD · Neutral","desc":"A stoic wanderer of the Mojave wastes. Cowboy weapons, survival instincts, and one shot to spare. A classic lone-gun archetype.","tags_short":"GUNS / SNEAK / SURVIVAL","karma_color":"#7f8c8d","data":{"name":"The Desert Ranger","mode":"std","origin":"MW","buildKarma":"neutral","special":{"STR":5,"PER":8,"END":6,"CHA":5,"INT":5,"AGI":6,"LCK":5},"tags":[false,false,false,false,true,false,false,false,false,false,true,false,true,false],"traits":["Kamikaze","","","","","",""],"startingTraits":[],"perks":[["Cowboy",""],["Hunter",""],["Run n' Gun",""],["Survivalist",""],["Gunslinger",""],["Sniper",""],["Hobbler",""],["Desperado",""],["Saguaro Stalker",""],["Sharpshooter",""],["Center of Mass",""],["Bolt-Action Hero",""],["Headhunter",""],["Headhunter","Rank 2"],["Sixgun Samurai",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":104,"LOCKPICK":0,"MEDICINE":36,"MELEE WEAPONS":0,"REPAIR":30,"SCIENCE":0,"SNEAK":74,"SPEECH":30,"SURVIVAL":74,"UNARMED":0},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":8,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":3,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":8,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":4,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":8,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":5,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":8,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":6,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":8,"SPEECH":0,"SURVIVAL":8,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":7,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":8,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":9,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":10,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":11,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":12,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":3,"SPEECH":0,"SURVIVAL":3,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":6,"SPEECH":0,"SURVIVAL":6,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":13,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":14,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":15,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":16,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":17,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":18,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":2,"SPEECH":0,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":8,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":2,"SCIENCE":0,"SNEAK":4,"SPEECH":0,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":19,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":20,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":21,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":22,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":23,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":24,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":1,"SCIENCE":0,"SNEAK":4,"SPEECH":2,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":25,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":26,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":27,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":28,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":29,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12},{"level":30,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":2,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":6,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":3,"SURVIVAL":4,"UNARMED":0},"tagged":["SURVIVAL","SNEAK","GUNS"],"pointsTotal":12}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Cowboy perk works with revolvers, lever-actions, and machetes.\nPrioritize Guns to 45+ before LV10 for Gunslinger.\nRep-based: staying neutral keeps all faction doors open.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}},{"id":"penitent","name":"THE PENITENT","subtitle":"MW · STD · Very Evil","desc":"A honey-tongued manipulator who dismantles the Mojave's power structures from within. Words are deadlier than bullets.","tags_short":"SPEECH / BARTER / SNEAK","karma_color":"#8B0000","data":{"name":"The Penitent","mode":"std","origin":"MW","buildKarma":"very-evil","special":{"STR":4,"PER":6,"END":5,"CHA":9,"INT":7,"AGI":4,"LCK":5},"tags":[true,false,false,false,false,false,false,false,false,false,true,true,false,false],"traits":["Ideologue","","","","","",""],"startingTraits":[{"name":"Ideologue"}],"perks":[["Scoundrel",""],["Indirect Bartering",""],["Gallows Humor",""],["Thief",""],["Wolf In Sheep's Clothing",""],["Scoundrel","Rank 2"],["Sneering Imperalist",""],["Devil's Advocate",""],["Scoundrel","Rank 3"],["Collective Consciousness",""],["Master Trader",""],["Overt Coercion",""],["Notorious E.V.I.L.",""],["Card Counter",""],["Ain't Like That Now",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":92,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":18,"LOCKPICK":34,"MEDICINE":30,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":42,"SNEAK":69,"SPEECH":92,"SURVIVAL":0,"UNARMED":0},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":4,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":3,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":8,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":6,"SPEECH":8,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":3,"allocation":{"BARTER":4,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":3,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":8,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":6,"SPEECH":8,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":4,"allocation":{"BARTER":4,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":3,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":8,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":6,"SPEECH":8,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":5,"allocation":{"BARTER":4,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":3,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":8,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":6,"SPEECH":8,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":6,"allocation":{"BARTER":4,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":3,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":8,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":6,"SPEECH":8,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":7,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":8,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":9,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":10,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":11,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":12,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":3,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":6,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":13,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":14,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":15,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":16,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":17,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":18,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":2,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":2,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":19,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":20,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":21,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":22,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":23,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":24,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":3,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":25,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":26,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":27,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":28,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":29,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13},{"level":30,"allocation":{"BARTER":3,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":3,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":6,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":3,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":6,"SURVIVAL":0,"UNARMED":0},"tagged":["BARTER","SPEECH","SNEAK"],"pointsTotal":13}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Ideologue doubles the book bonus for Speech and Barter.\nDevil's Advocate requires Very Evil karma — maintain alignment.\nOvert Coercion (LV24) stacks with Indirect Bartering for massive price reductions.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}},{"id":"ironclad","name":"THE IRONCLAD","subtitle":"CW · STD · Very Good","desc":"A Brotherhood soldier clad in power armor, raining ordnance on Super Mutants. Slow, loud, and impossible to stop.","tags_short":"BIG GUNS / REPAIR / MEDICINE","karma_color":"#2980b9","data":{"name":"The Ironclad","mode":"std","origin":"CW","buildKarma":"very-good","special":{"STR":9,"PER":5,"END":8,"CHA":3,"INT":5,"AGI":4,"LCK":6},"tags":[false,true,false,false,false,false,true,false,true,false,false,false,false,false],"traits":["Steel Plated","","","","","",""],"startingTraits":[],"perks":[["Size Matters",""],["Heavy Gunner",""],["Toughness",""],["Stonewall",""],["Size Matters","Rank 2"],["Strong Back",""],["Steel Jacketed",""],["Size Matters","Rank 3"],["Heavyweight",""],["Iron Focus",""],["Concentrated Fire",""],["Burden to Bear",""],["Commando",""],["Commando","Rank 2"],["Jury Rigging",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":0,"BIG GUNS":104,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":68,"MELEE WEAPONS":0,"REPAIR":98,"SCIENCE":48,"SNEAK":6,"SPEECH":24,"SURVIVAL":0,"UNARMED":0},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":8,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":3,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":8,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":4,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":8,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":5,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":8,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":6,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":8,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":7,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":8,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":9,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":10,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":11,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":12,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":4,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":8,"SCIENCE":2,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":13,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":14,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":15,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":16,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":17,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":18,"allocation":{"BARTER":0,"BIG GUNS":4,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":8,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":1,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":19,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":20,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":21,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":22,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":23,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":24,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":25,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":26,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":27,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":28,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":29,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12},{"level":30,"allocation":{"BARTER":0,"BIG GUNS":3,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":2,"MELEE WEAPONS":0,"REPAIR":3,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":6,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":4,"MELEE WEAPONS":0,"REPAIR":6,"SCIENCE":2,"SNEAK":0,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"tagged":["REPAIR","MEDICINE","BIG GUNS"],"pointsTotal":12}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Size Matters (3 ranks) is the backbone — get it before LV17.\nRepair 90 required for Jury Rigging at LV30 — keep Repair investment high.\nSteel Jacketed pairs perfectly with heavy armor for DT and damage bonus.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}},{"id":"corruptor","name":"THE CORRUPTOR","subtitle":"CW · HC · Evil","desc":"A contract killer operating in the Capital Wasteland. Fast-talking, quick-drawing, and twice as dangerous when no one's watching. ☢ HARDCORE MODE.","tags_short":"GUNS / SPEECH / SNEAK","karma_color":"#c0392b","data":{"name":"The Corruptor","mode":"hc","origin":"CW","buildKarma":"evil","special":{"STR":5,"PER":7,"END":6,"CHA":6,"INT":6,"AGI":6,"LCK":4},"tags":[false,false,false,false,true,false,false,false,false,false,true,true,false,false],"traits":["Trigger Discipline","","","","","",""],"startingTraits":[{"name":"Trigger Discipline"}],"perks":[["Gunslinger",""],["Thief",""],["Cowboy",""],["Mister Sandman",""],["The Professional ",""],["Sneering Imperalist",""],["Desperado",""],["Devil's Advocate",""],["Finesse",""],["Notorious E.V.I.L.",""],["",""],["",""],["",""],["",""],["",""],["",""]],"extraPerks":[],"weapons":[],"armor":[],"skillPoints":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":58,"LOCKPICK":6,"MEDICINE":6,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":36,"SPEECH":58,"SURVIVAL":10,"UNARMED":0},"charLevel":30,"skillHistory":[{"level":2,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":3,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":4,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":5,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":6,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":7,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":8,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":4,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":9,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":10,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":11,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":12,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":13,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":14,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":1,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":15,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":16,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":17,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":18,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":19,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":20,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":0,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":1,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":0,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":21,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":22,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":23,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":24,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":25,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":26,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":27,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":28,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":29,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6},{"level":30,"allocation":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":2,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":1,"SPEECH":2,"SURVIVAL":1,"UNARMED":0},"gains":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":4,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":2,"SPEECH":4,"SURVIVAL":1,"UNARMED":0},"tagged":["SPEECH","SNEAK","GUNS"],"pointsTotal":6}],"skillBooksFound":{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":0,"MELEE WEAPONS":0,"REPAIR":0,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":0,"UNARMED":0},"implantsTaken":{},"rewardPerksList":[],"internalizedTraitsList":[],"fourthTagSkill":null,"notes":"Trigger Discipline grants extra accuracy at range — pairs well with pistols.\nTalk your way in, shoot your way out.\nHC mode: fewer perks — every choice counts.","regionalStorage":{"CW":{"quests":[],"colls":[]},"MW":{"quests":[],"colls":[]}},"humbledLevel":0,"humbledReductions":{},"hasBeenHumbled":false,"quests":[],"colls":[],"uniWpns":[],"uniArmor":[]}}];
 
-function openTemplateModal() {
-    const modal = document.getElementById('template-modal');
-    modal.style.display = 'flex';
-    renderTemplateGrid();
-    nsAudio.click();
-}
 
-function closeTemplateModal() {
-    document.getElementById('template-modal').style.display = 'none';
-    nsAudio.click();
-}
 
-function renderTemplateGrid() {
-    const grid = document.getElementById('template-grid');
-    if (!grid) return;
-    grid.innerHTML = TEMPLATE_BUILDS.map((b, idx) => {
-        const [origin, modeStr, karma] = b.subtitle.split(' · ');
-        const isHC = modeStr === 'HC';
-        const modeColor = isHC ? '#ff6b35' : '#7fba00';
-        const modeLabel = isHC ? '☢ HARDCORE' : '◈ STANDARD';
-        return `<div class="template-card" onclick="loadTemplate(${idx})">
-            <div class="template-card-header">
-                <span class="template-card-title">${b.name}</span>
-                <span class="template-karma-badge" style="color:${b.karma_color}">
-                    ${karma}
-                </span>
-            </div>
-            <div class="template-meta">
-                <span class="template-origin-tag">${origin === 'CW' ? '⚡ CAPITAL WASTELAND' : '☀ MOJAVE WASTELAND'}</span>
-                <span class="template-mode-tag" style="color:${modeColor}">${modeLabel}</span>
-            </div>
-            <div class="template-tags-line">${b.tags_short}</div>
-            <div class="template-desc">${b.desc}</div>
-            <div class="template-load-btn">LOAD ARCHETYPE ▶</div>
-        </div>`;
-    }).join('');
-}
 
-function loadTemplate(idx) {
-    const build = TEMPLATE_BUILDS[idx];
-    if (!build) return;
-    if (!confirm(`LOAD "${build.name}"?\n\nYour current build will be replaced.\nThe Skill Log tab will open to show the level-by-level point allocation.`)) return;
-    const safe = sanitizeImport(build.data);
-    if (!safe) { alert('TEMPLATE LOAD ERROR'); return; }
-    hydrate(safe);
-    closeTemplateModal();
-    showTab('skilllog');
-    nsAudio.mojaveJingle && nsAudio.mojaveJingle();
-}
+
+
