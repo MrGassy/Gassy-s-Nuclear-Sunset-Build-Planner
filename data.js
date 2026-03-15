@@ -460,7 +460,7 @@ const SPECIAL_INFO = {
 };
 
 /* --- CUSTOM_THEMES --- */
-const CUSTOM_THEMES = ['bos','enclave','vault21','legion','ncr','house','shi','vaulttec'];
+const CUSTOM_THEMES = ['bos','enclave','vault21','legion','ncr','house','shi','vaulttec','dos','nukacola','sierramadre'];
 
 /* --- FACTION_THEMES --- */
 const FACTION_THEMES = {
@@ -473,6 +473,9 @@ const FACTION_THEMES = {
     'house':    { label: 'MR. HOUSE / NEW VEGAS',    quote: 'The House always wins. Welcome to the Strip.' },
     'shi':      { label: 'THE SHI',                  quote: "The Emperor's calculations are absolute. Steel endures." },
     'vaulttec': { label: 'VAULT-TEC',                quote: 'Revolutionizing safety for an uncertain future!' },
+    'dos':      { label: 'DOS TERMINAL',             quote: 'C:\\> NUCLEAR_SUNSET.EXE' },
+    'nukacola': { label: 'NUKA-COLA',                quote: 'Nuka-Cola! Enjoy the refreshing taste of the Atomic Age!' },
+    'sierramadre': { label: 'SIERRA MADRE',          quote: 'Begin again. Let go.' },
 };
 
 /* --- CONDITIONAL_PERK_NAMES (perks with toggleable situational SPECIAL/skill bonuses) --- */

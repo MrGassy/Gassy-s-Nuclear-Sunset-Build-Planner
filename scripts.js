@@ -7,6 +7,7 @@ let showEligibleOnly = false;
 let skillBooksFound = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let _lvlupSession = {}, _lvlupPointsLeft = 0;
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
+let _itCancelled = false; // tracks if IT modal was cancelled
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
 const sKeys = ["STR", "PER", "END", "CHA", "INT", "AGI", "LCK"];
@@ -91,7 +92,7 @@ let regionalStorage = { 'CW': { quests: [], colls: [] }, 'MW': { quests: [], col
 
 
 
-/* ===== UNDO SYSTEM (unlimited states) ===== */
+/* ===== UNDO SYSTEM (last 5 states) ===== */
 let _undoStack = [];  // each entry = JSON string of collectData()
 let _undoPaused = false;  // prevent capture during hydrate
 
@@ -101,6 +102,7 @@ function pushUndoState() {
     // Don't push duplicate of the last state
     if (_undoStack.length && _undoStack[_undoStack.length - 1] === snap) return;
     _undoStack.push(snap);
+    if (_undoStack.length > 5) _undoStack.shift();
     updateUndoBtn();
 }
 
@@ -1117,6 +1119,8 @@ function sanitizeImport(d) {
         tagged: Array.isArray(e.tagged) ? e.tagged.filter(s => skills.includes(s)) : [],
         pointsTotal: typeof e.pointsTotal === 'number' ? e.pointsTotal : 0
     })) : [];
+    clean.perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist.map(name => sanitizeStr(name || '')).filter(Boolean) : [];
+    clean.currentBuildName = sanitizeStr(d.currentBuildName || 'Current Build');
     return clean;
 }
 
@@ -1396,6 +1400,11 @@ function buildPerkCard(p) {
         }
     }
 
+    const isWishlisted = isPerkWishlisted(p.name);
+    const wishlistClass = isWishlisted ? 'wishlisted' : '';
+    const wishlistTitle = isWishlisted ? 'Remove from wishlist' : 'Add to wishlist';
+    const wishlistLabel = isWishlisted ? '★ WISHLISTED' : '★ WISHLIST';
+
     return `<div class="${cardClass}">
         <div class="perk-card-header">
             <h3>${p.name}</h3>
@@ -1408,6 +1417,7 @@ function buildPerkCard(p) {
         <div class="perk-card-actions">
             <button class="action-btn" onclick="addPerkToBuild('${escapedName}','${escapedReq}',${isIT})">${addBtnLabel}</button>
             <button class="action-btn perk-zoom-action" title="EXPAND DESCRIPTION" onclick="openPerkZoom('${escapedName}','${p.req.replace(/'/g,"\\'")}','${p.desc.replace(/'/g,"\\'")}')">⊕ ZOOM</button>
+            <button class="action-btn perk-wishlist-action ${wishlistClass}" onclick="togglePerkWishlist('${escapedName}')" title="${wishlistTitle}">${wishlistLabel}</button>
         </div>
     </div>`;
 }
@@ -1492,6 +1502,94 @@ function openLevelUpModal() {
 
 function closeLevelUpModal() {
     document.getElementById('lvlup-modal').classList.remove('active');
+}
+
+/* ===== LEVEL ROLLBACK MODAL ===== */
+function openLevelRollbackModal() {
+    if (charLevel <= 1) return; // Can't rollback from level 1
+    const modal = document.getElementById('rollback-modal');
+    const currentLevelEl = document.getElementById('rollback-current-level');
+    const inputEl = document.getElementById('rollback-level-input');
+    if (currentLevelEl) currentLevelEl.textContent = charLevel;
+    if (inputEl) {
+        inputEl.max = charLevel - 1;
+        inputEl.value = Math.max(1, charLevel - 1);
+    }
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeLevelRollbackModal() {
+    const modal = document.getElementById('rollback-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function confirmLevelRollback() {
+    const inputEl = document.getElementById('rollback-level-input');
+    const targetLevel = parseInt(inputEl.value);
+    
+    if (isNaN(targetLevel) || targetLevel < 1 || targetLevel >= charLevel) {
+        alert('Invalid level selected');
+        return;
+    }
+    
+    // Remove perks gained after target level
+    const allProgRows = document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)');
+    allProgRows.forEach(row => {
+        const lvlTag = row.querySelector('.lvl-tag');
+        if (lvlTag) {
+            const rowLevel = parseInt(lvlTag.textContent.match(/\d+/)?.[0] || '0');
+            if (rowLevel > targetLevel) {
+                // Check if this was Intense Training and revert the SPECIAL increase
+                const perkName = row.querySelector('.prog-name-input')?.value || '';
+                const itMatch = perkName.match(/^Intense Training \(\+1 (\w+)\)/i);
+                if (itMatch) {
+                    const statKey = itMatch[1];
+                    if (special[statKey] > 1) special[statKey]--;
+                }
+                // Clear the row
+                clearProgRow(row.querySelector('.prog-clear-btn'));
+            }
+        }
+    });
+    
+    // Remove extra perks (bonus perks)
+    const extraRows = document.querySelectorAll('#extra-perk-list .prog-row');
+    extraRows.forEach(row => {
+        const perkName = row.querySelector('.prog-name-input')?.value || '';
+        const itMatch = perkName.match(/^Intense Training \(\+1 (\w+)\)/i);
+        if (itMatch) {
+            const statKey = itMatch[1];
+            if (special[statKey] > 1) special[statKey]--;
+        }
+        row.remove();
+    });
+    
+    // Remove skill points gained after target level
+    const levelsToRemove = charLevel - targetLevel;
+    for (let i = 0; i < levelsToRemove; i++) {
+        if (skillHistory.length > 0) {
+            const lastEntry = skillHistory[skillHistory.length - 1];
+            // Subtract the gains from that level
+            skills.forEach(s => {
+                const gain = lastEntry.gains[s] || 0;
+                skillPoints[s] = Math.max(0, (skillPoints[s] || 0) - gain);
+            });
+            skillHistory.pop();
+        }
+    }
+    
+    // Update character level
+    charLevel = targetLevel;
+    
+    // Close modal and update
+    closeLevelRollbackModal();
+    updateAll();
+    reCheckAllPerkRows();
+    triggerAutosave();
+    pushUndoState();
+    
+    // Show confirmation toast
+    showPerkToast(`ROLLED BACK TO LEVEL ${targetLevel}`);
 }
 
 function renderLevelUpGrid() {
@@ -1605,6 +1703,7 @@ function showPerkLevelUpPrompt(lvl) {
 /* ===== INTENSE TRAINING MODAL ===== */
 function openITModal(name, req, sourceRow) {
     _itTargetRow = sourceRow || null;
+    _itCancelled = true; // Assume cancelled until a stat is selected
     const grid = document.getElementById('it-picker-grid');
     grid.innerHTML = '';
     sKeys.forEach(k => {
@@ -1625,14 +1724,17 @@ function openITModal(name, req, sourceRow) {
 
 function closeITModal() {
     document.getElementById('it-modal').classList.remove('active');
+    // If cancelled (no stat selected), clear the row
+    if (_itTargetRow && _itCancelled) {
+        clearProgRow(_itTargetRow.querySelector('.prog-clear-btn'));
+        _itTargetRow = null;
+    }
+    _itCancelled = false;
 }
 
 function confirmIT(name, req, statKey) {
-    // Capture the state BEFORE any mutation so this action is always undoable,
-    // even if the player hasn't done anything else since opening the modal.
-    pushUndoState();
-
     if (special[statKey] < 10) special[statKey] += 1;
+    _itCancelled = false; // Clear cancellation flag - user made a selection
     closeITModal();
     const label = `${name} (+1 ${statKey})`;
 
@@ -1650,52 +1752,27 @@ function confirmIT(name, req, statKey) {
         return;
     }
 
-    // Fallback: find first empty prog row.
-    // NOTE: Do NOT call selectPerkInRow here — it detects "Intense Training" by name
-    // and would re-open the IT modal, causing a second nested modal invocation.
-    // Instead, set the value and info directly.
+    // Fallback: find first empty prog row
     const rows = document.querySelectorAll('#prog-list .prog-row');
     for (const row of rows) {
         const nameInput = row.querySelector('.prog-name-input');
-        if (nameInput && !nameInput.value.trim()) {
+        if (!nameInput.value.trim()) {
+            selectPerkInRow(row, name);
             nameInput.value = label;
-            const notesInput = row.querySelector('.prog-notes-input');
-            if (notesInput && !notesInput.value) notesInput.value = req;
-            // Show perk info block so it renders correctly
-            const info = row.querySelector('.prog-perk-info');
-            const reqEl = row.querySelector('.prog-perk-req');
-            const descEl = row.querySelector('.prog-perk-desc');
-            const badge = row.querySelector('.prog-rank-badge');
-            const clearBtn = row.querySelector('.prog-clear-btn');
-            const pd = PERKS_DATA.find(p => p.name.toUpperCase() === name.toUpperCase());
-            if (info) info.style.display = 'block';
-            if (reqEl) reqEl.textContent = req;
-            if (descEl && pd) descEl.textContent = pd.desc;
-            if (badge) { badge.textContent = '1 RANK'; badge.style.display = 'inline'; }
-            if (clearBtn) clearBtn.style.display = 'inline';
-            row.classList.add('has-perk');
-            updateAll();
-            reCheckAllPerkRows();
+            const ni = row.querySelector('.prog-notes-input'); if(ni) ni.value = req;
             triggerAutosave();
             showPerkToast(label);
             return;
         }
     }
-
-    // Last resort: add an extra perk row
     addExtraPerk();
     const extras = document.querySelectorAll('#extra-perk-list .prog-row');
     const last = extras[extras.length - 1];
     if (last) {
-        const ni = last.querySelector('.prog-name-input');
-        if (ni) ni.value = label;
-        const notesInput = last.querySelector('.prog-notes-input');
-        if (notesInput) notesInput.value = req;
-        last.classList.add('has-perk');
-        const clearBtn = last.querySelector('.prog-clear-btn');
-        if (clearBtn) clearBtn.style.display = 'inline';
+        selectPerkInRow(last, name);
+        last.querySelector('.prog-name-input').value = label;
+        const ni = last.querySelector('.prog-notes-input'); if(ni) ni.value = req;
     }
-    updateAll();
     triggerAutosave();
     showPerkToast(label);
 }
@@ -2023,20 +2100,32 @@ function updateAll() {
     document.getElementById('ov-perks').innerHTML = (() => {
         // Strip annotations like [+AP REGEN] or (+1 STR) from perk names for lookup
         function baseName(v) { return v.replace(/\s*[\[(].*?[\])]$/, '').trim(); }
+        // Helper: check if perk meets requirements
+        function getReqIndicator(perkName) {
+            const perk = PERKS_DATA.find(p => p.name.toUpperCase() === perkName.toUpperCase());
+            if (!perk) return ''; // Not a standard perk
+            const meets = meetsRequirements(perk);
+            return meets 
+                ? '<span class="ov-req-indicator ov-req-met" title="REQUIREMENTS CURRENTLY MET">✓</span>'
+                : '<span class="ov-req-indicator ov-req-unmet" title="REQUIREMENTS NOT MET">⚠</span>';
+        }
         const levelPerks = Array.from(document.querySelectorAll('#prog-list .prog-row')).map(r => {
             const lvl = r.querySelector('.lvl-tag')?.innerText || '';
             const val = r.querySelector('.prog-name-input')?.value || '';
             if (!val) return '';
+            const reqIndicator = getReqIndicator(baseName(val));
             // always set onclick — ovPerkClick will look up across all data sources
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${val}</span><span style="opacity:0.5;">${lvl}</span></div>`;
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}</span><span style="opacity:0.5;">${lvl}</span></div>`;
         }).join('');
         const bonusPerks = Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).map(r => {
             const val = r.querySelector('.prog-name-input')?.value || '';
             if (!val) return '';
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`;
+            const reqIndicator = getReqIndicator(baseName(val));
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`;
         }).join('');
         const rewardPerks = rewardPerksList.map(rp => {
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(rp.name)}')" title="CLICK FOR DETAILS"><span>${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`;
+            const reqIndicator = getReqIndicator(rp.name);
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(rp.name)}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`;
         }).join('');
         const internalized = internalizedTraitsList.map(it => {
             return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(it.name)}')" title="CLICK FOR DETAILS"><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`;
@@ -2091,6 +2180,11 @@ function updateAll() {
         lvlBtn.classList.toggle('lvlup-btn-ready', ready);
         lvlBtn.classList.toggle('lvlup-btn-locked', !ready);
     }
+    // Fix 5: Show/hide rollback button based on level
+    const rollbackBtn = document.getElementById('rollback-btn');
+    if (rollbackBtn) {
+        rollbackBtn.style.display = charLevel > 1 ? 'inline-block' : 'none';
+    }
     const skillListEl = document.getElementById('skill-list');
     if (skillListEl) {
         skillListEl.innerHTML = skills.map(s => {
@@ -2125,6 +2219,19 @@ function updateAll() {
     // Keep build summary drawer in sync if open
     const drawerEl = document.getElementById('build-summary-drawer');
     if (drawerEl && drawerEl.classList.contains('drawer-open')) updateBuildSummaryDrawer();
+    // Fix 4: Real-time requirement updates - refresh All Perks tab if currently visible
+    const perksTab = document.getElementById('tab-perks');
+    if (perksTab && perksTab.style.display !== 'none') {
+        renderAllPerks();
+    }
+    
+    // Update wishlist count badge
+    const wishlistCountEl = document.getElementById('wishlist-count');
+    if (wishlistCountEl) {
+        const count = perkWishlist.length;
+        wishlistCountEl.textContent = count;
+        wishlistCountEl.style.display = count > 0 ? 'inline-block' : 'none';
+    }
 }
 
 function mod(k, v) { special[k] += v; updateAll(); reCheckAllPerkRows(); triggerAutosave(); }
@@ -2710,7 +2817,9 @@ function collectData() {
         fourthTagSkill: _fourthTagSkill || null,
         startingTraits: startingTraits,
         skillHistory: skillHistory,
-        conditionalToggles: conditionalToggles
+        conditionalToggles: conditionalToggles,
+        perkWishlist: perkWishlist || [],
+        currentBuildName: currentBuildName || 'Current Build'
     };
 }
 
@@ -2767,6 +2876,8 @@ function hydrate(d) {
     startingTraits = Array.isArray(d.startingTraits) ? d.startingTraits : [];
     skillHistory = Array.isArray(d.skillHistory) ? d.skillHistory : [];
     conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object') ? d.conditionalToggles : {};
+    perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist : [];
+    currentBuildName = d.currentBuildName || 'Current Build';
     setMode(d.mode, true);
     setOrigin(d.origin, true);
     const tI = document.querySelectorAll('#tag-area input');
@@ -2825,6 +2936,194 @@ function hydrate(d) {
 }
 
 function purgeMemory() { if(confirm("INITIATE TOTAL ATOMIC ANNIHILATION?")) { localStorage.clear(); location.reload(); } }
+
+/* ===== BUILD MANAGEMENT SYSTEM ===== */
+
+// Load saved builds from localStorage
+function loadSavedBuildsList() {
+    const stored = localStorage.getItem('NS_SavedBuilds');
+    savedBuilds = stored ? JSON.parse(stored) : [];
+    return savedBuilds;
+}
+
+// Save builds list to localStorage
+function saveBuildsList() {
+    localStorage.setItem('NS_SavedBuilds', JSON.stringify(savedBuilds));
+}
+
+// Save current build to the builds list
+function saveCurrentBuild() {
+    const name = prompt('ENTER BUILD NAME:', currentBuildName || 'My Build');
+    if (!name) return;
+    
+    const buildData = collectData();
+    buildData.currentBuildName = name;
+    
+    // Check if build with this name exists
+    const existingIndex = savedBuilds.findIndex(b => b.name === name);
+    
+    if (existingIndex >= 0) {
+        if (!confirm(`Overwrite existing build "${name}"?`)) return;
+        savedBuilds[existingIndex] = {
+            name: name,
+            data: buildData,
+            timestamp: Date.now()
+        };
+    } else {
+        savedBuilds.push({
+            name: name,
+            data: buildData,
+            timestamp: Date.now()
+        });
+    }
+    
+    currentBuildName = name;
+    saveBuildsList();
+    showPerkToast(`BUILD SAVED: ${name}`);
+    renderBuildsManager();
+}
+
+// Load a build
+function loadBuild(index) {
+    if (index < 0 || index >= savedBuilds.length) return;
+    
+    const build = savedBuilds[index];
+    const safe = sanitizeImport(build.data);
+    if (safe) {
+        hydrate(safe);
+        currentBuildName = build.name;
+        showPerkToast(`BUILD LOADED: ${build.name}`);
+        closeBuildManager();
+    }
+}
+
+// Delete a build
+function deleteBuild(index) {
+    if (index < 0 || index >= savedBuilds.length) return;
+    
+    const build = savedBuilds[index];
+    if (!confirm(`DELETE BUILD "${build.name}"?`)) return;
+    
+    savedBuilds.splice(index, 1);
+    saveBuildsList();
+    showPerkToast(`BUILD DELETED`);
+    renderBuildsManager();
+}
+
+// Duplicate a build
+function duplicateBuild(index) {
+    if (index < 0 || index >= savedBuilds.length) return;
+    
+    const original = savedBuilds[index];
+    const copy = JSON.parse(JSON.stringify(original));
+    copy.name = prompt('ENTER NAME FOR COPY:', `${original.name} (Copy)`);
+    if (!copy.name) return;
+    
+    copy.timestamp = Date.now();
+    savedBuilds.push(copy);
+    saveBuildsList();
+    showPerkToast(`BUILD DUPLICATED`);
+    renderBuildsManager();
+}
+
+// Open build manager modal
+function openBuildManager() {
+    loadSavedBuildsList();
+    renderBuildsManager();
+    const modal = document.getElementById('build-manager-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+// Close build manager
+function closeBuildManager() {
+    const modal = document.getElementById('build-manager-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+// Render builds list
+function renderBuildsManager() {
+    const list = document.getElementById('builds-list');
+    if (!list) return;
+    
+    if (savedBuilds.length === 0) {
+        list.innerHTML = '<div style="text-align:center; opacity:0.4; padding:24px;">NO SAVED BUILDS YET</div>';
+        return;
+    }
+    
+    list.innerHTML = savedBuilds.map((build, i) => {
+        const date = new Date(build.timestamp).toLocaleString();
+        const isCurrent = build.name === currentBuildName;
+        return `<div class="build-item ${isCurrent ? 'build-current' : ''}">
+            <div class="build-info">
+                <div class="build-name">${build.name} ${isCurrent ? '<span class="build-current-badge">ACTIVE</span>' : ''}</div>
+                <div class="build-meta">Level ${build.data.charLevel || 1} • ${date}</div>
+            </div>
+            <div class="build-actions">
+                <button class="build-action-btn" onclick="loadBuild(${i})" title="LOAD THIS BUILD">LOAD</button>
+                <button class="build-action-btn" onclick="duplicateBuild(${i})" title="DUPLICATE BUILD">COPY</button>
+                <button class="build-action-btn build-action-delete" onclick="deleteBuild(${i})" title="DELETE BUILD">DELETE</button>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// Open build comparison modal
+/* ===== PERK WISHLIST SYSTEM ===== */
+
+function togglePerkWishlist(perkName) {
+    const index = perkWishlist.indexOf(perkName);
+    if (index >= 0) {
+        perkWishlist.splice(index, 1);
+    } else {
+        perkWishlist.push(perkName);
+    }
+    triggerAutosave();
+    renderPerkPickerGrid();
+    renderAllPerks();
+    renderWishlist(); // Re-render wishlist modal if it's open
+}
+
+function isPerkWishlisted(perkName) {
+    return perkWishlist.includes(perkName);
+}
+
+function openWishlist() {
+    renderWishlist();
+    const modal = document.getElementById('wishlist-modal');
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeWishlist() {
+    const modal = document.getElementById('wishlist-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+function renderWishlist() {
+    const container = document.getElementById('wishlist-container');
+    if (!container) return;
+    
+    if (perkWishlist.length === 0) {
+        container.innerHTML = '<div style="text-align:center; opacity:0.4; padding:24px;">NO WISHLISTED PERKS YET<br><span style="font-size:0.7em; margin-top:8px; display:block;">Click the ★ icon on perks to add them to your wishlist</span></div>';
+        return;
+    }
+    
+    const wishlistedPerks = PERKS_DATA.filter(p => perkWishlist.includes(p.name));
+    
+    container.innerHTML = wishlistedPerks.map(p => {
+        const meets = meetsRequirements(p);
+        const statusClass = meets ? 'wishlist-ready' : 'wishlist-not-ready';
+        const statusText = meets ? '✓ READY TO TAKE' : '⚠ REQUIREMENTS NOT MET';
+        
+        return `<div class="wishlist-item ${statusClass}">
+            <div class="wishlist-perk-info">
+                <div class="wishlist-perk-name">${p.name}</div>
+                <div class="wishlist-perk-req">${p.req}</div>
+                <div class="wishlist-status">${statusText}</div>
+            </div>
+            <button class="wishlist-remove-btn" onclick="togglePerkWishlist('${p.name}')" title="Remove from wishlist">✕</button>
+        </div>`;
+    }).join('');
+}
 
 
 
@@ -2972,6 +3271,11 @@ function openTraitPerkPickerModal(traitName) {
 let _perkPickerLevel = null;
 let _perkPickerList  = [];
 let _perkPickerSort  = 'az';    // 'az' | 'lvl'
+let _perkPickerShowIneligible = false; // Toggle to show ineligible perks
+let _perkPickerFilters = { level: true, stats: true, skills: true }; // What blocks to show
+let perkWishlist = []; // Array of favorited perk names
+let savedBuilds = []; // Array of saved builds
+let currentBuildName = 'Current Build'; // Name of the active build
 
 function openPerkPickerModal(lvl) {
     _perkPickerLevel = lvl;
@@ -2985,6 +3289,18 @@ function openPerkPickerModal(lvl) {
     const lvlP = document.getElementById('ppick-sort-lvl');
     if (azP) azP.classList.add('active');
     if (lvlP) lvlP.classList.remove('active');
+    // Reset filter state
+    _perkPickerShowIneligible = false;
+    const toggleBtn = document.getElementById('ppick-toggle-ineligible');
+    const filterOpts = document.getElementById('ppick-filter-options');
+    if (toggleBtn) toggleBtn.classList.remove('active');
+    if (filterOpts) filterOpts.style.display = 'none';
+    // Reset checkboxes to all checked
+    ['level', 'stats', 'skills'].forEach(type => {
+        _perkPickerFilters[type] = true;
+        const checkbox = document.getElementById(`ppick-filter-${type}`);
+        if (checkbox) checkbox.checked = true;
+    });
     renderPerkPickerGrid();
     const modal = document.getElementById('perk-picker-modal');
     if (modal) modal.style.display = 'flex';
@@ -3032,6 +3348,29 @@ function renderPerkPickerGrid() {
         return m ? parseInt(m[1]) : 0;
     }
 
+    // Helper: determine what's blocking a perk (level, stats, or skills)
+    function getBlockType(p) {
+        const req = p.req;
+        const lvlM = req.match(/Level\s+(\d+)/i);
+        if (lvlM && charLevel < parseInt(lvlM[1])) return 'level';
+        
+        // Check each requirement chunk
+        for (const chunk of req.split(',').map(s => s.trim())) {
+            if (/^Level\s/i.test(chunk)) continue;
+            const anyMet = chunk.split(/\s+or\s+/i).some(part => parsePartMet(part));
+            if (!anyMet) {
+                // Determine if it's a stat or skill requirement
+                if (/\b(STR|PER|END|CHR|INT|AGL|LCK)\s+\d+/i.test(chunk)) return 'stats';
+                // Check for skill requirements
+                for (const { pattern } of SKILL_REQ_MAP) {
+                    if (pattern.test(chunk)) return 'skills';
+                }
+                return 'stats'; // default to stats if unclear
+            }
+        }
+        return null; // meets all requirements
+    }
+
     // Comparator respecting _perkPickerSort
     function sortPerks(a, b) {
         if (_perkPickerSort === 'lvl') {
@@ -3065,7 +3404,10 @@ function renderPerkPickerGrid() {
             const rankBadge = p.ranks > 1
                 ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${taken}/${p.ranks} RANKS</span>`
                 : `<span class="pperk-rank-badge">1 RANK</span>`;
+            const isWishlisted = isPerkWishlisted(p.name);
+            const wishlistBtn = `<button class="pperk-wishlist-btn ${isWishlisted ? 'wishlisted' : ''}" onclick="event.stopPropagation(); togglePerkWishlist('${p.name}')" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">★</button>`;
             return `<div class="pperk-card pperk-trait-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${isElig ? 'TAKE THIS PERK' : 'REQUIREMENTS NOT MET — YOU MAY STILL SELECT AS A TRAIT REWARD'}">
+                ${wishlistBtn}
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
                     ${lvlBadge}
@@ -3078,35 +3420,81 @@ function renderPerkPickerGrid() {
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     } else {
-        // Level-up mode: eligible only, exclude fully-taken perks
-        const eligible = PERKS_DATA.filter(p => meetsRequirements(p) && !isFullyTaken(p));
-        let list = search ? eligible.filter(p =>
-            p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
-        ) : eligible;
-        list = list.slice().sort(sortPerks);
-        _perkPickerList = list;
-
-        const countEl = document.getElementById('perk-picker-count');
-        if (countEl) countEl.textContent = `${_perkPickerList.length} ELIGIBLE`;
+        // Level-up mode: show eligible and optionally ineligible perks with filters
+        const available = PERKS_DATA.filter(p => !isFullyTaken(p));
+        const eligible = available.filter(p => meetsRequirements(p));
+        
+        let list, ineligibleList = [];
+        
+        if (_perkPickerShowIneligible) {
+            // Get ineligible perks and filter by block type
+            const allIneligible = available.filter(p => !meetsRequirements(p));
+            ineligibleList = allIneligible.filter(p => {
+                const blockType = getBlockType(p);
+                if (blockType === 'level' && !_perkPickerFilters.level) return false;
+                if (blockType === 'stats' && !_perkPickerFilters.stats) return false;
+                if (blockType === 'skills' && !_perkPickerFilters.skills) return false;
+                return true;
+            });
+            
+            // Apply search filter
+            const eligibleFiltered = eligible.filter(p => 
+                !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
+            );
+            const ineligibleFiltered = ineligibleList.filter(p =>
+                !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
+            );
+            
+            list = [...eligibleFiltered.sort(sortPerks), ...ineligibleFiltered.sort(sortPerks)];
+            _perkPickerList = list;
+            
+            const countEl = document.getElementById('perk-picker-count');
+            if (countEl) countEl.textContent = `${eligibleFiltered.length} ELIGIBLE · ${ineligibleFiltered.length} INELIGIBLE`;
+        } else {
+            // Show only eligible perks (original behavior)
+            list = search ? eligible.filter(p =>
+                p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search)
+            ) : eligible;
+            list = list.slice().sort(sortPerks);
+            _perkPickerList = list;
+            
+            const countEl = document.getElementById('perk-picker-count');
+            if (countEl) countEl.textContent = `${_perkPickerList.length} ELIGIBLE`;
+        }
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
+            const isElig = meetsRequirements(p);
             const taken = takenCount(p);
             const lvlNum = perkLevel(p);
             const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
             const rankBadge = p.ranks > 1
                 ? `<span class="pperk-rank-badge pperk-rank-multi">★ ${taken}/${p.ranks} RANKS</span>`
                 : `<span class="pperk-rank-badge">1 RANK</span>`;
-            return `<div class="pperk-card" onclick="takePerkFromModal(${i})">
+            
+            // Show what's blocking if ineligible
+            let blockInfo = '';
+            if (!isElig && _perkPickerShowIneligible) {
+                const blockType = getBlockType(p);
+                const blockLabels = { level: '⏱ LEVEL', stats: '⚡ STATS', skills: '📖 SKILLS' };
+                blockInfo = `<span class="pperk-inelig-tag">${blockLabels[blockType] || 'REQ NOT MET'}</span>`;
+            }
+            
+            const isWishlisted = isPerkWishlisted(p.name);
+            const wishlistBtn = `<button class="pperk-wishlist-btn ${isWishlisted ? 'wishlisted' : ''}" onclick="event.stopPropagation(); togglePerkWishlist('${p.name}')" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">★</button>`;
+            
+            return `<div class="pperk-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})">
+                ${wishlistBtn}
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
                     ${lvlBadge}
                     ${rankBadge}
+                    ${blockInfo}
                 </div>
                 <div class="pperk-req">${p.req}</div>
                 <div class="pperk-desc">${p.desc}</div>
-                <button class="pperk-take-btn">✓ TAKE THIS PERK</button>
+                <button class="pperk-take-btn">${isElig ? '✓ TAKE THIS PERK' : '⚠ REQ NOT MET'}</button>
             </div>`;
-        }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO ELIGIBLE PERKS FOUND</div>';
+        }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     }
 }
 
@@ -3114,6 +3502,20 @@ function setPerkPickerSort(mode) {
     _perkPickerSort = mode;
     document.getElementById('ppick-sort-az')  && document.getElementById('ppick-sort-az').classList.toggle('active',  mode === 'az');
     document.getElementById('ppick-sort-lvl') && document.getElementById('ppick-sort-lvl').classList.toggle('active', mode === 'lvl');
+    renderPerkPickerGrid();
+}
+
+function togglePerkPickerIneligible() {
+    _perkPickerShowIneligible = !_perkPickerShowIneligible;
+    const btn = document.getElementById('ppick-toggle-ineligible');
+    const filterOpts = document.getElementById('ppick-filter-options');
+    if (btn) btn.classList.toggle('active', _perkPickerShowIneligible);
+    if (filterOpts) filterOpts.style.display = _perkPickerShowIneligible ? 'flex' : 'none';
+    renderPerkPickerGrid();
+}
+
+function togglePerkPickerFilter(type, enabled) {
+    _perkPickerFilters[type] = enabled;
     renderPerkPickerGrid();
 }
 
@@ -3905,6 +4307,7 @@ window.onload = () => {
     applyStoredTheme();
     nsAudio.init();
     renderBooksTab();
+    loadSavedBuildsList(); // Load saved builds list
 };
 
 
