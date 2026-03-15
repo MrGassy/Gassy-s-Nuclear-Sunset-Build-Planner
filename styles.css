@@ -1223,7 +1223,7 @@ h2 {
 
 .levelup-dist-bar {
     display: grid;
-    grid-template-columns: 24px 80px 1fr 45px;
+    grid-template-columns: 24px 80px 1fr 45px 32px;
     gap: 8px;
     align-items: center;
 }
@@ -1286,6 +1286,14 @@ h2 {
     font-weight: bold;
     text-align: right;
     color: var(--pip-color);
+    min-width: 38px;
+}
+.levelup-dist-count {
+    font-size: 0.68rem;
+    font-weight: bold;
+    text-align: right;
+    color: rgba(255,255,255,0.45);
+    min-width: 28px;
 }
 
 /* ===== CHARACTER SHEET 3-COL GRID ===== */
@@ -2233,26 +2241,26 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 .psbtn-implant { color: #80d8ff; border-color: rgba(128,216,255,0.5); }
 .psbtn-implant:hover { background: rgba(128,216,255,0.1); }
 
-/* ===== SKILL LOG TAB ===== */
+/* ===== SKILL LOG ===== */
 .skilllog-header {
     padding: 10px 0 14px;
-    border-bottom: 1px solid rgba(100,255,100,0.12);
+    border-bottom: 1px solid rgba(var(--tc-r,100),var(--tc-g,255),var(--tc-b,100),0.12);
     margin-bottom: 14px;
 }
 .skilllog-title {
-    font-size: 1.05rem;
+    font-size: 1rem;
     font-weight: bold;
-    letter-spacing: 0.12em;
+    letter-spacing: 0.1em;
     color: var(--pip-color);
 }
 .skilllog-sub {
-    font-size: 0.75rem;
-    opacity: 0.45;
+    font-size: 0.62rem;
+    opacity: 0.4;
     margin-top: 4px;
-    letter-spacing: 0.07em;
+    letter-spacing: 0.06em;
 }
 .skilllog-empty {
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     opacity: 0.35;
     text-align: center;
     padding: 40px 20px;
@@ -2262,13 +2270,18 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 }
 .skilllog-summary {
     display: flex;
-    gap: 20px;
-    font-size: 0.8rem;
-    opacity: 0.6;
-    letter-spacing: 0.06em;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    font-size: 0.68rem;
+    opacity: 0.65;
+    letter-spacing: 0.05em;
     margin-bottom: 12px;
 }
 .skilllog-summary b { color: var(--pip-color); opacity: 1; }
+.skilllog-legend { margin-left: auto; font-size: 0.6rem; opacity: 0.5; }
+.skilllog-legend-tagged { color: #ffd080; }
+.skilllog-legend-val { color: rgba(255,255,255,0.7); font-weight: bold; }
 .skilllog-scroll {
     overflow-x: auto;
     border: 1px solid rgba(100,255,100,0.12);
@@ -2277,78 +2290,114 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 .skilllog-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 0.8rem;
-    letter-spacing: 0.04em;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
     min-width: 400px;
 }
 .skilllog-table thead {
-    background: rgba(100,255,100,0.06);
-    border-bottom: 1px solid rgba(100,255,100,0.15);
+    background: rgba(100,255,100,0.05);
+    border-bottom: 1px solid rgba(100,255,100,0.14);
 }
 .skilllog-th-skill {
     text-align: left;
-    padding: 7px 10px;
-    color: rgba(200,255,210,0.7);
-    font-size: 0.72rem;
+    padding: 6px 10px;
+    color: rgba(200,255,210,0.6);
+    font-size: 0.65rem;
     white-space: nowrap;
-    min-width: 120px;
+    min-width: 118px;
     position: sticky;
     left: 0;
-    background: var(--bg, #0a100a);
-    z-index: 1;
+    background: var(--pip-bg, #0a100a);
+    z-index: 2;
+    letter-spacing: 0.06em;
 }
 .skilllog-th-lvl {
-    padding: 7px 8px;
+    padding: 6px 5px;
     color: var(--pip-color);
     text-align: center;
     white-space: nowrap;
-    font-size: 0.75rem;
-    min-width: 42px;
+    font-size: 0.65rem;
+    min-width: 36px;
     cursor: help;
+    opacity: 0.8;
 }
 .skilllog-th-total {
-    padding: 7px 10px;
+    padding: 6px 8px;
     color: #ffd080;
     text-align: center;
-    font-size: 0.72rem;
+    font-size: 0.65rem;
     white-space: nowrap;
-    min-width: 56px;
+    min-width: 52px;
 }
-.skilllog-row:nth-child(even) { background: rgba(100,255,100,0.025); }
-.skilllog-row:hover { background: rgba(100,255,100,0.055); }
+.skilllog-th-final {
+    padding: 6px 8px;
+    color: rgba(255,255,255,0.55);
+    text-align: center;
+    font-size: 0.65rem;
+    white-space: nowrap;
+    min-width: 44px;
+}
+.skilllog-section-row { background: transparent !important; }
+.skilllog-section-label {
+    padding: 8px 10px 3px;
+    font-size: 0.55rem;
+    letter-spacing: 2px;
+    color: rgba(200,255,210,0.3);
+    text-transform: uppercase;
+    border-top: 1px solid rgba(100,255,100,0.07);
+}
+.skilllog-row:nth-child(even) { background: rgba(100,255,100,0.02); }
+.skilllog-row:hover { background: rgba(100,255,100,0.05); }
+.skilllog-row-tagged:nth-child(even) { background: rgba(255,208,128,0.025); }
+.skilllog-row-tagged:hover { background: rgba(255,208,128,0.05); }
 .skilllog-skill-name {
-    padding: 5px 10px;
-    color: rgba(200,255,210,0.8);
-    font-size: 0.78rem;
+    padding: 4px 10px;
+    color: rgba(200,255,210,0.78);
+    font-size: 0.72rem;
     white-space: nowrap;
     position: sticky;
     left: 0;
     background: inherit;
+    z-index: 1;
 }
-.skilllog-row:nth-child(even) .skilllog-skill-name { background: rgba(10,16,10,1); }
+.skilllog-row-tagged .skilllog-skill-name { color: #ffd080; }
+.skilllog-row:nth-child(even) .skilllog-skill-name { background: rgba(8,14,8,1); }
 .skilllog-row:hover .skilllog-skill-name { background: rgba(12,20,12,1); }
+.skilllog-row-tagged:nth-child(even) .skilllog-skill-name { background: rgba(14,12,4,1); }
+.skilllog-row-tagged:hover .skilllog-skill-name { background: rgba(18,15,5,1); }
+.skilllog-name-star { color: #ffd080; margin-right: 3px; font-size: 0.65rem; }
 .skilllog-cell {
-    padding: 5px 8px;
+    padding: 4px 5px;
     text-align: center;
-    border-left: 1px solid rgba(100,255,100,0.07);
-    font-size: 0.77rem;
+    border-left: 1px solid rgba(100,255,100,0.06);
+    font-size: 0.72rem;
 }
-.skilllog-zero { color: rgba(255,255,255,0.2); }
+.skilllog-zero { color: rgba(255,255,255,0.14); font-size: 0.62rem; }
 .skilllog-gain { color: #80ffb0; font-weight: bold; }
 .skilllog-tagged { color: #ffd080; }
-.skilllog-tagged .skilllog-star { font-size: 0.65rem; margin-left: 2px; vertical-align: super; }
+.skilllog-star { font-size: 0.55rem; margin-left: 1px; vertical-align: super; opacity: 0.8; }
 .skilllog-total-cell {
-    padding: 5px 10px;
+    padding: 4px 8px;
     text-align: center;
-    border-left: 1px solid rgba(255,208,128,0.2);
+    border-left: 1px solid rgba(255,208,128,0.18);
     color: #ffd080;
     font-weight: bold;
-    font-size: 0.78rem;
+    font-size: 0.72rem;
+    white-space: nowrap;
 }
-.skilllog-pts-row td {
-    border-top: 1px solid rgba(100,255,100,0.1);
+.skilllog-final-cell {
     padding: 4px 8px;
+    text-align: center;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.65);
+    font-weight: bold;
+    font-size: 0.75rem;
 }
+.skilllog-pts-row td { border-top: 1px solid rgba(100,255,100,0.1); }
+.skilllog-budget-label { font-size: 0.55rem !important; letter-spacing: 1px; opacity: 0.38; padding: 4px 10px !important; }
+.skilllog-budget-cell { font-size: 0.6rem !important; color: rgba(200,255,210,0.3) !important; padding: 3px 5px !important; }
+.skilllog-budget-total { text-align: center; font-size: 0.6rem; color: rgba(200,255,210,0.3); padding: 3px 8px; border-left: 1px solid rgba(100,255,100,0.08); }
+.skilllog-footnote { font-size: 0.55rem; opacity: 0.28; text-align: center; margin-top: 12px; letter-spacing: 0.04em; line-height: 1.8; }
 
 /* ══════════════════════════════════════════════
    SPECIAL INFO MODAL

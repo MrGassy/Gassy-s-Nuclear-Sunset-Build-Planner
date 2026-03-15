@@ -828,55 +828,79 @@ function renderSkillLog() {
     }
     if (empty) empty.style.display = 'none';
 
-    // Calculate cumulative totals at each level
-    const cumulativeGains = {};
-    skills.forEach(s => { cumulativeGains[s] = 0; });
+    // Pre-compute row totals
+    const totals = {};
+    skills.forEach(s => { totals[s] = 0; });
+    skillHistory.forEach(e => { skills.forEach(s => { totals[s] += (e.gains[s] || 0); }); });
 
+    // Final skill values
+    const finals = {};
+    skills.forEach(s => { finals[s] = skillTotal(s); });
+
+    // Tags as of most recent level
+    const activeTags = new Set(skillHistory[skillHistory.length - 1]?.tagged || []);
+
+    const totalPtsSpent = skillHistory.reduce((sum, e) =>
+        sum + Object.values(e.allocation).reduce((a, b) => a + b, 0), 0);
+    const ppl = skillHistory[0]?.pointsTotal ?? 0;
+
+    // Summary bar
     let html = `<div class="skilllog-summary">
-        <span>TOTAL LEVELS RECORDED: <b>${skillHistory.length}</b></span>
-        <span>CURRENT LEVEL: <b>${charLevel}</b></span>
+        <span>LEVELS: <b>${skillHistory.length}</b></span>
+        <span>PTS SPENT: <b>${totalPtsSpent}</b></span>
+        <span>PTS/LVL: <b>${ppl}</b></span>
+        <span class="skilllog-legend"><span class="skilllog-legend-tagged">★</span> = tagged &nbsp; <span class="skilllog-legend-val">num</span> = final skill value</span>
     </div>`;
 
-    // Build table
-    html += `<div class="skilllog-scroll">
-    <table class="skilllog-table">
-        <thead>
-            <tr>
-                <th class="skilllog-th-skill">SKILL</th>
-                ${skillHistory.map(e => `<th class="skilllog-th-lvl" title="Points budget: ${e.pointsTotal}">LV${e.level}</th>`).join('')}
-                <th class="skilllog-th-total">TOTAL<br>GAINED</th>
-            </tr>
-        </thead>
-        <tbody>`;
+    // Table
+    html += `<div class="skilllog-scroll"><table class="skilllog-table"><thead><tr>
+        <th class="skilllog-th-skill">SKILL</th>
+        ${skillHistory.map(e => `<th class="skilllog-th-lvl" title="Budget: ${e.pointsTotal} pts/lvl">LV${e.level}</th>`).join('')}
+        <th class="skilllog-th-total">TOTAL</th>
+        <th class="skilllog-th-final">FINAL</th>
+    </tr></thead><tbody>`;
 
-    skills.forEach(s => {
+    // Rows — tagged first, then untagged (ALL skills shown, even with zero investment)
+    const taggedSkills   = skills.filter(s =>  activeTags.has(s));
+    const untaggedSkills = skills.filter(s => !activeTags.has(s));
+
+    const renderRow = (s) => {
+        const isTagged = activeTags.has(s);
         let rowTotal = 0;
         const cells = skillHistory.map(entry => {
             const gain = entry.gains[s] || 0;
-            const isTagged = entry.tagged && entry.tagged.includes(s);
+            const wasTagged = entry.tagged && entry.tagged.includes(s);
             rowTotal += gain;
             if (gain === 0) return `<td class="skilllog-cell skilllog-zero">—</td>`;
-            return `<td class="skilllog-cell skilllog-gain${isTagged ? ' skilllog-tagged' : ''}" title="${isTagged ? '★ TAGGED — 2pts gained per 1 spent' : ''}">${gain > 0 ? '+'+gain : gain}${isTagged ? '<span class="skilllog-star">★</span>' : ''}</td>`;
+            return `<td class="skilllog-cell skilllog-gain${wasTagged ? ' skilllog-tagged' : ''}" title="${wasTagged ? '★ Tagged — 2 pts gained per 1 spent' : `+${gain} pts`}">+${gain}${wasTagged ? '<span class="skilllog-star">★</span>' : ''}</td>`;
         }).join('');
-
-        html += `<tr class="skilllog-row">
-            <td class="skilllog-skill-name">${s}</td>
+        const tagMark = isTagged ? '<span class="skilllog-name-star">★</span>' : '';
+        return `<tr class="skilllog-row${isTagged ? ' skilllog-row-tagged' : ''}">
+            <td class="skilllog-skill-name">${tagMark}${s}</td>
             ${cells}
             <td class="skilllog-total-cell">${rowTotal > 0 ? '+'+rowTotal : '—'}</td>
+            <td class="skilllog-final-cell">${finals[s]}</td>
         </tr>`;
-    });
+    };
 
-    // Points budget row
+    if (taggedSkills.length) {
+        html += `<tr class="skilllog-section-row"><td colspan="${skillHistory.length + 3}" class="skilllog-section-label">★ TAGGED SKILLS</td></tr>`;
+        taggedSkills.forEach(s => { html += renderRow(s); });
+    }
+    if (untaggedSkills.length) {
+        html += `<tr class="skilllog-section-row"><td colspan="${skillHistory.length + 3}" class="skilllog-section-label">UNTAGGED SKILLS</td></tr>`;
+        untaggedSkills.forEach(s => { html += renderRow(s); });
+    }
+
+    // Budget footer row
     html += `<tr class="skilllog-pts-row">
-        <td class="skilllog-skill-name" style="color:rgba(200,255,210,0.5); font-size:0.55rem;">PTS BUDGET</td>
-        ${skillHistory.map(e => `<td class="skilllog-cell" style="color:rgba(200,255,210,0.45); font-size:0.6rem;">${e.pointsTotal}</td>`).join('')}
-        <td class="skilllog-total-cell">—</td>
+        <td class="skilllog-skill-name skilllog-budget-label">PTS BUDGET</td>
+        ${skillHistory.map(e => `<td class="skilllog-cell skilllog-budget-cell">${e.pointsTotal}</td>`).join('')}
+        <td colspan="2" class="skilllog-budget-total">${totalPtsSpent} spent</td>
     </tr>`;
 
     html += `</tbody></table></div>`;
-
-    // Add a reset note
-    html += `<div style="font-size:0.58rem; opacity:0.35; text-align:center; margin-top:12px; letter-spacing:0.05em;">★ = TAGGED SKILL (1 PT SPENT = 2 PT GAINED) &nbsp;|&nbsp; LOG RESETS ON FULL BUILD RESET</div>`;
+    html += `<div class="skilllog-footnote">★ = tagged skill (1 pt spent = 2 pts gained) &nbsp;·&nbsp; FINAL = current skill value including base + all bonuses</div>`;
 
     wrap.innerHTML = html;
 }
@@ -2135,6 +2159,7 @@ function renderLevelUpBonuses() {
                     <div class="levelup-dist-fill hp-fill" style="width: ${hpPct}%;"></div>
                 </div>
                 <span class="levelup-dist-pct">${hpPct}%</span>
+                <span class="levelup-dist-count">${counts.hp}×</span>
             </div>
             <div class="levelup-dist-bar">
                 <span class="levelup-dist-icon">⚡</span>
@@ -2143,6 +2168,7 @@ function renderLevelUpBonuses() {
                     <div class="levelup-dist-fill ap-fill" style="width: ${apPct}%;"></div>
                 </div>
                 <span class="levelup-dist-pct">${apPct}%</span>
+                <span class="levelup-dist-count">${counts.ap}×</span>
             </div>
             <div class="levelup-dist-bar">
                 <span class="levelup-dist-icon">📦</span>
@@ -2151,6 +2177,7 @@ function renderLevelUpBonuses() {
                     <div class="levelup-dist-fill cw-fill" style="width: ${cwPct}%;"></div>
                 </div>
                 <span class="levelup-dist-pct">${cwPct}%</span>
+                <span class="levelup-dist-count">${counts.cw}×</span>
             </div>
         </div>
     `;
@@ -2578,7 +2605,7 @@ function effectiveSpecial(key) {
     const { perkSpecialDelta } = getActivePerkBonuses();
     const td = specialDelta[key] ?? 0;
     const pd = perkSpecialDelta[key] ?? 0;
-    return base + td + pd;
+    return Math.max(0, base + td + pd);
 }
 
 /**
@@ -3188,7 +3215,7 @@ function loadArchetype(id) {
     if (!confirm('LOAD ARCHETYPE: "' + a.name.toUpperCase() + '"?\n\nThis will overwrite your current build. Export first if you want to keep it.')) return;
     const buildData = {
         name: a.name,
-        notes: 'Archetype: ' + a.name + ' — ' + a.tagline,
+        notes: a.notes || ('Archetype: ' + a.name + ' — ' + a.tagline),
         mode: a.mode,
         origin: a.origin,
         buildKarma: a.buildKarma,
@@ -3202,8 +3229,8 @@ function loadArchetype(id) {
         armor: [],
         quests: [],
         colls: [],
-        uniWpns: [],
-        uniArmor: [],
+        uniWpns: a.uniWpns ? a.uniWpns.slice() : [],
+        uniArmor: a.uniArmor ? a.uniArmor.slice() : [],
         skillPoints: a.skillPoints ? Object.assign({}, a.skillPoints) : Object.fromEntries(skills.map(s => [s, 0])),
         skillBooksFound: Object.fromEntries(skills.map(s => [s, 0])),
         charLevel: a.charLevel || 1,
