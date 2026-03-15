@@ -3,11 +3,14 @@ let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHA: 5, INT
 let currentSort = 'az';
 let skillPoints = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let charLevel = 1;
+let levelUpBonuses = []; // Tracks level-up bonus choices: 'hp', 'ap', or 'cw' for each level
 let showEligibleOnly = false;
 let skillBooksFound = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let _lvlupSession = {}, _lvlupPointsLeft = 0;
+let _lvlupAttributeChoice = null; // Tracks current level-up attribute choice: 'hp', 'ap', or 'cw'
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
 let _itCancelled = false; // tracks if IT modal was cancelled
+let _hydrating = false; // true during hydrate() — suppresses choice modals (IT, Action Star, Tag!)
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
 const sKeys = ["STR", "PER", "END", "CHA", "INT", "AGI", "LCK"];
@@ -47,7 +50,7 @@ function skillTotal(s) {
     const { skillDelta: _cd } = getConditionalToggleDelta ? getConditionalToggleDelta() : { skillDelta: {} };
     const _td = _tb[s]||0, _pd = _pb[s]||0, _cdd = _cd[s]||0;
     const _bd = bookBonus(s);
-    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd + _cdd) + (skillPoints[s]||0) + _bd);
+    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd + _cdd + (skillPoints[s]||0) + _bd));
 }
 
 /* skillBase WITHOUT conditional toggles — for eligibility/perk requirement checks */
@@ -56,7 +59,7 @@ function skillBaseForEligibility(s) {
     const _pb = getActivePerkBonuses  ? getActivePerkBonuses().perkSkillDelta : {};
     const _td = _tb[s]||0, _pd = _pb[s]||0;
     const _bd = bookBonus(s);
-    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd) + (skillPoints[s]||0) + _bd);
+    return Math.min(100, Math.max(0, skillBase(s) + _td + _pd + (skillPoints[s]||0) + _bd));
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
@@ -664,10 +667,41 @@ function renderImplants() {
 }
 
 /* ===== PERK ZOOM MODAL ===== */
+/* Shared helper: wires Take/Wishlist buttons given a perkData entry (or null) */
+function _setupPerkZoomButtons(perkData) {
+    const actionsDiv = document.getElementById('perk-zoom-actions');
+    const takeBtn    = document.getElementById('perk-zoom-take-btn');
+    const wishlistBtn = document.getElementById('perk-zoom-wishlist-btn');
+    if (perkData && actionsDiv && takeBtn && wishlistBtn) {
+        actionsDiv.style.display = 'flex';
+        const isIT = perkData.name.trim().toUpperCase() === 'INTENSE TRAINING';
+        const escapedName = perkData.name.replace(/'/g, "\\'");
+        const escapedReq  = perkData.req.replace(/'/g, "\\'");
+        takeBtn.onclick = () => {
+            addPerkToBuild(escapedName, escapedReq, isIT);
+            document.getElementById('perk-zoom-modal').style.display = 'none';
+        };
+        takeBtn.textContent = isIT ? '+ ADD TO BUILD (PICK SPECIAL)' : '+ ADD TO BUILD';
+        const isWishlisted = isPerkWishlisted(perkData.name);
+        wishlistBtn.classList.toggle('wishlisted', isWishlisted);
+        wishlistBtn.textContent = isWishlisted ? '★ WISHLISTED' : '★ WISHLIST';
+        wishlistBtn.onclick = () => {
+            togglePerkWishlist(perkData.name);
+            const newState = isPerkWishlisted(perkData.name);
+            wishlistBtn.classList.toggle('wishlisted', newState);
+            wishlistBtn.textContent = newState ? '★ WISHLISTED' : '★ WISHLIST';
+        };
+    } else {
+        if (actionsDiv) actionsDiv.style.display = 'none';
+    }
+}
+
 function openPerkZoom(name, req, desc) {
     document.getElementById('perk-zoom-name').textContent = name;
     document.getElementById('perk-zoom-req').textContent = req ? 'REQ: ' + req : '';
     document.getElementById('perk-zoom-desc').textContent = desc;
+    const perkData = PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+    _setupPerkZoomButtons(perkData || null);
     document.getElementById('perk-zoom-modal').style.display = 'flex';
 }
 
@@ -680,15 +714,19 @@ function ovPerkClick(encodedName) {
     const intTrait = !perk && !trait && INTERNALIZED_TRAITS_DATA.find(t => t.name.trim().toLowerCase() === name.trim().toLowerCase());
     const rewardP = !perk && !trait && !intTrait && REWARD_PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
     const entry = perk || trait || intTrait || rewardP;
+    
     // Always open the modal — show what we have, or a "custom entry" placeholder
     document.getElementById('perk-zoom-name').textContent = entry ? entry.name : name;
     document.getElementById('perk-zoom-req').textContent = entry ? (entry.req ? 'REQ: ' + entry.req : 'NO REQUIREMENTS') : 'CUSTOM ENTRY';
     document.getElementById('perk-zoom-desc').textContent = entry ? entry.desc : '(No description available — this is a custom or manually entered entry.)';
+    
     const box = document.getElementById('perk-zoom-modal').querySelector('.perk-zoom-box');
     if (box) {
         box.removeAttribute('data-type');
         if (trait || intTrait) box.setAttribute('data-type', 'trait');
     }
+    
+    _setupPerkZoomButtons(perk || null);
     document.getElementById('perk-zoom-modal').style.display = 'flex';
 }
 
@@ -1121,6 +1159,22 @@ function sanitizeImport(d) {
     })) : [];
     clean.perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist.map(name => sanitizeStr(name || '')).filter(Boolean) : [];
     clean.currentBuildName = sanitizeStr(d.currentBuildName || 'Current Build');
+    clean.buildKarma = ['very-good','good','neutral','evil','very-evil'].includes(d.buildKarma) ? d.buildKarma : 'neutral';
+    clean.conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object')
+        ? Object.fromEntries(Object.entries(d.conditionalToggles).filter(([k,v]) => typeof k === 'string' && typeof v === 'boolean'))
+        : {};
+    clean.humbledLevel = (typeof d.humbledLevel === 'number' && d.humbledLevel >= 0) ? Math.floor(d.humbledLevel) : 0;
+    clean.humbledReductions = (d.humbledReductions && typeof d.humbledReductions === 'object')
+        ? Object.fromEntries(Object.entries(d.humbledReductions).filter(([k,v]) => sKeys.includes(k) && typeof v === 'number'))
+        : {};
+    clean.hasBeenHumbled = !!d.hasBeenHumbled;
+    clean.fourthTagSkill = (typeof d.fourthTagSkill === 'string' && skills.includes(d.fourthTagSkill)) ? d.fourthTagSkill : null;
+    clean.startingTraits = Array.isArray(d.startingTraits)
+        ? d.startingTraits.slice(0, 10).map(t => ({ name: sanitizeStr(t && t.name ? t.name : '') })).filter(t => t.name)
+        : [];
+    clean.levelUpBonuses = Array.isArray(d.levelUpBonuses)
+        ? d.levelUpBonuses.filter(v => ['hp','ap','cw'].includes(v))
+        : [];
     return clean;
 }
 
@@ -1494,14 +1548,25 @@ function openLevelUpModal() {
     }
     document.getElementById('lvlup-not-ready').style.display = 'none';
     _lvlupSession = {};
+    _lvlupAttributeChoice = null; // Reset attribute choice
     skills.forEach(s => { _lvlupSession[s] = 0; });
     _lvlupPointsLeft = pointsPerLevel();
     renderLevelUpGrid();
+    // Reset attribute button selection
+    document.querySelectorAll('.lvlup-attr-btn').forEach(btn => btn.classList.remove('selected'));
     document.getElementById('lvlup-modal').classList.add('active');
 }
 
 function closeLevelUpModal() {
     document.getElementById('lvlup-modal').classList.remove('active');
+}
+
+function selectLevelUpAttribute(attr) {
+    _lvlupAttributeChoice = attr;
+    // Update button selection visuals
+    document.querySelectorAll('.lvlup-attr-btn').forEach(btn => {
+        btn.classList.toggle('selected', btn.dataset.attr === attr);
+    });
 }
 
 /* ===== LEVEL ROLLBACK MODAL ===== */
@@ -1552,18 +1617,6 @@ function confirmLevelRollback() {
         }
     });
     
-    // Remove extra perks (bonus perks)
-    const extraRows = document.querySelectorAll('#extra-perk-list .prog-row');
-    extraRows.forEach(row => {
-        const perkName = row.querySelector('.prog-name-input')?.value || '';
-        const itMatch = perkName.match(/^Intense Training \(\+1 (\w+)\)/i);
-        if (itMatch) {
-            const statKey = itMatch[1];
-            if (special[statKey] > 1) special[statKey]--;
-        }
-        row.remove();
-    });
-    
     // Remove skill points gained after target level
     const levelsToRemove = charLevel - targetLevel;
     for (let i = 0; i < levelsToRemove; i++) {
@@ -1575,6 +1628,10 @@ function confirmLevelRollback() {
                 skillPoints[s] = Math.max(0, (skillPoints[s] || 0) - gain);
             });
             skillHistory.pop();
+        }
+        // Also remove the level-up bonus choice
+        if (levelUpBonuses.length > 0) {
+            levelUpBonuses.pop();
         }
     }
     
@@ -1646,6 +1703,12 @@ function lvlupAdjust(skill, delta) {
 }
 
 function confirmLevelUp() {
+    // Validate attribute choice
+    if (!_lvlupAttributeChoice) {
+        alert('Please select an attribute boost (Health, Action Points, or Carry Weight)');
+        return;
+    }
+    
     const tagged = getTaggedSkills();
     const gains = {};
     skills.forEach(s => {
@@ -1668,6 +1731,10 @@ function confirmLevelUp() {
             pointsTotal: pointsPerLevel()
         });
     }
+    
+    // Store the attribute choice for this level
+    levelUpBonuses[charLevel - 1] = _lvlupAttributeChoice; // charLevel is still at current level (will increment next)
+    
     charLevel++;
     closeLevelUpModal();
     updateAll();
@@ -2030,8 +2097,70 @@ function renderBadges(){
 }
 
 /* ===== UPDATE ALL ===== */
+function renderLevelUpBonuses() {
+    const container = document.getElementById('ov-levelup-bonuses');
+    if (!container) return;
+    
+    // Only show if there are any level-up bonuses recorded
+    if (!levelUpBonuses || levelUpBonuses.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // Calculate distribution
+    const counts = { hp: 0, ap: 0, cw: 0 };
+    levelUpBonuses.forEach(choice => {
+        if (counts[choice] !== undefined) counts[choice]++;
+    });
+    
+    const total = levelUpBonuses.length;
+    if (total === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    // Calculate percentages
+    const hpPct = Math.round((counts.hp / total) * 100);
+    const apPct = Math.round((counts.ap / total) * 100);
+    const cwPct = Math.round((counts.cw / total) * 100);
+    
+    // Build display
+    container.innerHTML = `
+        <div class="levelup-dist-title">LEVEL-UP BONUSES (${total} levels)</div>
+        <div class="levelup-dist-bars">
+            <div class="levelup-dist-bar">
+                <span class="levelup-dist-icon">❤️</span>
+                <span class="levelup-dist-label">HEALTH</span>
+                <div class="levelup-dist-track">
+                    <div class="levelup-dist-fill hp-fill" style="width: ${hpPct}%;"></div>
+                </div>
+                <span class="levelup-dist-pct">${hpPct}%</span>
+            </div>
+            <div class="levelup-dist-bar">
+                <span class="levelup-dist-icon">⚡</span>
+                <span class="levelup-dist-label">ACTION PTS</span>
+                <div class="levelup-dist-track">
+                    <div class="levelup-dist-fill ap-fill" style="width: ${apPct}%;"></div>
+                </div>
+                <span class="levelup-dist-pct">${apPct}%</span>
+            </div>
+            <div class="levelup-dist-bar">
+                <span class="levelup-dist-icon">📦</span>
+                <span class="levelup-dist-label">CARRY WT</span>
+                <div class="levelup-dist-track">
+                    <div class="levelup-dist-fill cw-fill" style="width: ${cwPct}%;"></div>
+                </div>
+                <span class="levelup-dist-pct">${cwPct}%</span>
+            </div>
+        </div>
+    `;
+    container.style.display = 'block';
+}
+
+function getSPECIALPool() { return mode === 'hc' ? 30 : 33; }
+
 function updateAll() {
-    const pool = (mode === 'hc' ? 30 : 33);
+    const pool = getSPECIALPool();
     let _ib=0; IMPLANTS_DATA.forEach(i=>{if(i.cat==='special'&&i.stat&&implantsTaken[i.name])_ib++;});
     let _itb=0; document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row')
         .forEach(r=>{if(/^Intense Training \(\+1 \w+\)/i.test(r.querySelector('.prog-name-input')?.value||''))_itb++;});
@@ -2039,6 +2168,7 @@ function updateAll() {
     document.getElementById('pts-left').innerText = rem;
     const { specialDelta, skillDelta, hasConditional } = getActiveTraitBonuses();
     const { perkSpecialDelta, perkSkillDelta } = getActivePerkBonuses();
+    const { specDelta: ctDelta, skillDelta: condSkillDelta } = getConditionalToggleDelta();
     // Merge perk deltas into combined display deltas
     const combSpecDelta = {};
     for (const k of Object.keys(specialDelta)) {
@@ -2052,7 +2182,6 @@ function updateAll() {
     document.getElementById('special-list').innerHTML = sKeys.map(k => {
         const td = specialDelta[k] || 0;
         const pd = perkSpecialDelta[k] || 0;
-        const { specDelta: ctDelta } = getConditionalToggleDelta();
         const cd = ctDelta[k] || 0;
         const rank = getSpecialRank(k);
         let deltaBadge = '';
@@ -2194,14 +2323,14 @@ function updateAll() {
                         const spent = skillPoints[s] || 0;
             const tDelta = skillDelta[s] || 0;
             const pDelta = perkSkillDelta[s] || 0;
+            const cDelta = condSkillDelta[s] || 0;
             const bDelta = bookBonus(s);
-            // Floor the base+delta penalty at 0; spent points always register
-            const val = Math.min(100, Math.max(0, base + tDelta + pDelta) + spent + bDelta);
+            const val = Math.min(100, Math.max(0, base + tDelta + pDelta + cDelta + spent + bDelta));
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
             if (bDelta !== 0) deltaBadges += `<span class="skill-delta-badge sdelta-pos sdelta-book" title="FROM SKILL BOOKS (×${skillBooksFound[s] || 0}${hasIdeologue()?', IDEOLOGUE':''})">+${bDelta}<span class="delta-src-tag">B</span></span>`;
-            const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')+(bDelta?' BOOK:+'+bDelta:'')).trim();
+            const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')+(cDelta?' COND:'+(cDelta>0?'+':'')+cDelta:'')+(bDelta?' BOOK:+'+bDelta:'')).trim();
             const tagClass = isFourthTag ? ' skill-row-tagged skill-row-tag4' : (isTagged ? ' skill-row-tagged' : '');
             const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
             return `<div class="skill-row${tagClass}" title="${breakdown}">
@@ -2232,6 +2361,9 @@ function updateAll() {
         wishlistCountEl.textContent = count;
         wishlistCountEl.style.display = count > 0 ? 'inline-block' : 'none';
     }
+    
+    // Update level-up bonuses distribution display
+    renderLevelUpBonuses();
 }
 
 function mod(k, v) { special[k] += v; updateAll(); reCheckAllPerkRows(); triggerAutosave(); }
@@ -2432,7 +2564,7 @@ function scheduleCloseAC(input) {
 }
 
 // Map perk req abbreviations → special object keys
-const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHA', INT:'INT', AGL:'AGI', LCK:'LCK' };
+const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHA', CHA:'CHA', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK' };
 const STAT_FULL = { STR:'Strength', PER:'Perception', END:'Endurance', CHR:'Charisma', INT:'Intelligence', AGL:'Agility', LCK:'Luck' };
 
 /**
@@ -2651,17 +2783,17 @@ function selectPerkInRow(row, perkName) {
     // Check requirements against current level + SPECIAL
     checkPerkRequirements(row, perk);
 
-    // If Intense Training, trigger SPECIAL picker — pass the row so confirmIT can update it in-place
-    if (perk.name.trim().toUpperCase() === 'INTENSE TRAINING') {
-        openITModal(perk.name, perk.req, row);
-    }
-    // If Tag!, prompt 4th skill selection
-    if (perk.name.trim().toUpperCase() === 'TAG!') {
-        setTimeout(() => openTagModal(), 80);
-    }
-    // If Action Star, prompt choice
-    if (perk.name.trim().toUpperCase() === 'ACTION STAR') {
-        setTimeout(() => openActionStarModal(row), 80);
+    // If Intense Training / Tag! / Action Star — only trigger interactive modal when NOT hydrating
+    if (!_hydrating) {
+        if (perk.name.trim().toUpperCase() === 'INTENSE TRAINING') {
+            openITModal(perk.name, perk.req, row);
+        }
+        if (perk.name.trim().toUpperCase() === 'TAG!') {
+            setTimeout(() => openTagModal(), 80);
+        }
+        if (perk.name.trim().toUpperCase() === 'ACTION STAR') {
+            setTimeout(() => openActionStarModal(row), 80);
+        }
     }
 
     triggerAutosave();
@@ -2778,12 +2910,22 @@ function toggleTag(itemEl) {
 }
 
 /* ===== AUTOSAVE & PERSISTENCE ===== */
+let _autosaveDebounce = null;
 function triggerAutosave() {
     pushUndoState();
-    const data = collectData();
-    localStorage.setItem('Nuclear_Sunset_Permanent_Vault', JSON.stringify(data));
-    document.getElementById('sync-status').innerText = "V_MEMORY_SYNCED_" + new Date().toLocaleTimeString();
-    updateAll();
+    clearTimeout(_autosaveDebounce);
+    _autosaveDebounce = setTimeout(() => {
+        try {
+            const data = collectData();
+            localStorage.setItem('Nuclear_Sunset_Permanent_Vault', JSON.stringify(data));
+            document.getElementById('sync-status').innerText = "V_MEMORY_SYNCED_" + new Date().toLocaleTimeString();
+        } catch(e) {
+            console.warn('Autosave failed (storage unavailable):', e);
+            const s = document.getElementById('sync-status');
+            if (s) s.innerText = 'V_MEMORY_SYNC_FAILED';
+        }
+        updateAll();
+    }, 150);
 }
 
 function collectData() {
@@ -2819,7 +2961,8 @@ function collectData() {
         skillHistory: skillHistory,
         conditionalToggles: conditionalToggles,
         perkWishlist: perkWishlist || [],
-        currentBuildName: currentBuildName || 'Current Build'
+        currentBuildName: currentBuildName || 'Current Build',
+        levelUpBonuses: levelUpBonuses || []
     };
 }
 
@@ -2847,6 +2990,7 @@ function importJSON(e) {
 
 function hydrate(d) {
     if(!d) return;
+    _hydrating = true;
     special = d.special;
     if (d.skillPoints && typeof d.skillPoints === 'object') {
         skills.forEach(s => { skillPoints[s] = typeof d.skillPoints[s] === 'number' ? d.skillPoints[s] : 0; });
@@ -2878,6 +3022,7 @@ function hydrate(d) {
     conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object') ? d.conditionalToggles : {};
     perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist : [];
     currentBuildName = d.currentBuildName || 'Current Build';
+    levelUpBonuses = Array.isArray(d.levelUpBonuses) ? d.levelUpBonuses : [];
     setMode(d.mode, true);
     setOrigin(d.origin, true);
     const tI = document.querySelectorAll('#tag-area input');
@@ -2927,6 +3072,7 @@ function hydrate(d) {
     if(d.uniWpns) d.uniWpns.forEach((c, i) => { if(uC[i]) { uC[i].checked = c; updateUniqueMarker(uC[i]); } });
     const uA = document.querySelectorAll('.u-armor-check');
     if(d.uniArmor) d.uniArmor.forEach((c, i) => { if(uA[i]) { uA[i].checked = c; updateUniqueMarker(uA[i]); } });
+    _hydrating = false;
     updateAll();
     reCheckAllPerkRows();
     renderImplants();
@@ -2935,20 +3081,178 @@ function hydrate(d) {
     renderStartingTraitsList();
 }
 
-function purgeMemory() { if(confirm("INITIATE TOTAL ATOMIC ANNIHILATION?")) { localStorage.clear(); location.reload(); } }
+/* ===== BUILD ARCHETYPES SYSTEM ===== */
+
+function openArchetypesModal() {
+    const modal = document.getElementById('archetypes-modal');
+    if (!modal) return;
+    renderArchetypeGrid();
+    document.getElementById('archetype-detail').style.display = 'none';
+    modal.style.display = 'flex';
+}
+
+function closeArchetypesModal() {
+    const modal = document.getElementById('archetypes-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+let _selectedArchetypeId = null;
+
+function renderArchetypeGrid() {
+    const grid = document.getElementById('archetype-grid');
+    if (!grid || typeof ARCHETYPES_DATA === 'undefined') return;
+    grid.innerHTML = ARCHETYPES_DATA.map(a => {
+        const isSel = _selectedArchetypeId === a.id;
+        return `<div class="archetype-card${isSel ? ' archetype-selected' : ''}" onclick="selectArchetype('${a.id}')"
+            style="border-color:${isSel ? a.color : 'rgba(255,255,255,0.1)'};">
+            <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};">${a.icon}</div>
+            <div class="archetype-card-body">
+                <div class="archetype-name">${a.name}</div>
+                <div class="archetype-tagline">${a.tagline}</div>
+                <div class="archetype-badges">
+                    <span class="archetype-badge" style="color:${a.color};border-color:${a.color}44;">${a.origin === 'CW' ? 'Capital' : 'Mojave'}</span>
+                    <span class="archetype-badge">${a.mode === 'hc' ? 'HC' : 'STD'}</span>
+                    <span class="archetype-badge" style="text-transform:capitalize;">${a.buildKarma.replace('-',' ')}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function selectArchetype(id) {
+    _selectedArchetypeId = id;
+    renderArchetypeGrid();
+    const a = ARCHETYPES_DATA.find(x => x.id === id);
+    if (!a) return;
+    const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+    const taggedSkills = skillNames.filter((_,i) => a.tags[i]);
+    const perkLevels = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30];
+    const specHtml = ['STR','PER','END','CHA','INT','AGI','LCK'].map(k => {
+        const v = a.special[k];
+        const bars = Array.from({length:10},(_,i)=>`<span class="aspec-pip${i<v?' aspec-pip-on':''}"></span>`).join('');
+        return `<div class="aspec-row"><span class="aspec-key">${k}</span>${bars}<span class="aspec-num">${v}</span></div>`;
+    }).join('');
+    const perksPreview = a.perks.slice(0,8).map((p,i) =>
+        p[0] ? `<div class="arch-perk-row"><span class="arch-perk-lvl">LVL ${perkLevels[i]}</span><span class="arch-perk-name">${p[0]}</span></div>` : ''
+    ).filter(Boolean).join('');
+    const remaining = a.perks.filter(p=>p[0]).length - 8;
+    const traitNames = a.startingTraits.map(t=>t.name).join(', ') || 'None';
+    const detail = document.getElementById('archetype-detail');
+    detail.style.display = 'block';
+    detail.innerHTML = `
+    <div class="archetype-detail-box" style="border-color:${a.color}44;">
+        <div class="arch-detail-header" style="border-bottom-color:${a.color}33;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};font-size:1.5rem;width:44px;height:44px;">${a.icon}</div>
+                <div>
+                    <div style="font-size:0.95rem;font-weight:bold;letter-spacing:1px;color:var(--pip-color);">${a.name}</div>
+                    <div style="font-size:0.65rem;opacity:0.6;margin-top:2px;">${a.tagline}</div>
+                </div>
+            </div>
+            <p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;">${a.description}</p>
+        </div>
+        <div class="arch-detail-cols">
+            <div class="arch-detail-col">
+                <div class="arch-section-label">S.P.E.C.I.A.L.</div>
+                <div class="aspec-grid">${specHtml}</div>
+                <div class="arch-section-label" style="margin-top:12px;">TAGGED SKILLS</div>
+                <div style="font-size:0.72rem;color:var(--pip-color);letter-spacing:0.5px;">${taggedSkills.join(' · ') || 'None'}</div>
+                <div class="arch-section-label" style="margin-top:12px;">STARTING TRAITS</div>
+                <div style="font-size:0.72rem;color:#c8a0ff;letter-spacing:0.5px;">${traitNames}</div>
+                <div class="arch-section-label" style="margin-top:12px;">ORIGIN &amp; MODE</div>
+                <div style="font-size:0.72rem;opacity:0.75;">${a.origin === 'CW' ? 'CAPITAL WASTELAND' : 'MOJAVE WASTELAND'} &nbsp;·&nbsp; ${a.mode.toUpperCase()}</div>
+            </div>
+            <div class="arch-detail-col">
+                <div class="arch-section-label">SUGGESTED PERK PATH (LVL 2–${perkLevels[Math.min(7, a.perks.filter(p=>p[0]).length-1)]})</div>
+                ${perksPreview}
+                ${remaining > 0 ? `<div style="font-size:0.6rem;opacity:0.4;margin-top:6px;letter-spacing:1px;">+ ${remaining} MORE PERKS LOADED INTO BUILD</div>` : ''}
+            </div>
+        </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="action-btn" onclick="loadArchetype('${a.id}')"
+                style="background:${a.color}22;border-color:${a.color};color:${a.color};font-size:0.72rem;padding:8px 20px;flex:1;letter-spacing:1px;">
+                ◈ LOAD THIS ARCHETYPE
+            </button>
+            <button class="modal-cancel-btn" onclick="closeArchetypesModal()" style="font-size:0.68rem;padding:8px 16px;">CANCEL</button>
+        </div>
+        <div style="font-size:0.58rem;opacity:0.35;margin-top:10px;text-align:center;letter-spacing:1px;">
+            ★ LOADING WILL OVERWRITE YOUR CURRENT BUILD — EXPORT FIRST IF YOU WANT TO KEEP IT
+        </div>
+    </div>`;
+    detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function loadArchetype(id) {
+    const a = ARCHETYPES_DATA.find(x => x.id === id);
+    if (!a) return;
+    if (!confirm('LOAD ARCHETYPE: "' + a.name.toUpperCase() + '"?\n\nThis will overwrite your current build. Export first if you want to keep it.')) return;
+    const buildData = {
+        name: a.name,
+        notes: 'Archetype: ' + a.name + ' — ' + a.tagline,
+        mode: a.mode,
+        origin: a.origin,
+        buildKarma: a.buildKarma,
+        special: Object.assign({}, a.special),
+        tags: a.tags.slice(),
+        traits: a.traits ? a.traits.slice() : Array(12).fill(''),
+        startingTraits: a.startingTraits ? a.startingTraits.map(t => ({ name: t.name })) : [],
+        perks: a.perks.slice(),
+        extraPerks: [],
+        weapons: [],
+        armor: [],
+        quests: [],
+        colls: [],
+        uniWpns: [],
+        uniArmor: [],
+        skillPoints: a.skillPoints ? Object.assign({}, a.skillPoints) : Object.fromEntries(skills.map(s => [s, 0])),
+        skillBooksFound: Object.fromEntries(skills.map(s => [s, 0])),
+        charLevel: a.charLevel || 1,
+        skillHistory: a.skillHistory ? a.skillHistory.slice() : [],
+        conditionalToggles: {},
+        implantsTaken: a.implantsTaken ? Object.assign({}, a.implantsTaken) : {},
+        rewardPerksList: [],
+        internalizedTraitsList: [],
+        fourthTagSkill: null,
+        perkWishlist: [],
+        currentBuildName: a.name,
+        levelUpBonuses: a.levelUpBonuses ? a.levelUpBonuses.slice() : [],
+        humbledLevel: 0,
+        humbledReductions: {},
+        hasBeenHumbled: false,
+        regionalStorage: { CW:{quests:[],colls:[]}, MW:{quests:[],colls:[]} },
+    };
+    const safe = sanitizeImport(buildData);
+    if (!safe) { alert('ARCHETYPE LOAD ERROR'); return; }
+    closeArchetypesModal();
+    _selectedArchetypeId = null;
+    hydrate(safe);
+    nsAudio.diceRoll();
+    showPerkToast('ARCHETYPE LOADED: ' + a.name.toUpperCase());
+    triggerAutosave();
+    const btn = document.getElementById('tab-btn-prog');
+    if (btn) {
+        btn.style.boxShadow = '0 0 12px var(--pip-color)';
+        btn.style.background = 'var(--pip-color)';
+        btn.style.color = 'black';
+        setTimeout(() => { if (!btn.classList.contains('active')) { btn.style.boxShadow=''; btn.style.background=''; btn.style.color=''; } }, 1200);
+    }
+}
+
+function purgeMemory() { if(confirm("INITIATE TOTAL ATOMIC ANNIHILATION?")) { try { localStorage.clear(); } catch(e) {} location.reload(); } }
 
 /* ===== BUILD MANAGEMENT SYSTEM ===== */
 
 // Load saved builds from localStorage
 function loadSavedBuildsList() {
-    const stored = localStorage.getItem('NS_SavedBuilds');
+    let stored = null;
+    try { stored = localStorage.getItem('NS_SavedBuilds'); } catch(e) {}
     savedBuilds = stored ? JSON.parse(stored) : [];
     return savedBuilds;
 }
 
 // Save builds list to localStorage
 function saveBuildsList() {
-    localStorage.setItem('NS_SavedBuilds', JSON.stringify(savedBuilds));
+    try { localStorage.setItem('NS_SavedBuilds', JSON.stringify(savedBuilds)); } catch(e) {}
 }
 
 // Save current build to the builds list
@@ -3178,7 +3482,7 @@ function randomizeBuild() {
     if (nameInput) nameInput.value = getRandomWastelandName();
 
     // ── Step 1: Randomize SPECIAL — distribute the FULL pool so all points are used
-    const pool = mode === 'hc' ? 30 : 33;
+    const pool = getSPECIALPool();
     const newSpecial = { STR:1,PER:1,END:1,CHA:1,INT:1,AGI:1,LCK:1 };
     let remaining = pool; // pool = total SPECIAL to distribute (not extra above baseline)
     while (remaining > 0) {
@@ -3735,6 +4039,22 @@ function openTraitDetailModal(name, opts) {
             changeBtn.style.display = 'none';
         }
     }
+    
+    // Wire up wishlist button (traits can be wishlisted too)
+    const wishlistBtn = document.getElementById('td-wishlist-btn');
+    if (wishlistBtn) {
+        const isWishlisted = isPerkWishlisted(name);
+        wishlistBtn.classList.toggle('wishlisted', isWishlisted);
+        wishlistBtn.textContent = isWishlisted ? '★ WISHLISTED' : '★ WISHLIST';
+        wishlistBtn.onclick = () => {
+            togglePerkWishlist(name);
+            // Update button state
+            const newState = isPerkWishlisted(name);
+            wishlistBtn.classList.toggle('wishlisted', newState);
+            wishlistBtn.textContent = newState ? '★ WISHLISTED' : '★ WISHLIST';
+        };
+        wishlistBtn.style.display = 'inline-block';
+    }
 
     modal.style.display = 'flex';
 }
@@ -3802,7 +4122,7 @@ function setCustomTheme(name, skipSave) {
 }
 
 function applyStoredTheme() {
-    const saved = localStorage.getItem('NS_CustomTheme') || '';
+    let saved = ''; try { saved = localStorage.getItem('NS_CustomTheme') || ''; } catch(e) {}
     if (saved) {
         setCustomTheme(saved, true);
     } else {
@@ -4146,6 +4466,47 @@ const nsAudio = (() => {
                 t += durs[i]+0.02;
             });
         },
+        dosJingle() {
+            if (muted) return;
+            // Classic computer beeps — square wave DOS boot sequence
+            const notes = [880, 1174, 1318, 1760, 2093];
+            const durs  = [0.08, 0.08, 0.08, 0.10, 0.20];
+            let t = 0;
+            notes.forEach((f, i) => {
+                playTone(f, 'square', durs[i], 0.04, 0.002, t);
+                t += durs[i]+0.04;
+            });
+            // Terminal click
+            playNoise(0.06, 0.03, 2500, t);
+        },
+        nukacolaJingle() {
+            if (muted) return;
+            // Bright fizzy pop — triangle sparkle with noise bursts
+            const notes = [659, 784, 880, 1046, 784, 880, 1046, 1318];
+            const durs  = [0.06, 0.06, 0.06, 0.10, 0.06, 0.06, 0.08, 0.28];
+            let t = 0;
+            notes.forEach((f, i) => {
+                playTone(f, 'triangle', durs[i]+0.03, 0.08, 0.004, t);
+                playTone(f*2, 'sine', durs[i]+0.02, 0.02, 0.002, t);
+                // Fizz bursts
+                if (i % 2 === 0) playNoise(0.04, 0.04, 5000, t);
+                t += durs[i]+0.02;
+            });
+        },
+        sierramadreJingle() {
+            if (muted) return;
+            // Ghostly casino — haunting sine with rumble and distant echo
+            playNoise(0.08, 0.35, 180); // Deep rumble (The Cloud)
+            const notes = [392, 330, 294, 247, 220, 196];
+            const durs  = [0.18, 0.16, 0.18, 0.20, 0.22, 0.40];
+            let t = 0.08;
+            notes.forEach((f, i) => {
+                playTone(f, 'sine', durs[i]+0.15, 0.05, 0.035, t);
+                // Ghostly echo
+                playTone(f*1.5, 'sine', durs[i]+0.12, 0.015, 0.020, t+0.08);
+                t += durs[i]+0.06;
+            });
+        },
         playThemeJingle(themeName) {
             const jingles = {
                 'bos':      () => this.bosJingle(),
@@ -4156,6 +4517,9 @@ const nsAudio = (() => {
                 'house':    () => this.houseJingle(),
                 'shi':      () => this.shiJingle(),
                 'vaulttec': () => this.vaulttecJingle(),
+                'dos':      () => this.dosJingle(),
+                'nukacola': () => this.nukacolaJingle(),
+                'sierramadre': () => this.sierramadreJingle(),
                 '':         () => this.cwMotif(),
             };
             if (jingles[themeName] !== undefined) jingles[themeName]();

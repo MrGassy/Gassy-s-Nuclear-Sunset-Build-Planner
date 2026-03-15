@@ -18,6 +18,23 @@
     </div>
 </div>
 
+<!-- ARCHETYPES MODAL -->
+<div class="modal-overlay" id="archetypes-modal" style="display:none;">
+    <div class="modal-box" style="max-width:860px; width:96vw; max-height:90vh; overflow-y:auto; padding:0;">
+        <div style="padding:22px 24px 14px; border-bottom:1px solid rgba(255,255,255,0.07); position:sticky; top:0; background:var(--pip-bg); z-index:1;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <h2 style="font-size:1rem; letter-spacing:2px; margin:0;">◈ BUILD ARCHETYPES</h2>
+                <button class="modal-cancel-btn" onclick="closeArchetypesModal()" style="padding:4px 14px;">✕ CLOSE</button>
+            </div>
+            <div style="font-size:0.62rem; opacity:0.5; letter-spacing:1px; line-height:1.6;">SELECT A STARTING TEMPLATE — LOADS SPECIAL, TAGS, TRAITS &amp; PERK SUGGESTIONS &nbsp;|&nbsp; ALL VALUES CAN BE FREELY EDITED AFTER LOADING</div>
+        </div>
+        <div style="padding:18px 20px;">
+            <div id="archetype-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; margin-bottom:18px;"></div>
+            <div id="archetype-detail" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- LEVEL UP MODAL -->
 <div class="modal-overlay" id="lvlup-modal">
     <div class="modal-box lvlup-box">
@@ -30,6 +47,27 @@
             <div style="font-size:0.62rem;opacity:0.55;margin-top:3px;">★ = TAGGED SKILL — HIGHLIGHTED FOR REFERENCE (1 PT SPENT = 2 PT GAINED)</div>
         </div>
         <div id="lvlup-skill-grid" class="lvlup-skill-grid"></div>
+        
+        <!-- ATTRIBUTE BOOST CHOICE -->
+        <div class="lvlup-attribute-choice">
+            <div class="lvlup-attribute-title">⚡ CHOOSE ATTRIBUTE BOOST</div>
+            <div class="lvlup-attribute-subtitle">Select one attribute to increase this level</div>
+            <div class="lvlup-attribute-grid">
+                <button class="lvlup-attr-btn" data-attr="hp" onclick="selectLevelUpAttribute('hp')" title="Increase Health Points">
+                    <span class="lvlup-attr-icon">❤️</span>
+                    <span class="lvlup-attr-label">HEALTH</span>
+                </button>
+                <button class="lvlup-attr-btn" data-attr="ap" onclick="selectLevelUpAttribute('ap')" title="Increase Action Points">
+                    <span class="lvlup-attr-icon">⚡</span>
+                    <span class="lvlup-attr-label">ACTION POINTS</span>
+                </button>
+                <button class="lvlup-attr-btn" data-attr="cw" onclick="selectLevelUpAttribute('cw')" title="Increase Carry Weight">
+                    <span class="lvlup-attr-icon">📦</span>
+                    <span class="lvlup-attr-label">CARRY WEIGHT</span>
+                </button>
+            </div>
+        </div>
+        
         <div class="lvlup-actions">
             <button class="action-btn" style="flex:1;margin-bottom:0;" onclick="confirmLevelUp()">✓ CONFIRM LEVEL UP</button>
             <button class="modal-cancel-btn" style="flex:0 0 120px;" onclick="closeLevelUpModal()">CANCEL</button>
@@ -212,6 +250,12 @@
       <button onclick="const m=document.getElementById('perk-zoom-modal');m.style.display='none';const b=m.querySelector('.perk-zoom-box');if(b)b.removeAttribute('data-type');" style="flex-shrink:0; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.75rem;">✕</button>
     </div>
     <div id="perk-zoom-desc" style="font-size:0.88rem; line-height:1.8; color:rgba(220,255,220,0.92); border-top:1px solid rgba(40,255,40,0.15); padding-top:12px; margin-top:4px;"></div>
+    
+    <!-- Action buttons for perks only -->
+    <div id="perk-zoom-actions" style="display:none; margin-top:16px; padding-top:12px; border-top:1px solid rgba(100,255,100,0.15); display:flex; gap:8px;">
+      <button id="perk-zoom-take-btn" class="action-btn" style="flex:1;">+ ADD TO BUILD</button>
+      <button id="perk-zoom-wishlist-btn" class="action-btn perk-wishlist-action">★ WISHLIST</button>
+    </div>
   </div>
 </div>
 
@@ -314,8 +358,9 @@
     <div id="td-delta"></div>
     <div id="td-desc" style="font-size:0.82rem; line-height:1.6; color:rgba(255,255,255,0.8); border-top:1px solid rgba(255,255,255,0.1); padding-top:10px; margin-bottom:14px;"></div>
     <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button id="td-change-btn" class="action-btn" style="font-size:0.65rem;">⟳ CHANGE</button>
-      <button id="td-remove-btn" style="background:rgba(255,50,50,0.1); border:1px solid rgba(255,80,80,0.5); color:rgba(255,100,100,0.9); padding:4px 14px; font-size:0.65rem; letter-spacing:0.08em; font-family:inherit; cursor:pointer; font-weight:bold;">✕ REMOVE TRAIT</button>
+      <button id="td-change-btn" class="action-btn" style="font-size:0.65rem; width:auto; flex:0 0 auto;">⟳ CHANGE</button>
+      <button id="td-wishlist-btn" class="action-btn perk-wishlist-action" style="font-size:0.65rem; width:auto; flex:0 0 auto;">★ WISHLIST</button>
+      <button id="td-remove-btn" style="background:rgba(255,50,50,0.1); border:1px solid rgba(255,80,80,0.5); color:rgba(255,100,100,0.9); padding:4px 14px; font-size:0.65rem; letter-spacing:0.08em; font-family:inherit; cursor:pointer; font-weight:bold; width:auto; flex:0 0 auto;">✕ REMOVE TRAIT</button>
     </div>
   </div>
 </div>
@@ -454,6 +499,7 @@
                     </div>
                     <div id="lvlup-not-ready" style="display:none;font-size:0.65rem;color:#ff6060;margin-bottom:6px;padding:4px 8px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,0,0,0.06);">⚠ SELECT 3 TAGS TO UNLOCK</div>
                     <div id="skill-list" class="skill-list-2col"></div>
+                    <div id="ov-levelup-bonuses" class="levelup-bonuses-display" style="display:none; margin-top:10px;"></div>
                 </div>
 
             </div>
@@ -643,9 +689,22 @@
                     <span class="hud-theme-swatch" style="background:#ffd000;"></span>
                     <span class="hud-theme-name">VAULT-TEC</span>
                 </button>
+                <button class="hud-theme-tile" data-theme="dos" onclick="setCustomTheme('dos'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ffffff;"></span>
+                    <span class="hud-theme-name">DOS TERMINAL</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="nukacola" onclick="setCustomTheme('nukacola'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ff3030;"></span>
+                    <span class="hud-theme-name">NUKA-COLA</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="sierramadre" onclick="setCustomTheme('sierramadre'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ff6040;"></span>
+                    <span class="hud-theme-name">SIERRA MADRE</span>
+                </button>
             </div>
         </div>
         <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
+            <button onclick="openArchetypesModal()" class="randomize-btn" style="margin-bottom:5px;" title="Load a curated starting build">◈ ARCHETYPES</button>
             <button onclick="randomizeBuild()" class="randomize-btn">🎲 RANDOMIZE BUILD</button>
         <div id="sync-status" style="font-size:0.6rem; text-align:right; opacity:0.6; margin-top:5px;">SYSTEM_SYNCED</div>
         
