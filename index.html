@@ -29,7 +29,60 @@
             <div style="font-size:0.62rem; opacity:0.5; letter-spacing:1px; line-height:1.6;">SELECT A STARTING TEMPLATE — LOADS SPECIAL, TAGS, TRAITS &amp; PERK SUGGESTIONS &nbsp;|&nbsp; ALL VALUES CAN BE FREELY EDITED AFTER LOADING</div>
         </div>
         <div style="padding:18px 20px;">
-            <div id="archetype-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:12px; margin-bottom:18px;"></div>
+            <!-- FILTER BAR -->
+            <div id="arch-filter-bar">
+                <input type="text" id="arch-search" class="pip-search" placeholder="SEARCH BY NAME OR TAGLINE..." oninput="renderArchetypeGrid()">
+                <div class="arch-filter-grid">
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">ORIGIN</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="origin" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip" data-filter="origin" data-val="CW" onclick="toggleArchChip(this)">CAPITAL</button>
+                            <button class="arch-chip" data-filter="origin" data-val="MW" onclick="toggleArchChip(this)">MOJAVE</button>
+                        </div>
+                    </div>
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">KARMA</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="karma" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="very-good" onclick="toggleArchChip(this)">V. GOOD</button>
+                            <button class="arch-chip" data-filter="karma" data-val="good" onclick="toggleArchChip(this)">GOOD</button>
+                            <button class="arch-chip" data-filter="karma" data-val="neutral" onclick="toggleArchChip(this)">NEUTRAL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="evil" onclick="toggleArchChip(this)">EVIL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="very-evil" onclick="toggleArchChip(this)">V. EVIL</button>
+                        </div>
+                    </div>
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">DIFFICULTY</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="diff" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="1" onclick="toggleArchChip(this)">★☆☆☆☆</button>
+                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="2" onclick="toggleArchChip(this)">★★☆☆☆</button>
+                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="3" onclick="toggleArchChip(this)">★★★☆☆</button>
+                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="4" onclick="toggleArchChip(this)">★★★★☆</button>
+                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="5" onclick="toggleArchChip(this)">★★★★★</button>
+                        </div>
+                    </div>
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">STYLE</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="style" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip" data-filter="style" data-val="GUNS" onclick="toggleArchChip(this)">GUNS</button>
+                            <button class="arch-chip" data-filter="style" data-val="ENERGY WEAPONS" onclick="toggleArchChip(this)">ENERGY</button>
+                            <button class="arch-chip" data-filter="style" data-val="MELEE WEAPONS" onclick="toggleArchChip(this)">MELEE</button>
+                            <button class="arch-chip" data-filter="style" data-val="UNARMED" onclick="toggleArchChip(this)">UNARMED</button>
+                            <button class="arch-chip" data-filter="style" data-val="EXPLOSIVES" onclick="toggleArchChip(this)">EXPLOSIVES</button>
+                            <button class="arch-chip" data-filter="style" data-val="SNEAK" onclick="toggleArchChip(this)">SNEAK</button>
+                            <button class="arch-chip" data-filter="style" data-val="SPEECH" onclick="toggleArchChip(this)">SPEECH</button>
+                            <button class="arch-chip" data-filter="style" data-val="SCIENCE" onclick="toggleArchChip(this)">SCIENCE</button>
+                            <button class="arch-chip" data-filter="style" data-val="SURVIVAL" onclick="toggleArchChip(this)">SURVIVAL</button>
+                            <button class="arch-chip" data-filter="style" data-val="MEDICINE" onclick="toggleArchChip(this)">MEDICINE</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="arch-filter-count"></div>
+            </div>
+            <div id="archetype-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-bottom:18px;"></div>
             <div id="archetype-detail" style="display:none;"></div>
         </div>
     </div>

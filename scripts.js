@@ -3113,6 +3113,13 @@ function hydrate(d) {
 function openArchetypesModal() {
     const modal = document.getElementById('archetypes-modal');
     if (!modal) return;
+    // Reset filters on open
+    Object.keys(_archFilters).forEach(k => _archFilters[k] = '');
+    const search = document.getElementById('arch-search');
+    if (search) search.value = '';
+    document.querySelectorAll('.arch-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.val === '');
+    });
     renderArchetypeGrid();
     document.getElementById('archetype-detail').style.display = 'none';
     modal.style.display = 'flex';
@@ -3125,11 +3132,50 @@ function closeArchetypesModal() {
 
 let _selectedArchetypeId = null;
 
+const _archFilters = { origin: '', karma: '', diff: '', style: '' };
+
+function toggleArchChip(btn) {
+    const filter = btn.dataset.filter;
+    const val    = btn.dataset.val;
+    _archFilters[filter] = _archFilters[filter] === val ? '' : val;
+    // Update active state — only one active per filter group
+    btn.closest('div').querySelectorAll(`.arch-chip[data-filter="${filter}"]`).forEach(c => {
+        c.classList.toggle('active', c.dataset.val === _archFilters[filter] || (c.dataset.val === '' && _archFilters[filter] === ''));
+    });
+    renderArchetypeGrid();
+}
+
 function renderArchetypeGrid() {
     const grid = document.getElementById('archetype-grid');
     if (!grid || typeof ARCHETYPES_DATA === 'undefined') return;
-    grid.innerHTML = ARCHETYPES_DATA.map(a => {
+    const SKILLS = ["BARTER","BIG GUNS","ENERGY WEAPONS","EXPLOSIVES","GUNS","LOCKPICK","MEDICINE","MELEE WEAPONS","REPAIR","SCIENCE","SNEAK","SPEECH","SURVIVAL","UNARMED"];
+    const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
+    const filtered = ARCHETYPES_DATA.filter(a => {
+        if (_archFilters.origin && a.origin !== _archFilters.origin) return false;
+        if (_archFilters.karma  && a.buildKarma !== _archFilters.karma)  return false;
+        if (_archFilters.diff   && String(a.difficulty || 1) !== _archFilters.diff) return false;
+        if (_archFilters.style) {
+            const tagged = SKILLS.filter((_,i) => a.tags[i]);
+            if (!tagged.includes(_archFilters.style)) return false;
+        }
+        if (q) {
+            const haystack = (a.name + ' ' + a.tagline + ' ' + (a.description||'')).toLowerCase();
+            if (!haystack.includes(q)) return false;
+        }
+        return true;
+    });
+    const countEl = document.getElementById('arch-filter-count');
+    if (countEl) {
+        const total = ARCHETYPES_DATA.length;
+        countEl.textContent = filtered.length === total
+            ? `SHOWING ALL ${total} ARCHETYPES`
+            : `SHOWING ${filtered.length} OF ${total} ARCHETYPES`;
+    }
+    grid.innerHTML = filtered.length ? filtered.map(a => {
         const isSel = _selectedArchetypeId === a.id;
+        const diff = a.difficulty || 1;
+        const stars = '★'.repeat(diff) + '☆'.repeat(5 - diff);
+        const diffColor = ['','#6adb6a','#c8c840','#e09020','#e05020','#cc2020'][diff];
         return `<div class="archetype-card${isSel ? ' archetype-selected' : ''}" onclick="selectArchetype('${a.id}')"
             style="border-color:${isSel ? a.color : 'rgba(255,255,255,0.1)'};">
             <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};">${a.icon}</div>
@@ -3140,10 +3186,11 @@ function renderArchetypeGrid() {
                     <span class="archetype-badge" style="color:${a.color};border-color:${a.color}44;">${a.origin === 'CW' ? 'Capital' : 'Mojave'}</span>
                     <span class="archetype-badge">${a.mode === 'hc' ? 'HC' : 'STD'}</span>
                     <span class="archetype-badge" style="text-transform:capitalize;">${a.buildKarma.replace('-',' ')}</span>
+                    <span class="archetype-badge" style="color:${diffColor};border-color:${diffColor}44;letter-spacing:1px;">${stars}</span>
                 </div>
             </div>
         </div>`;
-    }).join('');
+    }).join('') : '<div style="opacity:0.35;font-size:0.7rem;letter-spacing:1px;padding:24px 0;text-align:center;">NO ARCHETYPES MATCH YOUR FILTERS</div>';
 }
 
 function selectArchetype(id) {
