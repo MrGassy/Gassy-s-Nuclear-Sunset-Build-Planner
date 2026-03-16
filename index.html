@@ -441,18 +441,16 @@
         <button class="mobile-nav-btn" data-tab="quests" onclick="showTab('quests')">📜<span>QUESTS</span></button>
     </nav>
     <header>
-        <div class="hc-alert-bar" id="hc-banner">⚠ HARDERCORE_OVERRIDE_ACTIVE — SYSTEM INTEGRITY COMPROMISED ⚠</div>
-        <!-- FACTION QUOTE BAR -->
-        <div id="faction-quote-bar" style="display:none;" class="faction-quote-bar"></div>
         <div class="header-controls">
-            <div class="os-title">☢ NUCLEAR SUNSET — BUILD PLANNER <span class="os-title-sub">// TALE OF TWO WASTELANDS</span></div>
+            <div class="os-title">☢ NUCLEAR SUNSET <span class="os-title-sub">// TTW BUILD PLANNER</span></div>
             <div class="settings-block">
-                <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL WASTELAND</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE DESERT</button></div>
+                <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE</button></div>
                 <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
-                <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled style="border:1px solid rgba(100,200,255,0.3)!important;color:rgba(100,200,255,0.5);padding:5px 12px;cursor:pointer;font-size:0.75rem;background:transparent;letter-spacing:1px;transition:all 0.2s;border-bottom:1px solid rgba(100,200,255,0.3)!important;">↩ UNDO</button>
+                <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled>↩ UNDO</button>
                 <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
             </div>
         </div>
+        <!-- Banners sit BELOW header bar, inside main-panel -->
     </header>
 
     <section class="left-panel">
@@ -476,7 +474,10 @@
         </div>
     </section>
 
-    <section>
+    <section class="main-panel">
+        <!-- HARDERCORE ALERT + FACTION QUOTE (moved from header) -->
+        <div class="hc-alert-bar" id="hc-banner">⚠ HARDERCORE_OVERRIDE_ACTIVE — SYSTEM INTEGRITY COMPROMISED ⚠</div>
+        <div id="faction-quote-bar" style="display:none;" class="faction-quote-bar"></div>
         <div class="tab-nav">
             <button onclick="showTab('ov')" id="tab-btn-ov" class="active">🧑 OVERVIEW</button>
             <button onclick="showTab('prog')" id="tab-btn-prog">🧬 TRAITS &amp; IMPLANTS</button>
@@ -694,7 +695,7 @@
         <div id="tab-books" class="tab-content scroll-v" style="display:none;"></div>
     </section>
 
-    <section>
+    <section class="right-panel">
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:0;">
             <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
