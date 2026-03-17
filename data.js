@@ -548,7 +548,7 @@ const ARCHETYPES_DATA = [
   /* ── 1. WANDERING GUNSLINGER ────────────────────────────── */
   {
     id:'gunslinger', name:'Wandering Gunslinger', tagline:'Fast hands, faster draws',
-    notes:"WEAPONS: Lucky · Wild Bill's Sidearm · Maria · Mysterious Magnum | ARMOUR: Paulson's Outfit · Regulator Duster · Lucky Shades · NCR Ranger Combat Armor",
+    notes:"WEAPONS: Lucky · Wild Bill's Sidearm · Maria · Mysterious Magnum | ARMOUR: Paulson's Outfit · Regulator Duster · Lucky Shades · NCR Ranger Combat Armor\n\nPLAY STYLE: Open every fight from stealth for a sneak attack crit, then stay mobile. Bullet Time is your primary combat tool — queue headshots and let Lucky proc crits. Keep weapons repaired above 75% condition at all times; Built to Destroy accelerates wear. Favour light armour to keep AGI penalties off your speed.\nRP: A drifter who never stays anywhere long enough to make enemies. Accepts caps first, asks questions second. Talks their way past guards when possible; shoots them when not. Never draws first but always draws last.",
     icon:'🔫', color:'#EF9F27', origin:'MW', mode:'std', buildKarma:'neutral', difficulty:2,
     special:{STR:6,PER:8,END:5,CHA:4,INT:6,AGI:9,LCK:7},
     tags:[false,false,false,false,true,false,false,false,true,false,true,false,false,false],
@@ -630,7 +630,7 @@ const ARCHETYPES_DATA = [
   /* ── 2. NCR COMMANDO ────────────────────────────────────── */
   {
     id:'commando', name:'NCR Commando', tagline:'Infantry firepower, US Army loadout',
-    notes:"WEAPONS: This Machine · All-American · Medicine Stick · Mercy | ARMOUR: NCR Ranger Combat Armor · Composite Recon Armor · 1st Recon Beret · Desert Ranger Combat Armor",
+    notes:"WEAPONS: This Machine · All-American · Medicine Stick · Mercy | ARMOUR: NCR Ranger Combat Armor · Composite Recon Armor · 1st Recon Beret · Desert Ranger Combat Armor\n\nPLAY STYLE: Explosives soften clusters, rifles finish stragglers. Use cover aggressively — the Commando has good END but no stealth. Mark priority targets in Bullet Time and aim for centre mass. Keep grenades stocked for close-quarters clearing. Travel with at least one NCR companion for Ferocious Loyalty triggers.\nRP: A decorated soldier following orders even without a chain of command to follow them up to. Aligns with NCR factions. Dislikes Caesar's Legion on principle. Keeps a field log. Gives combat reports to no one.",
     icon:'🪖', color:'#639922', origin:'MW', mode:'std', buildKarma:'good', difficulty:2,
     special:{STR:7,PER:8,END:7,CHA:3,INT:6,AGI:8,LCK:7},
     tags:[false,false,false,true,true,false,false,false,false,false,false,false,true,false],
@@ -713,7 +713,7 @@ const ARCHETYPES_DATA = [
   /* ── 3. SHADOW ASSASSIN ─────────────────────────────────── */
   {
     id:'assassin', name:'Shadow Assassin', tagline:'Unseen, unheard, lethal',
-    notes:"WEAPONS: A Light Shining in Darkness · Sleepytyme · Christine's CoS Silencer Rifle | ARMOUR: Chinese Stealth Armor · Assassin Suit · Cryptochromatic Spectacles · Lucky Shades",
+    notes:"WEAPONS: A Light Shining in Darkness · Sleepytyme · Christine's CoS Silencer Rifle | ARMOUR: Chinese Stealth Armor · Assassin Suit · Cryptochromatic Spectacles · Lucky Shades\n\nPLAY STYLE: Never enter combat undetected. Reposition after every kill. Silenced pistols only — the moment suppression breaks, retreat and reset sneak. Lockpick every locked container before moving on; caps fund better gear faster than looting bodies. Use the Shadow Assassin trait combination to become invisible while crouched and stationary.\nRP: A contractor. No ideology, no faction loyalty above the contract. Collects the payment, vanishes. Speaks rarely and precisely. Will not take a job against children or the innocent — a line, not a philosophy.",
     icon:'🗡', color:'#7F77DD', origin:'CW', mode:'std', buildKarma:'evil', difficulty:3,
     special:{STR:5,PER:7,END:6,CHA:3,INT:6,AGI:9,LCK:9},
     tags:[false,false,false,false,true,true,false,false,false,false,true,false,false,false],
@@ -721,7 +721,7 @@ const ARCHETYPES_DATA = [
     traits:['','','','','','','','','','','',''],
     perks:[
       ['Thief','Sneak and pickpocket bonuses'],
-      ['ACTION STAR [+AP REGEN]','Rapid AP regen for back-to-back BT strikes'],
+      ['Intense Training [PER]','+1 PER — pushes to PER 8, enabling Sniper (PER 8 ✓, Guns 75 ✓)'],
       ['The Professional ','Sneak attack crits with pistols +20%'],
       ['Mister Sandman','Silent execution of sleeping targets'],
       ['Finesse','Crit chance boost — devastating with LCK 9'],
@@ -751,7 +751,8 @@ const ARCHETYPES_DATA = [
       '"Optics Enhancer" Perception Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Nociception Regulator" Endurance Implant': true,
-      '"Hypertrophy Accelerator" Strength Implant': true
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      'Implant M-5': true,
     },
     uniWpns:[true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
     uniArmor:[false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
@@ -795,7 +796,7 @@ const ARCHETYPES_DATA = [
   /* ── 4. ENERGY WEAPONS SPECIALIST ───────────────────────── */
   {
     id:'energy', name:'Energy Weapons Specialist', tagline:'Harness the power of science',
-    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Holorifle · MF Hyperbreeder Alpha | ARMOUR: Gannon Family Tesla Armor · All-Purpose Science Suit · Remnants Power Armor · Cryptochromatic Spectacles",
+    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Holorifle · MF Hyperbreeder Alpha | ARMOUR: Gannon Family Tesla Armor · All-Purpose Science Suit · Remnants Power Armor · Cryptochromatic Spectacles\n\nPLAY STYLE: Manage weapon mode switching — laser for precision, plasma for armoured targets. Science investment unlocks energy ammo crafting and weapon maintenance. Night Person fires at night, so plan rest cycles. Vats laser headshots chain beautifully with the crit modifiers once Laser Commander is active.\nRP: A pre-war technology enthusiast who believes the old world's tools are still superior to anything the wasteland has built. Collects terminal entries, reads holotapes obsessively. Fascinated by Big Mountain. Suspicious of anyone burning wood for light.",
     icon:'⚡', color:'#1D9E75', origin:'MW', mode:'std', buildKarma:'neutral', difficulty:3,
     special:{STR:5,PER:8,END:6,CHA:3,INT:7,AGI:7,LCK:9},
     tags:[false,false,true,false,false,false,false,false,false,true,true,false,false,false],
@@ -877,7 +878,7 @@ const ARCHETYPES_DATA = [
   /* ── 5. UNARMED BRAWLER ─────────────────────────────────── */
   {
     id:'brawler', name:'Unarmed Brawler', tagline:'Your fists are the only weapons you need',
-    notes:"WEAPONS: Love and Hate · Two-Step Goodbye · Pushy · Salt-Upon-Wounds' Power Fist | ARMOUR: Ledoux's Hockey Mask · Leather Rebel · Composite Recon Armor · Tribal Power Armor",
+    notes:"WEAPONS: Love and Hate · Two-Step Goodbye · Pushy · Salt-Upon-Wounds' Power Fist | ARMOUR: Ledoux's Hockey Mask · Leather Rebel · Composite Recon Armor · Tribal Power Armor\n\nPLAY STYLE: Close distance immediately and stay there. Rip N' Tear gives +2 STR at creation so your first few levels hit harder than they should. Hot Blooded at 50% HP turns you into a sprint-punching blur — intentionally drop health into the zone and stay there with careful stimpak timing. Block to build Friction Addiction AP.\nRP: Someone who settled every argument with their hands before the bombs fell and sees no reason to change now. Cheerful about violence. No grudges — once the fight is done it is done. Has a soft spot for dogs and brahmin.",
     icon:'✊', color:'#D85A30', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:2,
     special:{STR:8,PER:6,END:8,CHA:4,INT:5,AGI:9,LCK:7},
     tags:[false,false,false,false,false,false,false,true,false,false,false,false,true,true],
@@ -961,7 +962,7 @@ const ARCHETYPES_DATA = [
   /* ── 6. WASTELAND SURVIVOR ──────────────────────────────── */
   {
     id:'survivor', name:'Wasteland Survivor', tagline:'Live off the land, outlast everyone',
-    notes:"WEAPONS: Ol' Painless · Perforator · Wanda | ARMOUR: Desert Ranger Combat Armor · Explorer's Gear · Rebreather · Wanderer's Leather Armor · Paulson's Outfit",
+    notes:"WEAPONS: Ol' Painless · Perforator · Wanda | ARMOUR: Desert Ranger Combat Armor · Explorer's Gear · Rebreather · Wanderer's Leather Armor · Paulson's Outfit\n\nPLAY STYLE: Manage the survival triangle: food, water, sleep. Hardy and Fight Hungry mean deprivation is a buff, not a penalty — stay hungry in combat. PHOENIX Monocyte Breeder provides passive HP recovery between encounters. Medicine keeps companions functional. Use Guns as a reliable fallback; this build outlasts rather than outfights.\nRP: Someone the wasteland tried to kill many times and simply couldn't finish the job. Keeps a running count of close calls. Eats anything. Sleeps anywhere. Trusts no one for the first three conversations, then trusts completely.",
     icon:'🌵', color:'#5DCAA5', origin:'MW', mode:'std', buildKarma:'neutral', difficulty:3,
     special:{STR:6,PER:7,END:9,CHA:5,INT:7,AGI:5,LCK:8},
     tags:[false,false,false,false,true,false,true,false,false,false,false,false,true,false],
@@ -1001,7 +1002,8 @@ const ARCHETYPES_DATA = [
       '"Probability Calculator" Luck Implant': true,
       '"Optics Enhancer" Perception Implant': true,
       '"Reflex Booster" Agility Implant': true,
-      '"Empathy Synthesizer" Charisma Implant': true
+      '"Empathy Synthesizer" Charisma Implant': true,
+      '"PHOENIX" Monocyte Breeder': true,
     },
     uniWpns:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
     uniArmor:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false],
@@ -1045,7 +1047,7 @@ const ARCHETYPES_DATA = [
   /* ── 7. EXPLOSIVES DEMOLITIONIST ────────────────────────── */
   {
     id:'demoman', name:'Explosives Demolitionist', tagline:'If in doubt, blow it up',
-    notes:"WEAPONS: Annabelle · Thump-Thump · Mercy · Ol' Painless | ARMOUR: Desert Ranger Combat Armor · Explorer's Gear · Wanderer's Leather Armor · Advanced Riot Gear",
+    notes:"WEAPONS: Annabelle · Thump-Thump · Mercy · Ol' Painless | ARMOUR: Desert Ranger Combat Armor · Explorer's Gear · Wanderer's Leather Armor · Advanced Riot Gear\n\nPLAY STYLE: Never be in the blast radius. Mark targets in Bullet Time before throwing — arc grenades into clusters, plant mines on known patrol routes. Implant C-13 rewards launching enemies into the air before they land. Keep multiple grenade types: frags for clusters, incendiaries for fleeing targets, plasma for robots.\nRP: An engineer who discovered that the most efficient way to fix a problem is to remove it entirely. Talks about structural integrity too often. Gets nervous in caves. Has very strong opinions about grenade geometry.",
     icon:'💥', color:'#D4537E', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:3,
     special:{STR:6,PER:8,END:5,CHA:3,INT:7,AGI:8,LCK:8},
     tags:[false,false,false,true,true,false,false,false,true,false,false,false,false,false],
@@ -1083,7 +1085,8 @@ const ARCHETYPES_DATA = [
       '"Probability Calculator" Luck Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Hypertrophy Accelerator" Strength Implant': true,
-      '"Reflex Booster" Agility Implant': true
+      '"Reflex Booster" Agility Implant': true,
+      'Implant C-13': true,
     },
     uniWpns:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,true,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
     uniArmor:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false],
@@ -1127,7 +1130,7 @@ const ARCHETYPES_DATA = [
   /* ── 8. SILVER-TONGUED MERCENARY ────────────────────────── */
   {
     id:'diplomat', name:'Silver-Tongued Mercenary', tagline:'Words as weapons, caps as armour',
-    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Lucky Shades · Suave Gambler Hat · Tenpenny's Suit",
+    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Lucky Shades · Suave Gambler Hat · Tenpenny's Suit\n\nPLAY STYLE: Attempt a speech check before every combat encounter — you will succeed more than you expect. Keep Caps available for Barter leverage. Impartial Mediation rewards staying neutral, so avoid strong faction commitments early. The weapons are for when words fail, which is rarer than other builds expect.\nRP: A fixer who believes every conflict has a deal inside it waiting to be found. Morally flexible. Likes everyone until they make it impossible. Has a list of people owed favours and people who owe them, kept entirely in memory.",
     icon:'💬', color:'#B5D4F4', origin:'MW', mode:'std', buildKarma:'good', difficulty:2,
     special:{STR:5,PER:6,END:6,CHA:8,INT:8,AGI:4,LCK:8},
     tags:[true,false,false,false,false,false,true,false,false,false,false,true,false,false],
@@ -1209,7 +1212,7 @@ const ARCHETYPES_DATA = [
   /* ── 9. TECH SCAVENGER ──────────────────────────────────── */
   {
     id:'techscav', name:'Tech Scavenger', tagline:'Smarter, not stronger',
-    notes:"WEAPONS: Wazer Wifle · Smuggler's End · Lincoln's Repeater | ARMOUR: All-Purpose Science Suit · Vault Lab Uniform · Dr. Klein's Glasses · Dr. Klein's Scrubs · Neural Interface Suit",
+    notes:"WEAPONS: Wazer Wifle · Smuggler's End · Lincoln's Repeater | ARMOUR: All-Purpose Science Suit · Vault Lab Uniform · Dr. Klein's Glasses · Dr. Klein's Scrubs · Neural Interface Suit\n\nPLAY STYLE: Invest heavily in Science and Repair early — both compound as the build progresses. Hack every terminal. Disassemble enemy robots for components before moving on. Night Person means nighttime sessions at workbenches are the most productive hours. What Are You, Stupid? punishes enemies with lower INT — most raiders qualify.\nRP: The only person in the wasteland who actually read the manual. Insufferably correct about how things work. Takes notes on everything. Convinced that the wasteland's problems are fundamentally engineering problems.",
     icon:'🔧', color:'#AFA9EC', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:2,
     special:{STR:5,PER:6,END:6,CHA:3,INT:9,AGI:6,LCK:10},
     tags:[false,false,false,false,false,false,true,false,true,true,false,false,false,false],
@@ -1291,7 +1294,7 @@ const ARCHETYPES_DATA = [
   /* ── 10. MELEE SLASHER ───────────────────────────────────── */
   {
     id:'slasher', name:'Melee Slasher', tagline:'Blood on the blade, caps in the pocket',
-    notes:"WEAPONS: Chance's Knife · Occam's Razor · Blood-Nap · Vampire's Edge | ARMOUR: Pint-Sized Slasher Mask · Grifter's Fit · Wanderer's Leather Armor · Leather Rebel",
+    notes:"WEAPONS: Chance's Knife · Occam's Razor · Blood-Nap · Vampire's Edge | ARMOUR: Pint-Sized Slasher Mask · Grifter's Fit · Wanderer's Leather Armor · Leather Rebel\n\nPLAY STYLE: Enter from stealth for the sneak attack crit, then commit. Twisted doubles XP and AP while on chems — carry Psycho for the heavy fights. Chainsaw Carnage is the endgame weapon; use bladed melee until it unlocks. Grim Reaper Sprint chains kills in Bullet Time. At LVL20 Intense Training pushes LCK to 10 — Winning Streak then doubles every subsequent crit chance.\nRP: Evil. Genuinely, quietly evil. Not theatrical about it. Collects trophies. Has a specific target type they prefer. Uses polite language in all situations, including violence.",
     icon:'🔪', color:'#E24B4A', origin:'CW', mode:'std', buildKarma:'evil', difficulty:3,
     special:{STR:8,PER:6,END:7,CHA:2,INT:6,AGI:8,LCK:9},
     tags:[false,false,false,false,false,false,false,true,false,false,true,false,true,false],
@@ -1307,12 +1310,12 @@ const ARCHETYPES_DATA = [
       ['This Is A Knife','DT when guarding with blade; rank 2 speed and dmg — STR 6 ✓, AGL 7 ✓'],
       ['Piercing Strike','Negate 2 DT per STR with melee — STR 8 = 16 DT ignored'],
       ['Unstoppable Force','4x damage through blocks — STR 8 ✓, Melee 60 ✓'],
-      ['Stonewall','+1 DT per END vs melee; knockdown immune — END 7 ✓, STR 8 ✓'],
+      ['Intense Training [LCK]','+1 LCK — LCK 9→10, enables Winning Streak at LVL30'],
       ['Better Criticals','3% crit dmg per PER — PER 6 = +18% on every blade strike'],
       ['Grim Reaper\'s Sprint','Kill in BT restores 20 AP — LCK 6 ✓ rank 1'],
       ['Slayer','All melee +20% attack speed — AGL 7 ✓, STR 7 ✓, Melee 70 ✓'],
       ['Chainsaw Carnage','+20% damage with auto melee; kill = +10 DT + time slow — Butcher ✓'],
-      ['Ninja','+15% crit chance with melee; sneak attack crits +25% — Melee 80 ✓']
+      ['Winning Streak','After any crit: crit chance doubled — LCK 10 ✓ via IT']
     ],
     implantsTaken:{
       '"Nociception Regulator" Endurance Implant': true,
@@ -1364,7 +1367,7 @@ const ARCHETYPES_DATA = [
   /* ── 11. BIG GUNS HEAVY ──────────────────────────────────── */
   {
     id:'heavygunner', name:'Big Guns Heavy', tagline:'When you need a bigger gun',
-    notes:"WEAPONS: CZ57 Avenger · Bozar · Burnmaster · Mercy | ARMOUR: Remnants Power Armor · NCR Ranger Combat Armor · Composite Recon Armor · 1st Recon Beret",
+    notes:"WEAPONS: CZ57 Avenger · Bozar · Burnmaster · Mercy | ARMOUR: Remnants Power Armor · NCR Ranger Combat Armor · Composite Recon Armor · 1st Recon Beret\n\nPLAY STYLE: Get into position before the fight starts. Big guns have slow draw and heavy ammo consumption — pre-place yourself with the enemy in front and allies to the sides. Hurt Me More flips damage taken into bonuses, so absorbing a hit is not a loss. Ideologue pays out passively for Very Good karma — be genuinely good and the build rewards it mechanically.\nRP: A protector who uses overwhelming force specifically so the people behind them never have to. Collects bouquets from grateful settlements and has no idea what to do with them. Carries too much. Complains about carrying too much. Carries more.",
     icon:'🔥', color:'#BA7517', origin:'MW', mode:'std', buildKarma:'very-good', difficulty:2,
     special:{STR:9,PER:6,END:8,CHA:4,INT:6,AGI:6,LCK:8},
     tags:[false,true,false,false,true,false,false,false,false,false,false,false,true,false],
@@ -1448,7 +1451,7 @@ const ARCHETYPES_DATA = [
   /* ── 12. CANNIBAL SURVIVOR ───────────────────────────────── */
   {
     id:'cannibal', name:'Cannibal Survivor', tagline:'Waste nothing. Especially the dead.',
-    notes:"WEAPONS: Ol' Painless · Perforator · Backwater Rifle | ARMOUR: Armor of the 87th Tribe · Wanderer's Leather Armor · Ghoul Mask · Vault 77 Jumpsuit",
+    notes:"WEAPONS: Ol' Painless · Perforator · Backwater Rifle | ARMOUR: Armor of the 87th Tribe · Wanderer's Leather Armor · Ghoul Mask · Vault 77 Jumpsuit\n\nPLAY STYLE: Feed from corpses immediately after combat — Ghastly Scavenger and Them's Good Eatin give you healing items that don't cost caps. PHOENIX Monocyte Breeder means you regen between encounters. Keep one companion for Ferocious Loyalty; they do not need to know about the feeding. Chem Resistant means you can take Med-X to manage the social consequences of your dietary choices.\nRP: Practical. The wasteland wastes nothing and neither do they. Doesn't discuss it. If pressed, changes the subject. Has one companion who figured it out and said nothing, which is the strongest bond the Cannibal has ever formed.",
     icon:'🦴', color:'#5DCAA5', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:3,
     special:{STR:6,PER:7,END:10,CHA:5,INT:7,AGI:5,LCK:7},
     tags:[false,false,false,false,true,false,true,false,false,false,false,false,true,false],
@@ -1479,7 +1482,8 @@ const ARCHETYPES_DATA = [
       '"Probability Calculator" Luck Implant': true,
       '"Optics Enhancer" Perception Implant': true,
       '"Reflex Booster" Agility Implant': true,
-      '"Empathy Synthesizer" Charisma Implant': true
+      '"Empathy Synthesizer" Charisma Implant': true,
+      '"PHOENIX" Monocyte Breeder': true,
     },
     uniWpns:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,true,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false],
     uniArmor:[false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,false,true,false,false,false,false,false,false,false,false,false,false,false,false],
@@ -1523,7 +1527,7 @@ const ARCHETYPES_DATA = [
   /* ── 13. PUMP-ACTION RANGER ──────────────────────────────── */
   {
     id:'shotgunner', name:'Pump-Action Ranger', tagline:'One shot. One kill. Twelve pellets.',
-    notes:"WEAPONS: Dinner Bell · The Terrible Shotgun · The Kneecapper · Lucky | ARMOUR: NCR Ranger Combat Armor · Desert Ranger Combat Armor · Cryptochromatic Spectacles · 1st Recon Beret",
+    notes:"WEAPONS: Dinner Bell · The Terrible Shotgun · The Kneecapper · Lucky | ARMOUR: NCR Ranger Combat Armor · Desert Ranger Combat Armor · Cryptochromatic Spectacles · 1st Recon Beret\n\nPLAY STYLE: Never engage beyond 20 metres. Every perk in this build is designed for close-medium range — Pump-Action Ranger lives in doorways, stairwells and chokepoints. Tryptophobe rewards eating Brahmin Steaks; bring them. Stealth opens the first shot as a sneak crit at point blank, which tends to end the fight immediately.\nRP: A frontier lawman who decided the frontier needed more law and less talking. Carries a badge they found somewhere. Enforces their own version of the law, which is surprisingly reasonable. Has shot a lot of doors.",
     icon:'🎯', color:'#97C459', origin:'MW', mode:'std', buildKarma:'good', difficulty:2,
     special:{STR:6,PER:8,END:6,CHA:4,INT:6,AGI:8,LCK:7},
     tags:[false,false,false,false,true,false,false,false,true,false,true,false,false,false],
@@ -1605,7 +1609,7 @@ const ARCHETYPES_DATA = [
   /* ── 14. DESERT COWBOY ───────────────────────────────────── */
   {
     id:'cowboy', name:'Desert Cowboy', tagline:'Six shots. One chance. Make \'em count.',
-    notes:"WEAPONS: Lucky · Callahan's Magnum · Mysterious Magnum · Paulson's Revolver | ARMOUR: Paulson's Outfit · Regulator Duster · Lucky Shades · Suave Gambler Hat · Sheriff's Duster",
+    notes:"WEAPONS: Lucky · Callahan's Magnum · Mysterious Magnum · Paulson's Revolver | ARMOUR: Paulson's Outfit · Regulator Duster · Lucky Shades · Suave Gambler Hat · Sheriff's Duster\n\nPLAY STYLE: Revolvers and lever-actions only. Ideologue pays at Good karma — help people genuinely. Right Handed adds 25% one-handed damage passively so every cowboy shot hits harder from the start. Desert Cowboy becomes markedly more powerful after LVL10 when the Cowboy perk chain starts stacking. Carry cigarettes for Boiadero's crit bonus.\nRP: Believes the Mojave needs to be the Old West and conducts themselves accordingly. Has a horse name for every brahmin they meet. Takes insults to their hat personally. Would die for their companion and has said so out loud, which made everyone uncomfortable.",
     icon:'🤠', color:'#EF9F27', origin:'MW', mode:'std', buildKarma:'good', difficulty:2,
     special:{STR:6,PER:8,END:6,CHA:5,INT:6,AGI:8,LCK:6},
     tags:[false,false,false,false,true,false,false,false,false,false,false,true,true,false],
@@ -1687,7 +1691,7 @@ const ARCHETYPES_DATA = [
   /* ── 15. WASTELAND SNIPER ────────────────────────────────── */
   {
     id:'sniper', name:'Wasteland Sniper', tagline:'One shot from the shadows. They never see it coming.',
-    notes:"WEAPONS: Gobi Campaign Scout Rifle · Victory Rifle · Ratslayer · Christine's CoS Silencer Rifle | ARMOUR: Assassin Suit · Cryptochromatic Spectacles · Boone's Beret · Chinese Stealth Armor",
+    notes:"WEAPONS: Gobi Campaign Scout Rifle · Victory Rifle · Ratslayer · Christine's CoS Silencer Rifle | ARMOUR: Assassin Suit · Cryptochromatic Spectacles · Boone's Beret · Chinese Stealth Armor\n\nPLAY STYLE: Engage only from concealment and only at maximum range. Careful Handling reduces spread for precision. Four Eyes means glasses must stay on — check your loadout before every major fight. Night Person fires at night: plan ambushes after dark. Never enter a building as the primary approach if there's a window.\nRP: Patient. Methodical. Has been in this exact spot for three hours and is not bothered by that. Keeps a rangefinding log. Dislikes explosions on philosophical grounds. Has a very specific morning routine and gets genuinely irritated when it's disrupted.",
     icon:'🔭', color:'#B5D4F4', origin:'CW', mode:'std', buildKarma:'evil', difficulty:3,
     special:{STR:5,PER:9,END:6,CHA:3,INT:6,AGI:8,LCK:8},
     tags:[false,false,false,false,true,false,false,false,false,false,true,false,true,false],
@@ -1836,7 +1840,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["ENERGY WEAPONS","MELEE WEAPONS","SCIENCE"],pointsTotal:14}
     ],
     description:"INT 8 post-implant with triple-tagged ENERGY WEAPONS, MELEE WEAPONS and SCIENCE. Two complete identities: Cyborg, Anodized Armor and Radiation Renegade transform metal armor into a fortress for the melee monster; Laser Commander and Meltdown reward the scientist with a pulse rifle. Steel Jacketed rewards heavy armor wear; Trigger Discipline rewards the precise energy weapons user. Switch loadouts — switch persona.",
-    notes:"WEAPONS: Elijah's Advanced LAER · Q-35 Matter Modulator · Jingwei's Shocksword · Oh, Baby! | ARMOUR: Neural Interface Suit · All-Purpose Science Suit · Remnants Power Armor · Gannon Family Tesla Armor",
+    notes:"WEAPONS: Elijah's Advanced LAER · Q-35 Matter Modulator · Jingwei's Shocksword · Oh, Baby! | ARMOUR: Neural Interface Suit · All-Purpose Science Suit · Remnants Power Armor · Gannon Family Tesla Armor\n\nPLAY STYLE: The build has two modes — switch deliberately. Energy weapons at range, blade melee when enemies close. Jekyll & Hyde demands INT 8 post-implant so Science and Energy Weapons compound rapidly. Cyborg provides blanket resistances. The highest PPL in the melee/EW hybrid space — invest broadly and both modes sharpen simultaneously.\nRP: A scientist who had a very bad night in a Big Mountain laboratory and came out different. Refers to the melee half as 'the other shift'. Keeps detailed notes on both personalities' experiences. The handwriting changes.",
   },
 
   /* ── 17. COMPANION COMMANDER ─────────────────────────────── */
@@ -1907,7 +1911,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["BARTER","MEDICINE","SPEECH"],pointsTotal:13}
     ],
     description:"Good Natured pushes effective CHA to 9 — one below the Magnetic Personality cap. Empath grants a free perk at character creation and fits a build that deliberately avoids dealing damage. Triple-tagged SPEECH, BARTER and MEDICINE make every conversation an investment. Non-Combatant rewards holstering your weapon and letting companions handle the violence.",
-    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Lucky Shades · Suave Gambler Hat · Tenpenny's Suit",
+    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Lucky Shades · Suave Gambler Hat · Tenpenny's Suit\n\nPLAY STYLE: Your companions are the primary damage dealers — you enable, protect and coordinate. Ferocious Loyalty at 50% your HP gives companions massive DR. Scoundrel's discount means your caps go further for companion equipment. Magnetic Personality lets you field more companions than any other build. Stay behind them and keep them alive.\nRP: Never fought alone in their life and never intends to. Has names for every companion, remembers their birthdays, writes letters home on their behalf. Gets very quiet when a companion dies. Takes a day off.",
   },
 
   /* ── 18. LUCKY DEVIL ─────────────────────────────────────── */
@@ -1978,7 +1982,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":13},gains:{"SPEECH":13},tagged:["GUNS","SNEAK","SURVIVAL"],pointsTotal:13}
     ],
     description:"LCK 9 base — the highest in the roster. LCK implant reaches 10, unlocking Winning Streak: after any critical hit, crit chance doubles. Built to Destroy adds +10% crit velocity from level 1. High Roller rewards gambling sessions. Cola Comrade turns every Nuka-Cola into a 2-minute crit buff. Mysterious Stranger shows up in Bullet Time when the dice need loading.",
-    notes:"WEAPONS: Lucky · Ratslayer · Gobi Campaign Scout Rifle · Maria | ARMOUR: Paulson's Outfit · Lucky Shades · Viva Las Vegas · Suave Gambler Hat",
+    notes:"WEAPONS: Lucky · Ratslayer · Gobi Campaign Scout Rifle · Maria | ARMOUR: Paulson's Outfit · Lucky Shades · Viva Las Vegas · Suave Gambler Hat\n\nPLAY STYLE: Bullet Time is the primary damage tool — Lucky's crit chains fuel Grim Reaper Sprint which keeps BT extended. Mysterious Stranger fires randomly but at LCK 10 he appears constantly. Magnate rewards holding large cap stacks; visit casinos early and often. The crit loop becomes self-sustaining by LVL20.\nRP: Convinced they are cosmically favoured. Flips a coin for major decisions. Has won every coin flip they've ever described to anyone. Whether this is genuine luck or selective memory is unclear. Spends time in every casino. Always leaves ahead.",
   }
 ,
 
@@ -2023,7 +2027,8 @@ const ARCHETYPES_DATA = [
       '"Hypertrophy Accelerator" Strength Implant': true,
       '"Optics Enhancer" Perception Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
-      '"Reflex Booster" Agility Implant': true
+      '"Reflex Booster" Agility Implant': true,
+      '"PHOENIX" Monocyte Breeder': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":0,"REPAIR":82,"SCIENCE":82,"SNEAK":0,"SPEECH":52,"SURVIVAL":76,"UNARMED":0},
@@ -2060,7 +2065,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":13},gains:{"SPEECH":13},tagged:["MEDICINE","SURVIVAL"],pointsTotal:13}
     ],
     description:"END 8 base — the highest starting Endurance in the roster. Tagged MEDICINE and SURVIVAL are the twin pillars: Survival drives Rad Child (75), Survivalist (75) and Tenacious (50); Medicine keeps you patched while deliberately soaking rads. Healing Factor at LVL8 turns limb damage into a minor inconvenience. Burning Sensation actively drains your rad stack so you control the level. Cannibal trait lets you feed in the field to sustain the machine. Solar Powered adds +1 END in sunlight, pushing Toughness's DT tally even higher.",
-    notes:"WEAPONS: Euclid's C-Finder · YCS/186 · Jingwei's Shocksword · Bumper Sword | ARMOUR: Radiation Suit · Rebreather · Neural Interface Suit · Vault Lab Uniform",
+    notes:"WEAPONS: Euclid's C-Finder · YCS/186 · Jingwei's Shocksword · Bumper Sword | ARMOUR: Radiation Suit · Rebreather · Neural Interface Suit · Vault Lab Uniform\n\nPLAY STYLE: Seek irradiated zones deliberately — Rad Child regenerates HP inside them, Atomic! makes you 25% faster. Burning Sensation drains rads so you control the stack rather than capping out. PHOENIX Monocyte Breeder adds passive regen on top. Wear the Radiation Suit as primary armour; Radiation Renegade gives it +10 DT and +25 AP. Cannibal feeding is free healing.\nRP: Something happened at the reactor. They don't talk about what. Comfortable in places that would kill others. Genuinely doesn't understand why everyone is so upset about radiation. Has developed opinions about different flavours of irradiated water.",
   },
 
   /* ── 20. THE ROBOTICIST ──────────────────────────────────── */
@@ -2140,7 +2145,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["ENERGY WEAPONS","REPAIR","SCIENCE"],pointsTotal:14}
     ],
     description:"INT 9 — tied with Techscav for the highest in the roster — drives PPL of 14 and compounds SCIENCE and REPAIR rapidly. Monkey Wrench requires Repair 60 at LVL6: REPAIR is tagged and the base is 22, achievable by LVL4. Robotics Expert scales directly with Science: at 100, you deal +35% damage vs robots. Mad Science at LVL28 rewards the EW75+Science80 investment. Educated gives one free random skill point per level on top; Theories and Hypothesis grants +15 Science while hacking.",
-    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Wazer Wifle · Smuggler's End | ARMOUR: All-Purpose Science Suit · Neural Interface Suit · Gannon Family Tesla Armor · Dr. Klein's Scrubs",
+    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Wazer Wifle · Smuggler's End | ARMOUR: All-Purpose Science Suit · Neural Interface Suit · Gannon Family Tesla Armor · Dr. Klein's Scrubs\n\nPLAY STYLE: Hack every terminal before engaging its associated robots — Robotics Expert lets you shut them down undetected. At Science 100, you deal +35% damage to every robot in the game. Certified Tech makes robot corpses wealthy. Night Person at night gives INT bonuses that push Science base even higher for terminal hacking.\nRP: The machines are the only things in the wasteland that behave predictably. Has reprogrammed every robot companion to address them by a preferred title. Maintains detailed maintenance logs. Gets emotionally invested in specific robots.",
   },
 
   /* ── 21. TRIBAL TERROR ───────────────────────────────────── */
@@ -2184,7 +2189,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
-      '"Logic Co-Processor" Intelligence Implant': true
+      '"Logic Co-Processor" Intelligence Implant': true,
+      'Implant Y-7': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":0,"MEDICINE":84,"MELEE WEAPONS":76,"REPAIR":84,"SCIENCE":0,"SNEAK":64,"SPEECH":0,"SURVIVAL":78,"UNARMED":78},
@@ -2221,7 +2227,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SNEAK":12},gains:{"SNEAK":12},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:12}
     ],
     description:"INT 4 is deliberate — the lowest in the roster, locking out Old World science. Contact Courier doubles down: STR 8 base, END 7 base, INT under 8 met — Unarmed only, +50% Unarmed damage, -50% Melee, +50% ranged spread. The build tags MELEE WEAPONS, SURVIVAL and UNARMED: three skills that never appear on a terminal. Tribal Ways rewards wearing tribal outfits with a full combat loadout. Coiled Snake at LVL22 requires AGL 8 — met post-implant — and rewards crouched thrown-weapon play. Slayer at LVL30 is the endgame.",
-    notes:"WEAPONS: Chance's Knife · Blood-Nap · Love and Hate · Pushy | ARMOUR: Armor of the 87th Tribe · Wanderer's Leather Armor · Ledoux's Hockey Mask · Rebreather",
+    notes:"WEAPONS: Chance's Knife · Blood-Nap · Love and Hate · Pushy | ARMOUR: Armor of the 87th Tribe · Wanderer's Leather Armor · Ledoux's Hockey Mask · Rebreather\n\nPLAY STYLE: No technology. Crafted weapons, primitive melee, thrown spears and hatchets. Implant Y-7 from Big Mountain adds HP and AP from food — eat before every fight. Contact Courier adds +50% Unarmed damage. Tribal Ways gives +8 DT in tribal outfits — never wear anything modern. Coiled Snake rewards throwing from a crouch.\nRP: Rejects the Old World completely. Does not use guns. Does not read terminals. Will not explain themselves in wasteland terms. Has a name in their language that outsiders cannot pronounce and a wasteland name they find insulting but answer to anyway.",
   },
 
   /* ── 22. CHEM-ADDICT CHEMIST ─────────────────────────────── */
@@ -2302,7 +2308,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SNEAK":14},gains:{"SNEAK":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14}
     ],
     description:"Logan's Loophole is the keystone: no addiction ever, chems last twice as long, capped at Level 30. Hot Blooded fires below 50% HP — attack speed surges while Psycho, Turbo and Med-X are already doubling their duration. Twisted at Evil karma doubles XP and AP regen with chems active. Implant GRX at LVL26/28 gives a non-addictive Turbo that Logan's Loophole can't block — the only chem that bypasses the cap. Friction Addiction turns every blocked hit into AP restoration.",
-    notes:"WEAPONS: Lucky · Sleepytyme · Maria · Blackhawk | ARMOUR: Grifter's Fit · Leather Rebel · Cryptochromatic Spectacles · Lucky Shades",
+    notes:"WEAPONS: Lucky · Sleepytyme · Maria · Blackhawk | ARMOUR: Grifter's Fit · Leather Rebel · Cryptochromatic Spectacles · Lucky Shades\n\nPLAY STYLE: The chem rotation is the build. Psycho before heavy combat, Turbo in Bullet Time, Med-X as a last resort. Logan's Loophole means no withdrawal — ever. Twisted doubles XP and AP while active. Hot Blooded below 50% HP. Implant GRX rank 2 at LVL30 gives a non-addictive Turbo that Logan's own rule cannot block — the one exception.\nRP: Self-medicated through the apocalypse and came out ahead. Has a very specific pre-combat ritual. Does not recommend their lifestyle but is alive and several of the people who warned them are not. Carries a personal pharmacopoeia.",
   },
 
   /* ── 23. TERRIFYING PRESENCE ─────────────────────────────── */
@@ -2327,8 +2333,8 @@ const ARCHETYPES_DATA = [
       ['Stonewall','+1 DT per END vs melee; knockdown immune — END 8 ✓, STR 9 ✓'],
       ['Unstoppable Force','4x damage through blocks — STR 7 ✓, Melee 60 ✓'],
       ['Chainsaw Carnage','+20% damage auto-melee; kill = +10 DT + time slow — Butcher ✓'],
-      ['Toughness','+1 DT per END — END 8 = +8 DT in combat; END 5 ✓'],
-      ['Overkiller','+15% heavy melee damage; cripple = knockdown — STR 8 ✓, Melee 80 ✓'],
+      ['Intense Training [AGI]','+1 AGI — AGI 6→7, enables Slayer (AGL 7 ✓, STR 7 ✓, Melee 70 ✓)'],
+      ['Slayer','All melee +20% attack speed — AGL 7 ✓ via IT, STR 7 ✓, Melee 70 ✓'],
       _EMPTY_PERK_SLOT
     ],
     implantsTaken:{
@@ -2337,7 +2343,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
-      '"Logic Co-Processor" Intelligence Implant': true
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":76,"REPAIR":82,"SCIENCE":0,"SNEAK":0,"SPEECH":88,"SURVIVAL":78,"UNARMED":0},
@@ -2374,7 +2381,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"LOCKPICK":3},gains:{"LOCKPICK":3},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13}
     ],
     description:"CHR 3 meets the Terrifying Presence trait requirement (CHR < 5). Contact Courier locks in the identity: STR 8 base, END 7 base, INT under 8 — Unarmed only, +50% Unarmed damage, -50% Melee, +50% spread with ranged. SPEECH is tagged not for diplomacy but for the unique intimidation dialogue options the trait unlocks. Non-Combatant rewards walking in with a holstered chainsaw. Nowhere To Hide doubles damage against anyone who breaks and runs. Overkiller at LVL30 with STR 9 and Melee 80 turns every power attack into a knockdown.",
-    notes:"WEAPONS: Oh, Baby! · Nuka-Breaker · Chainsaw · Ripper | ARMOUR: Pint-Sized Slasher Mask · Grifter's Fit · Wanderer's Leather Armor · Ledoux's Hockey Mask",
+    notes:"WEAPONS: Oh, Baby! · Nuka-Breaker · Chainsaw · Ripper | ARMOUR: Pint-Sized Slasher Mask · Grifter's Fit · Wanderer's Leather Armor · Ledoux's Hockey Mask\n\nPLAY STYLE: Approach with weapon holstered — Non-Combatant gives +8 DT and +15% DR. Exhaust every dialogue option before drawing the Chainsaw. When you do draw it, Butcher procs AP on cripples. Chainsaw Carnage at LVL26 gives +10 DT on every kill and a brief time-slow. At LVL28 Intense Training pushes AGI to 7, enabling Slayer at LVL30 for the final attack speed tier.\nRP: Soft-spoken. Extremely polite. Has never needed to raise their voice because the reputation precedes them into every room. The Chainsaw is a last resort. They say this entirely without irony.",
   },
 
   /* ── 24. PYROMANIAC PURIST ───────────────────────────────── */
@@ -2409,7 +2416,8 @@ const ARCHETYPES_DATA = [
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
       '"Hypertrophy Accelerator" Strength Implant': true,
-      '"Nociception Regulator" Endurance Implant': true
+      '"Nociception Regulator" Endurance Implant': true,
+      'Implant C-13': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":82,"EXPLOSIVES":82,"GUNS":0,"LOCKPICK":0,"MEDICINE":80,"MELEE WEAPONS":0,"REPAIR":80,"SCIENCE":80,"SNEAK":0,"SPEECH":0,"SURVIVAL":78,"UNARMED":0},
@@ -2446,7 +2454,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["ENERGY WEAPONS","EXPLOSIVES","SURVIVAL"],pointsTotal:13}
     ],
     description:"Triple-tagged ENERGY WEAPONS, EXPLOSIVES and SURVIVAL. The EXPLOSIVES tag makes Mad Bomber, Demolition Expert and Combustion Kid accessible early; ENERGY WEAPONS drives the EW skill fast enough to unlock Pyromaniac at LVL12 (EW 60), Laser Commander at LVL26 (EW 75) and Meltdown at LVL30 (EW 90). Fast Shot fires 20% faster — at point blank with a flamer, accuracy is irrelevant. Return To Ashes at LVL8 doubles damage when both combatants use fire: one of the highest damage multipliers in the game.",
-    notes:"WEAPONS: Burnmaster · Rapid-Torch Flamer · SLO-BURN Flamer · Cleansing Flame | ARMOUR: Radiation Suit · Rebreather · Explorer's Gear · Advanced Riot Gear",
+    notes:"WEAPONS: Burnmaster · Rapid-Torch Flamer · SLO-BURN Flamer · Cleansing Flame | ARMOUR: Radiation Suit · Rebreather · Explorer's Gear · Advanced Riot Gear\n\nPLAY STYLE: Close range only — flamers require proximity. Fast Shot fires 20% faster at the cost of accuracy, which is irrelevant at flamer distances. Return To Ashes at LVL8 doubles damage when both you and the target are using fire weapons — many Fire Geckos qualify. Implant C-13 rewards launching burning enemies into the air. Never stand in your own fire.\nRP: Has strong opinions about which things deserve to burn and which do not. The list is longer than expected in one direction and shorter than expected in the other. Finds the sound of a flamer's ignition genuinely soothing. Keeps a candle.",
   }
 ,
 
@@ -2490,7 +2498,8 @@ const ARCHETYPES_DATA = [
       '"Reflex Booster" Agility Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Hypertrophy Accelerator" Strength Implant': true,
-      '"Nociception Regulator" Endurance Implant': true
+      '"Nociception Regulator" Endurance Implant': true,
+      'Implant M-5': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":78,"LOCKPICK":78,"MEDICINE":80,"MELEE WEAPONS":0,"REPAIR":80,"SCIENCE":0,"SNEAK":78,"SPEECH":20,"SURVIVAL":82,"UNARMED":0},
@@ -2527,7 +2536,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":13},gains:{"SPEECH":13},tagged:["GUNS","SNEAK","SURVIVAL"],pointsTotal:13}
     ],
     description:"Tagged GUNS, SNEAK and SURVIVAL — the three pillars of a wasteland hermit. Claustrophobia swings all SPECIAL +1 outside and -1 inside, which suits a wanderer who lives in the open. Hoarder covers carry weight for a character who never passes a vendor. A Solitary Soul and My Own Master Now are the pair that define the build: both unlock at LVL10, reward having no companions and being shunned by major factions. Saguaro Stalker rewards absolute stillness. Sneaking Tiger turns AGL 8 into +11 DT while moving crouched.",
-    notes:"WEAPONS: Gobi Campaign Scout Rifle · Ratslayer · Lucky · Wild Bill's Sidearm | ARMOUR: Wanderer's Leather Armor · Cryptochromatic Spectacles · Rebreather · Explorer's Gear",
+    notes:"WEAPONS: Gobi Campaign Scout Rifle · Ratslayer · Lucky · Wild Bill's Sidearm | ARMOUR: Wanderer's Leather Armor · Cryptochromatic Spectacles · Rebreather · Explorer's Gear\n\nPLAY STYLE: No companions. Ever. A Solitary Soul and My Own Master Now both require it and reward it simultaneously. Claustrophobia gives +1 all SPECIAL outdoors — favour open terrain. Saguaro Stalker rewards absolute stillness. Sneaking Tiger rewards crouched movement. Implant M-5 adds 10% crouch speed — the Lone Wolf moves faster on all fours than most people do upright.\nRP: Left a settlement once and never went back. Doesn't explain why. Every companion attempt ends with polite refusal. Has conversations with themself in the wasteland that cover most of the same ground a companion would.",
   },
 
   /* ── 26. GLASS CANNON ────────────────────────────────────── */
@@ -2607,7 +2616,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["GUNS","SNEAK","UNARMED"],pointsTotal:13}
     ],
     description:"LCK 10 base — the highest possible and the only build in the roster that starts there. Doom Spiral hands you a free perk in exchange for a scaling instant-kill chance as health drops: -1% health = +1% chance of instant death. Fickle hands you another free perk in exchange for -50% crit damage after any non-crit hit. Built to Destroy adds +10% crit chance on top. Winning Streak doubles crit chance after any critical. The build is offensive to the point of self-destruction — maximum AP, no defensive perks, trusting LCK 10 to end every fight before it ends you.",
-    notes:"WEAPONS: Lucky · Ratslayer · Love and Hate · Pushy | ARMOUR: Grifter's Fit · Leather Rebel · Lucky Shades · Pint-Sized Slasher Mask",
+    notes:"WEAPONS: Lucky · Ratslayer · Love and Hate · Pushy | ARMOUR: Grifter's Fit · Leather Rebel · Lucky Shades · Pint-Sized Slasher Mask\n\nPLAY STYLE: Doom Spiral is always active — your death chance rises with damage taken so the goal is ending every fight before it ends you. Maximum AP above everything: the longer BT runs, the more crits you stack. Winning Streak at LVL30 doubles crit chance after every crit — once the chain starts it should not stop. Never holster. Never negotiate. Never take a hit you can avoid.\nRP: Very evil. Very confident. Certain the cosmos has specifically arranged for them to survive everything they've survived so far. Wrong in a way that hasn't been proven yet. Extravagant about everything.",
   },
 
   /* ── 27. COMBAT MEDIC ────────────────────────────────────── */
@@ -2650,7 +2659,8 @@ const ARCHETYPES_DATA = [
       '"Optics Enhancer" Perception Implant': true,
       '"Nociception Regulator" Endurance Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
-      '"Probability Calculator" Luck Implant': true
+      '"Probability Calculator" Luck Implant': true,
+      '"PHOENIX" Monocyte Breeder': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":78,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":20,"MEDICINE":80,"MELEE WEAPONS":0,"REPAIR":80,"SCIENCE":80,"SNEAK":0,"SPEECH":78,"SURVIVAL":80,"UNARMED":0},
@@ -2687,7 +2697,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MEDICINE","SPEECH","SURVIVAL"],pointsTotal:13}
     ],
     description:"Good Natured brings effective CHR to 9 and adds +5 to Medicine and Speech directly. Empath grants a free perk at character creation — the compassionate pacifist identity expressed mechanically. Blood Bag at LVL4 turns the medical system into an active combat tool. Healing Factor at LVL14 makes limb damage self-resolving. Living Anatomy at LVL20 reveals enemy HP and DT in real time — the medic knows exactly how hurt everyone is. Scoundrel fills the spare perk slots: CHR 9 effective makes it the best discount build in the roster.",
-    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Doctor Li's Outfit · All-Purpose Science Suit · Lucky Shades · Suave Gambler Hat",
+    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 | ARMOUR: Doctor Li's Outfit · All-Purpose Science Suit · Lucky Shades · Suave Gambler Hat\n\nPLAY STYLE: Your companions are patients, not weapons. Keep them at full HP at all times — Ferocious Loyalty at 50% your HP gives them DR. PHOENIX Monocyte Breeder passively regenerates your own HP so stimpaks go to companions first. Living Anatomy reveals enemy HP and DT for triage decisions. Empath's damage penalty is the point — you do not fight if avoidable.\nRP: A healer who ended up in the wasteland by accident and decided the place needed them. Has strong feelings about suffering. Will patch up enemies after disabling them. Does not enjoy violence but is very good at ending encounters before violence becomes necessary.",
   },
 
   /* ── 28. THE SCOUNDREL ───────────────────────────────────── */
@@ -2730,7 +2740,8 @@ const ARCHETYPES_DATA = [
       '"Optics Enhancer" Perception Implant': true,
       '"Nociception Regulator" Endurance Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
-      '"Reflex Booster" Agility Implant': true
+      '"Reflex Booster" Agility Implant': true,
+      'Implant M-5': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":83,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":81,"MEDICINE":79,"MELEE WEAPONS":0,"REPAIR":79,"SCIENCE":9,"SNEAK":79,"SPEECH":83,"SURVIVAL":33,"UNARMED":0},
@@ -2767,7 +2778,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"REPAIR":5,"SCIENCE":9},gains:{"REPAIR":5,"SCIENCE":9},tagged:["LOCKPICK","SNEAK","SPEECH"],pointsTotal:14}
     ],
     description:"Small Frame adds +15 Sneak at character creation — the highest single trait bonus to a skill in the roster. Night Person adds +1 INT and PER at night, boosting Lockpick and Sneak bases. Graceful adds +1 CHR while sober. Three Thief ranks push Sneak and pickpocket simultaneously. The entire build is about never being seen: Saguaro Stalker rewards absolute stillness, Sneaking Tiger rewards movement, Tunnel Runner rewards speed, and Mister Sandman rewards finding the enemy asleep.",
-    notes:"WEAPONS: Sleepytyme · Lucky · Wild Bill's Sidearm · Li'l Devil | ARMOUR: Assassin Suit · Cryptochromatic Spectacles · Lucky Shades · Boone's Beret",
+    notes:"WEAPONS: Sleepytyme · Lucky · Wild Bill's Sidearm · Li'l Devil | ARMOUR: Assassin Suit · Cryptochromatic Spectacles · Lucky Shades · Boone's Beret\n\nPLAY STYLE: Never be seen. Mister Sandman kills sleeping targets silently — check patrol routes for rest points. Three Thief ranks push pickpocket high enough to lift weapons off enemies before they know you're there. Implant M-5 adds 10% crouch speed — the Scoundrel covers ground faster crouched than most characters do standing. Small Frame's +15 Sneak at creation means you start better at this than any other build.\nRP: Everything is an opportunity. Every locked door is an invitation. Every pocket is a question. Has a personal rule about only stealing from people who can afford it — applies this rule very loosely.",
   },
 
   /* ── 29. THE CRUSADER ────────────────────────────────────── */
@@ -2848,7 +2859,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["GUNS","MEDICINE","SPEECH"],pointsTotal:13}
     ],
     description:"Ideologue at Good karma rewards the righteous: +4% XP, +1 skill point per level, +1 Luck, 6% better prices. Trigger Discipline reduces spread 20% for precision justice. Lawbringer at LVL16 turns every Evil kill into caps and karma — the build literally profits from doing good. Stonewall at LVL16 with END 8 and STR 8 makes the Crusader immune to knockdowns and gives +8 DT against every melee swing. Long Haul at LVL24 lets a heavily armoured paladin fast travel while overencumbered.",
-    notes:"WEAPONS: This Machine · Medicine Stick · Lucky · All-American | ARMOUR: NCR Ranger Combat Armor · Desert Ranger Combat Armor · 1st Recon Beret · Rebreather",
+    notes:"WEAPONS: This Machine · Medicine Stick · Lucky · All-American | ARMOUR: NCR Ranger Combat Armor · Desert Ranger Combat Armor · 1st Recon Beret · Rebreather\n\nPLAY STYLE: Ideologue rewards Good karma continuously — take the good options and the build pays dividends. Burden to Bear stacks on Strong Back for massive carry capacity in power armor. Lawbringer activates at LVL10 from Good karma and passively rewards every Evil kill with caps and karma. Living Anatomy reveals HP and DT mid-combat for targeting decisions.\nRP: Righteousness is not performed — it simply is. Helps without being asked. Dislikes being thanked. Has a very specific definition of justice that occasionally surprises people with its mercy and occasionally surprises them with its finality.",
   },
 
   /* ── 30. WASTELAND DRUNK ─────────────────────────────────── */
@@ -2891,7 +2902,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Empathy Synthesizer" Charisma Implant': true,
       '"Reflex Booster" Agility Implant': true,
-      '"Probability Calculator" Luck Implant': true
+      '"Probability Calculator" Luck Implant': true,
+      'Implant Y-3': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":80,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":82,"LOCKPICK":0,"MEDICINE":86,"MELEE WEAPONS":0,"REPAIR":86,"SCIENCE":0,"SNEAK":0,"SPEECH":57,"SURVIVAL":76,"UNARMED":0},
@@ -2928,7 +2940,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":12},gains:{"SPEECH":12},tagged:["BARTER","GUNS","SURVIVAL"],pointsTotal:12}
     ],
     description:"INT 4 is the build's defining constraint — the lowest in the roster alongside Tribal Terror, and the only build that deliberately keeps it low to unlock Boozer (INT<6) and Prohibition (INT<6, PER<6). Law-Jaw trait provides improved prices while at Good/Very Good karma, which an Evil drunk will fluctuate through. Hoarder covers the carry weight for someone hauling bottles everywhere. Hot Blooded fires below 50% HP. Prohibition rewards holding bottles. Gunshots N' Drop Shots removes the drunk spread penalty. Boozer at LVL16 halves addiction duration and reduces prices while drunk.",
-    notes:"WEAPONS: Lucky · Dinner Bell · The Terrible Shotgun · Callahan's Magnum | ARMOUR: Regulator Duster · Paulson's Outfit · Lucky Shades · Suave Gambler Hat",
+    notes:"WEAPONS: Lucky · Dinner Bell · The Terrible Shotgun · Callahan's Magnum | ARMOUR: Regulator Duster · Paulson's Outfit · Lucky Shades · Suave Gambler Hat\n\nPLAY STYLE: Prohibition rewards holding bottles — always carry a dozen. Gunshots N' Drop Shots removes drunk spread entirely. Boozer at LVL16 halves addiction duration. Implant Y-3 strips rads from every drink — the Wasteland Drunk is paradoxically radiation-resistant at the bar. Hot Blooded below 50% HP while drunk and armed is the endgame state.\nRP: Functioning. They are functioning. Has a system. The system involves specific times of day and specific beverages and if you disrupt the system there are consequences. Somehow always has caps. Never explains where they come from.",
   }
 ,
 
@@ -2973,7 +2985,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Reflex Booster" Agility Implant': true,
-      '"Probability Calculator" Luck Implant': true
+      '"Probability Calculator" Luck Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":84,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":0,"REPAIR":82,"SCIENCE":82,"SNEAK":0,"SPEECH":38,"SURVIVAL":51,"UNARMED":0},
@@ -3010,7 +3023,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":13},gains:{"SPEECH":13},tagged:["GUNS","MEDICINE","REPAIR"],pointsTotal:13}
     ],
     description:"END 8 base — the highest in any of the three power armor builds — giving 9 post-implant and the largest Toughness DT bonus in the roster at +9. Steel Jacketed at LVL10 unlocks the full heavy armor loadout: +25% carry weight, +1 END and +15% melee damage. Stonewall at LVL16 with END 9 and STR 8 adds another +9 DT against melee and makes knockdown immune. Burden to Bear at LVL24 stacks on top of Strong Back for maximum carry. Ideologue at Good karma pays out +4% XP and +1 LCK passively.",
-    notes:"WEAPONS: This Machine · Medicine Stick · All-American · Lucky | ARMOUR: Remnants Power Armor · NCR Ranger Combat Armor · 1st Recon Beret · Rebreather",
+    notes:"WEAPONS: This Machine · Medicine Stick · All-American · Lucky | ARMOUR: Remnants Power Armor · NCR Ranger Combat Armor · 1st Recon Beret · Rebreather\n\nPLAY STYLE: Power armor from the earliest opportunity — Strong Back at LVL6 handles the carry weight, Burden to Bear at LVL24 makes overencumbrance irrelevant. Steel Jacketed unlocks the full heavy armor loadout. Living Anatomy reveals enemy DT for targeting — aim for the gap in their armour if there is one. Ideologue at Good karma pays passively.\nRP: Brotherhood of Steel in spirit if not always in letter. Believes technology is a sacred trust. Picks up every weapon they find and stores it — will not explain why but will be very vague about where the storage is. Formally addresses everyone.",
   },
 
   /* ── 32. THE JUGGERNAUT ──────────────────────────────────── */
@@ -3054,7 +3067,8 @@ const ARCHETYPES_DATA = [
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
-      '"Optics Enhancer" Perception Implant': true
+      '"Optics Enhancer" Perception Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":83,"MEDICINE":81,"MELEE WEAPONS":77,"REPAIR":81,"SCIENCE":81,"SNEAK":0,"SPEECH":0,"SURVIVAL":75,"UNARMED":0},
@@ -3091,7 +3105,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["MEDICINE","MELEE WEAPONS","SURVIVAL"],pointsTotal:13}
     ],
     description:"Masochist is the identity — DT and DR bonuses rise as health drops, inverting the survival instinct. Impact Play stacks +10% DR per melee hit to a maximum of +50% additional DR. Friction Addiction adds +1 DT per STR per blocked hit and restores AP — with STR 8 that's +8 DT on every block. Stonewall with END 9 adds another +9 DT against melee attackers. The Juggernaut doesn't dodge. It stands, absorbs everything, and hits back harder for it.",
-    notes:"WEAPONS: Oh, Baby! · Super Sledge · Nuka-Breaker · Bumper Sword | ARMOUR: Remnants Power Armor · Tribal Power Armor · Ledoux's Hockey Mask · Rebreather",
+    notes:"WEAPONS: Oh, Baby! · Super Sledge · Nuka-Breaker · Bumper Sword | ARMOUR: Remnants Power Armor · Tribal Power Armor · Ledoux's Hockey Mask · Rebreather\n\nPLAY STYLE: Do not dodge. Do not retreat. Masochist flips your DT/DR as HP drops — the lower your health, the harder you become. Impact Play stacks +10% DR per melee hit received up to +50%. NEMEAN Sub-Dermal Armor adds +4 DT on top of everything else. Friction Addiction restores AP on every blocked hit. The Juggernaut wins by outlasting everything thrown at it.\nRP: Has absorbed an amount of punishment that should by rights be fatal and interpreted each survival as confirmation that they are simply built differently. Slow to anger. Impossible to stop once moving.",
   },
 
   /* ── 33. ENCLAVE REMNANT ─────────────────────────────────── */
@@ -3171,7 +3185,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["ENERGY WEAPONS","REPAIR","SCIENCE"],pointsTotal:14}
     ],
     description:"Scientific Method pushes INT to 10 effectively (+2 INT, -2 PER, +20 Science) — the only build in the roster to reach double-digit INT. Night Person adds +1 INT and PER at night, further boosting Science and Lockpick bases. Educated gives a free skill point per level on top. The result is a PPL of 14 with INT 8 base, climbing higher with trait and time-of-day bonuses. Gannon Family Tesla Armor and Remnants Power Armor are the endgame reward for completing For Auld Lang Syne — the lore payoff for the Enclave identity.",
-    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Gauss Rifle · Holorifle | ARMOUR: Gannon Family Tesla Armor · Remnants Power Armor · All-Purpose Science Suit · Dr. Klein's Scrubs",
+    notes:"WEAPONS: AER14 Prototype · Q-35 Matter Modulator · Gauss Rifle · Holorifle | ARMOUR: Gannon Family Tesla Armor · Remnants Power Armor · All-Purpose Science Suit · Dr. Klein's Scrubs\n\nPLAY STYLE: Educated and Night Person at night push INT effectively toward 10 — do terminal work and science crafting after dark. Robotics Expert scales with Science: at 100 Science you deal +35% to every robot. Gannon Family Tesla Armor and Remnants Power Armor are the endgame reward for completing For Auld Lang Syne. Save that quest.\nRP: Pre-war Enclave. The Republic fell and they are still not entirely sure how to feel about that. Refers to the NCR and Brotherhood as 'the new arrangements'. Keeps an Enclave uniform in storage. Has not worn it in years. Has not thrown it away either.",
   },
 
   /* ── 34. THE PUGILIST ────────────────────────────────────── */
@@ -3196,7 +3210,7 @@ const ARCHETYPES_DATA = [
       ['Better Criticals','+3% crit damage per PER — PER 6 = +18% — LCK 6 ✓'],
       ['Super Slam','Unarmed attacks knockdown on DT penetration — STR 6 ✓, Unarmed 55 ✓'],
       ['Unstoppable Force','4x damage through blocks while moving — STR 7 ✓, Unarmed 60 ✓'],
-      ['ACTION STAR [+AP REGEN]','AP regen for sustained Bullet Time unarmed chains'],
+      ['Intense Training [STR]','+1 STR — STR 8→9, Piercing Strike now ignores 18 DT instead of 16'],
       ['Fatal Counter','2x damage and doubled crit when target staggered — STR 5 ✓, Unarmed 75 ✓'],
       _EMPTY_PERK_SLOT,
       _EMPTY_PERK_SLOT,
@@ -3215,7 +3229,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
-      '"Logic Co-Processor" Intelligence Implant': true
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":0,"REPAIR":82,"SCIENCE":0,"SNEAK":78,"SPEECH":0,"SURVIVAL":80,"UNARMED":80},
@@ -3252,7 +3267,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["MEDICINE","SURVIVAL","UNARMED"],pointsTotal:13}
     ],
     description:"Rip N' Tear grants +2 STR and +5 Unarmed at character creation — the highest single-stat trait bonus to Unarmed in the game. Built to Destroy adds +10% crit chance. Iron Fist stacks twice: at LVL4 and LVL12, each rank adding +1 unarmed damage per point of END — with END 7 post-implant that's +14 flat damage from perks alone. Sucker Punch at LVL8 adds +15 unarmed damage when the target doesn't see it coming. Rolling With The Punches turns being hit into a speed burst. Fatal Counter at LVL30 doubles damage and crit chance against staggered targets — the capstone of a build that wants the enemy to swing first.",
-    notes:"WEAPONS: Two-Step Goodbye · Salt-Upon-Wounds' Power Fist · Love and Hate · Pushy | ARMOUR: Ledoux's Hockey Mask · Leather Rebel · Composite Recon Armor · Tribal Power Armor",
+    notes:"WEAPONS: Two-Step Goodbye · Salt-Upon-Wounds' Power Fist · Love and Hate · Pushy | ARMOUR: Ledoux's Hockey Mask · Leather Rebel · Composite Recon Armor · Tribal Power Armor\n\nPLAY STYLE: Rip N' Tear gives +2 STR and +5 Unarmed at creation. Iron Fist stacks twice — at LVL4 and LVL12, adding +1 unarmed per END point each time. At LVL28 Intense Training pushes STR to 9 — Piercing Strike then ignores 18 DT with every strike. NEMEAN Sub-Dermal Armor adds +4 DT since this build has no ranged fallback. Fatal Counter at LVL30 doubles damage when the target staggers.\nRP: A boxer who kept fighting after the gyms closed. Has a strict code about weapons — anyone else can use them, they choose not to. Not moral about it. Practical. The hands are enough. Has never once been convinced otherwise.",
   },
 
   /* ── 35. THE NIGHTSTALKER ────────────────────────────────── */
@@ -3294,7 +3309,8 @@ const ARCHETYPES_DATA = [
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Probability Calculator" Luck Implant': true,
       '"Optics Enhancer" Perception Implant': true,
-      '"Hypertrophy Accelerator" Strength Implant': true
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      'Implant M-5': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":78,"LOCKPICK":78,"MEDICINE":78,"MELEE WEAPONS":0,"REPAIR":78,"SCIENCE":0,"SNEAK":78,"SPEECH":86,"SURVIVAL":47,"UNARMED":0},
@@ -3331,7 +3347,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":3,"SURVIVAL":11},gains:{"SPEECH":3,"SURVIVAL":11},tagged:["GUNS","MEDICINE","SNEAK"],pointsTotal:14}
     ],
     description:"Night Person is the load-bearing identity — at night, INT and PER each gain +1, boosting Lockpick, Medicine, Sneak and Energy Weapons bases simultaneously. Small Frame adds +15 Sneak at character creation. Blue Moon at LVL26 crystallises the nocturnal identity: between 9PM and 5AM, crit chance rises by 5% and crit damage by 50% while using a scope — stacked with Voyeur's 25% crit damage and Better Criticals' PER scaling, the midnight sniper peak is the highest crit damage ceiling in the roster.",
-    notes:"WEAPONS: Ratslayer · Gobi Campaign Scout Rifle · Sleepytyme · Lucky | ARMOUR: Assassin Suit · Chinese Stealth Armor · Cryptochromatic Spectacles · Boone's Beret",
+    notes:"WEAPONS: Ratslayer · Gobi Campaign Scout Rifle · Sleepytyme · Lucky | ARMOUR: Assassin Suit · Chinese Stealth Armor · Cryptochromatic Spectacles · Boone's Beret\n\nPLAY STYLE: Operate exclusively at night. Blue Moon at LVL26 gives +5% crit and +50% crit damage between 9PM and 5AM while scoped — this is the highest crit damage ceiling in the roster, unlocked by being exactly where you should be at exactly the right time. Implant M-5 adds 10% crouch speed for repositioning between kills. Night Person fires passively while the sun is down.\nRP: Nocturnal by choice and preference. Finds daylight hostile. Has specific spots at specific vantage points that they have pre-scouted across the entire map. The settlement schedules know when the nightstalker has been through: missing patrols, no bodies, no evidence.",
   },
 
   /* ── 36. THE PACKRAT ─────────────────────────────────────── */
@@ -3375,7 +3391,8 @@ const ARCHETYPES_DATA = [
       '"Logic Co-Processor" Intelligence Implant': true,
       '"Probability Calculator" Luck Implant': true,
       '"Optics Enhancer" Perception Implant': true,
-      '"Reflex Booster" Agility Implant': true
+      '"Reflex Booster" Agility Implant': true,
+      'Implant Y-7': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":85,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":83,"LOCKPICK":83,"MEDICINE":79,"MELEE WEAPONS":0,"REPAIR":79,"SCIENCE":0,"SNEAK":0,"SPEECH":12,"SURVIVAL":77,"UNARMED":0},
@@ -3412,7 +3429,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"LOCKPICK":1,"SPEECH":12},gains:{"LOCKPICK":1,"SPEECH":12},tagged:["BARTER","GUNS","SURVIVAL"],pointsTotal:13}
     ],
     description:"Hoarder grants +20% carry weight at creation — the largest single carry bonus of any trait. Strong Back at LVL6 and Burden to Bear at LVL24 stack multiplicatively with it. Long Haul at LVL14 means being overencumbered is never a movement problem, only a combat one. Magnate trait rewards holding over 3000 caps with progressively reduced buying prices. High Roller at LVL28 turns the accumulated casino chips into a passive crit bonus. Pack Rat at LVL30 is the capstone: every item at or under 2 lbs weighs half, cutting the weight of ammo, stimpaks, food and holdout weapons in half.",
-    notes:"WEAPONS: Lucky · This Machine · Ol' Painless · Dinner Bell | ARMOUR: Explorer's Gear · Wanderer's Leather Armor · Rebreather · Paulson's Outfit",
+    notes:"WEAPONS: Lucky · This Machine · Ol' Painless · Dinner Bell | ARMOUR: Explorer's Gear · Wanderer's Leather Armor · Rebreather · Paulson's Outfit\n\nPLAY STYLE: Hoarder gives +20% carry weight at creation. With Strong Back, Burden to Bear, Long Haul and Heavyweight stacked, you can carry the contents of a small settlement and still fast-travel. Implant Y-7 adds HP and AP from food — eat between every significant encounter. Magnate rewards holding 3000+ caps with better prices.\nRP: Cannot leave a container unchecked. Has a system for categorising everything they carry that no one else can understand. Swears they will drop something eventually. Has not. Would rather overencumber than discard.",
   },
 
   /* ── 37. THE GUNSMITH ────────────────────────────────────── */
@@ -3493,7 +3510,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","REPAIR","SCIENCE"],pointsTotal:14}
     ],
     description:"Repair is tagged alongside GUNS and SCIENCE — the only build in the roster where Repair is the primary combat-enabling skill rather than a support investment. Gun Nut across all three ranks reduces spread and condition damage by 15% total. Jury Rigging at LVL26 is the capstone: Repair 90 lets you fix any weapon with a vaguely similar item, making weapon condition a non-issue even in the deepest wilderness. Gun Guru grants +30 Repair at any physical Reloading Bench. Educated and Theories and Hypothesis push INT utility even further.",
-    notes:"WEAPONS: This Machine · All-American · Medicine Stick · Gobi Campaign Scout Rifle | ARMOUR: All-Purpose Science Suit · Vault Lab Uniform · Cryptochromatic Spectacles · Neural Interface Suit",
+    notes:"WEAPONS: This Machine · All-American · Medicine Stick · Gobi Campaign Scout Rifle | ARMOUR: All-Purpose Science Suit · Vault Lab Uniform · Cryptochromatic Spectacles · Neural Interface Suit\n\nPLAY STYLE: Repair weapons before they drop below 50% condition. Gun Nut at all three ranks means condition degrades 15% slower total. Jury Rigging at LVL26 is the keystone: any weapon repaired with any vaguely similar weapon. Gun Guru at LVL14 adds +30 Repair at a Reloading Bench — use every workbench you pass. Hand Loader means you never run out of ammunition.\nRP: Everything can be fixed. Everything. They find weapons in states other characters would discard and bring them back. Has names for specific guns. Gets visibly upset about poor maintenance.",
   },
 
   /* ── 38. THE GLADIATOR ───────────────────────────────────── */
@@ -3537,7 +3554,8 @@ const ARCHETYPES_DATA = [
       '"Nociception Regulator" Endurance Implant': true,
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
-      '"Logic Co-Processor" Intelligence Implant': true
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":76,"REPAIR":82,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":78,"UNARMED":78},
@@ -3574,7 +3592,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{},gains:{},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13}
     ],
     description:"Torque Dork grants +25% damage with all Melee Weapons at the cost of 5x condition damage with everything else — locking the build into melee exclusively by design. STR 9 post-implant feeds Piercing Strike's DT negation (18 DT ignored), Threat Range's heavy melee bonus and Blunt Force Trauma's crit chain. Hot Blooded fires at 50% HP. Slayer at LVL26 adds +20% attack speed to everything already augmented. Fatal Counter at LVL30 doubles damage and crit chance when the enemy staggers — the intended reward for every knockdown built into the chain.",
-    notes:"WEAPONS: Oh, Baby! · Nuka-Breaker · Super Sledge · Bumper Sword | ARMOUR: Tribal Power Armor · NCR Ranger Combat Armor · Ledoux's Hockey Mask · Composite Recon Armor",
+    notes:"WEAPONS: Oh, Baby! · Nuka-Breaker · Super Sledge · Bumper Sword | ARMOUR: Tribal Power Armor · NCR Ranger Combat Armor · Ledoux's Hockey Mask · Composite Recon Armor\n\nPLAY STYLE: Torque Dork gives +25% melee damage and 5x condition damage to everything else — guns and energy weapons will destroy themselves in your hands, so don't carry them. Two-handed heavy melee only. Blunt Force Trauma crits, Threat Range adds speed and damage, Slayer caps the chain. Hot Blooded at 50% HP. Fatal Counter at LVL30 rewards every knockdown with double damage and doubled crit.\nRP: Entered the Arena for caps. Stayed because the crowd liked them. Left before the management could make it compulsory. Has a very specific warm-up routine before every serious fight. Considers every fight serious.",
   },
 
   /* ── 39. THE POLITICIAN ──────────────────────────────────── */
@@ -3653,7 +3671,7 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["BARTER","SNEAK","SPEECH"],pointsTotal:14}
     ],
     description:"Sex Appeal adds +2 CHR at creation. Graceful adds +1 CHR while sober. Wasteland Masquerade adds another +1 CHR and INT while wearing headwear — the Politician is almost always dressed for the occasion. Three Scoundrel ranks stack to maximum vendor discount. Three Thief ranks push Sneak and pickpocket simultaneously. Clothes Make The Courier rewards wearing outfits over armor with +7 to Barter, Speech and Sneak — the build is physically fragile but socially armoured. Collective Consciousness at LVL22 turns faction allegiances into Speech bonuses.",
-    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 · Sleepytyme | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Suave Gambler Hat · Lucky Shades",
+    notes:"WEAPONS: Lucky · Maria · Zhu-Rong V418 · Sleepytyme | ARMOUR: Benny's Suit · Ambassador Crocker's Suit · Suave Gambler Hat · Lucky Shades\n\nPLAY STYLE: Three Scoundrel ranks hit maximum vendor discount by LVL14. Wolf in Sheep's Clothing adds +2 CHR and +5 crit when wearing enemy faction armor — dress like whoever you're dealing with. Clothes Make The Courier adds +7 to Barter, Speech and Sneak while wearing outfits over armor. Collective Consciousness at LVL22 turns every allied faction into a Speech bonus.\nRP: Has a position on every issue that is whatever the person they're talking to needs to hear. Does not consider this dishonest — considers it efficient. Has genuine loyalties that are entirely personal rather than ideological. Would die for exactly two people and is not going to say who.",
   },
 
   /* ── 40. THE DRIFTER ─────────────────────────────────────── */
@@ -3697,7 +3715,8 @@ const ARCHETYPES_DATA = [
       '"Reflex Booster" Agility Implant': true,
       '"Probability Calculator" Luck Implant': true,
       '"Logic Co-Processor" Intelligence Implant': true,
-      '"Hypertrophy Accelerator" Strength Implant': true
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      'Implant Y-7': true,
     },
     charLevel:30,
     skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":78,"LOCKPICK":80,"MEDICINE":82,"MELEE WEAPONS":0,"REPAIR":82,"SCIENCE":0,"SNEAK":78,"SPEECH":15,"SURVIVAL":80,"UNARMED":0},
@@ -3734,6 +3753,826 @@ const ARCHETYPES_DATA = [
       {level:30,allocation:{"SPEECH":13},gains:{"SPEECH":13},tagged:["GUNS","SNEAK","SURVIVAL"],pointsTotal:13}
     ],
     description:"Claustrophobia gives +1 to all SPECIAL outside and -1 inside — the Drifter is built for the open wasteland and mechanically punished for entering buildings. Walker Instinct and Boiadero both require being outdoors. Road Rage rewards using the weapons the wasteland provides rather than curated loadouts. Marathon Runner removes movement penalties in any armor, keeping the Drifter mobile regardless of gear weight. Hoarder covers carry weight for someone who never passes a vendor. Home on the Range means no wasted perks on beds — any campfire provides the Well Rested bonus.",
-    notes:"WEAPONS: Lucky · This Machine · Ratslayer · Medicine Stick | ARMOUR: Explorer's Gear · Wanderer's Leather Armor · Rebreather · Paulson's Outfit",
+    notes:"WEAPONS: Lucky · This Machine · Ratslayer · Medicine Stick | ARMOUR: Explorer's Gear · Wanderer's Leather Armor · Rebreather · Paulson's Outfit\n\nPLAY STYLE: Claustrophobia punishes buildings — plan routes outdoors when possible. Road Rage at LVL12 rewards wasteland weapons specifically. Implant Y-7 adds HP and AP from food — eat from the land, not from vendors. Home on the Range means every campfire is a rest point. Boiadero at LVL20 rewards carrying cigarettes everywhere — buy a carton at every settlement.\nRP: Been everywhere once. Plans to go everywhere again. Knows which vantage points offer good sight lines across every major area. Does not own property. Does not intend to. Gives directions to places they've been that no one else seems to know exist.",
+  }
+,
+
+  /* ── 41. THE GRENADIER ───────────────────────────────────── */
+  {
+    id:'grenadier', name:'The Grenadier', tagline:'The arc of every grenade is a prayer.',
+    icon:'💣', color:'#D4801A', origin:'MW', mode:'std', buildKarma:'neutral', difficulty:3,
+    special:{STR:7,PER:6,END:7,CHA:3,INT:6,AGI:8,LCK:9},
+    tags:[false,false,false,true,false,false,false,true,false,false,false,false,true,false],
+    startingTraits:[{name:'Loose Cannon'},{name:'Carpet Bomber'},{name:'Dustbowl'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Heave, Ho!','+25% thrown velocity and damage — STR 7 ✓ or AGL 8 ✓, Explos 25 ✓'],
+      ['Fight Hungry','Hunger >150: +10% damage, +1 END — Survival 20 ✓'],
+      ['Combustion Kid','+25% equip speed, +15% attack speed with throwable explosives — AGL 6 ✓'],
+      ['Mad Bomber','Throwable explosive crafting -35% — Repair 40 ✓, Explos 35 ✓'],
+      ['Demolition Expert','+10% explosive damage — Explos 40 ✓ — rank 1'],
+      ['Coiled Snake','Crouched: +15% thrown velocity; prone: +25% move/+15% attack — AGL 8 ✓, Survival 35 ✓'],
+      ['Contents Under Pressure','+20% fire weapon speed; +15% condition damage — Explos 50 ✓'],
+      ['Super Slam','Melee attacks knockdown on DT penetration — STR 6 ✓, Melee 55 ✓'],
+      ['Demolition Expert','+10% explosive damage — rank 2'],
+      ['Splash Damage','All explosives 25% larger area of effect — Explos 60 ✓'],
+      ['Survivalist','Sating needs twice as effective — END 6 ✓, Survival 75 ✓'],
+      ['Piercing Strike','Negate 2 DT per STR with melee — STR 7 = 14 DT ignored'],
+      ['Unstoppable Force','4x damage through blocks — STR 7 ✓, Melee 60 ✓'],
+      ['Concentrated Fire','BT accuracy stacks per hit on same body part — Explos 60 ✓'],
+      ['High Roller','+2% crit per 2500 casino chips (10% max) — LCK 7 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Logic Co-Processor" Intelligence Implant': true,
+      'Implant C-13': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":81,"GUNS":0,"LOCKPICK":0,"MEDICINE":81,"MELEE WEAPONS":79,"REPAIR":81,"SCIENCE":81,"SNEAK":0,"SPEECH":0,"SURVIVAL":79,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"EXPLOSIVES":13},gains:{"EXPLOSIVES":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:3,allocation:{"EXPLOSIVES":13},gains:{"EXPLOSIVES":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:4,allocation:{"EXPLOSIVES":13},gains:{"EXPLOSIVES":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:5,allocation:{"EXPLOSIVES":2,"MELEE WEAPONS":11},gains:{"EXPLOSIVES":3,"MELEE WEAPONS":22},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:6,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:7,allocation:{"MELEE WEAPONS":5,"REPAIR":8},gains:{"MELEE WEAPONS":10,"REPAIR":8},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:8,allocation:{"MELEE WEAPONS":13},gains:{"MELEE WEAPONS":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:9,allocation:{"MELEE WEAPONS":11,"SURVIVAL":2},gains:{"MELEE WEAPONS":21,"SURVIVAL":4},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:10,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:11,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:12,allocation:{"REPAIR":1,"SURVIVAL":12},gains:{"REPAIR":1,"SURVIVAL":23},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:13,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:14,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:15,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:16,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:17,allocation:{"MEDICINE":6,"REPAIR":7},gains:{"MEDICINE":6,"REPAIR":7},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:18,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:19,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:20,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:21,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:22,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:23,allocation:{"MEDICINE":10,"SCIENCE":3},gains:{"MEDICINE":10,"SCIENCE":3},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:24,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:25,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:26,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:27,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:28,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:29,allocation:{"SCIENCE":13},gains:{"SCIENCE":13},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13},
+      {level:30,allocation:{},gains:{},tagged:["EXPLOSIVES","MELEE WEAPONS","SURVIVAL"],pointsTotal:13}
+    ],
+    description:"Loose Cannon fires 25% faster with 33% more scatter — perfect for a thrown-grenade specialist where accuracy matters less than arc speed. Carpet Bomber ensures thrown explosives always land near the target. Coiled Snake at LVL12 requires AGL 8 — met post-implant — and rewards the prone throwing position with +15% velocity and +15% attack speed. Heave, Ho! at LVL2 pushes the arc further and hits harder. Implant C-13 adds +10% damage to targets in the air — anything a grenade launches into the air takes the extra hit.",
+    notes:"WEAPONS: Frag Grenades · Incendiary Grenades · Plasma Grenades · Bumper Sword | ARMOUR: Explorer's Gear · Composite Recon Armor · Rebreather · Ledoux's Hockey Mask\n\nPLAY STYLE: Prone before throwing — Coiled Snake adds +15% velocity and attack speed while crouched. Loose Cannon fires faster with more scatter so close the distance before throwing. Implant C-13 rewards enemies launched into the air by blasts. Keep multiple grenade types stocked at all times.\nRP: Has strong geometric opinions about every space they enter. Involuntarily calculates blast radii in social situations. Is never more than ten metres from a grenade. Finds silence concerning.",
+  },
+
+  /* ── 42. THE SOLAR PRIEST ────────────────────────────────── */
+  {
+    id:'solarpriest', name:'The Solar Priest', tagline:'The sun is your weapon. Worship accordingly.',
+    icon:'☀️', color:'#FFD040', origin:'MW', mode:'std', buildKarma:'good', difficulty:3,
+    special:{STR:5,PER:8,END:7,CHA:5,INT:7,AGI:6,LCK:8},
+    tags:[false,false,true,false,false,false,false,false,false,true,false,false,true,false],
+    startingTraits:[{name:'Solar Powered'},{name:'Ideologue'},{name:'Built to Destroy'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Walker Instinct','+1 PER and AGL while outside crouched — Survival 35 ✓, PER 3 ✓'],
+      ['Junk Rounds','Craft ammo from scrap — INT 6 ✓, Repair 25 ✓'],
+      ['In Shining Armor','+5 DT vs energy in metal armor — Repair 40 ✓, Science 30 ✓'],
+      ['Radiation Renegade','Rad suit: +10 DT, +25 AP, -25% enemy crit — Science 50 ✓'],
+      ['Anodized Armor','Scrap electronics magnetise metal armor: +8% DR — Science 40 ✓'],
+      ['Fight Hungry','Hunger >150: +10% damage, +1 END — Survival 20 ✓'],
+      ['Burning Wasteland Sun','5AM–7PM: fire/laser +8% crit, +15% crit dmg — EW 50 ✓, END 6 ✓'],
+      ['Survivalist','Sating needs twice as effective — END 6 ✓, Survival 75 ✓'],
+      ['Vigilant Recycler','More drained energy ammo recovered — EW 50 ✓, Science 70 ✓'],
+      ['Laser Commander','+15% damage, +10% crit with laser weapons — EW 75 ✓'],
+      ['Run n\' Gun','Movement spread penalty -50% — EW 45 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 8 = +24% — LCK 6 ✓'],
+      ['Concentrated Fire','BT accuracy stacks per hit — EW 60 ✓'],
+      ['Sniper','+25% head BT; +25% crit while scoped crouched — PER 8 ✓, Guns 75 ✓... EW 75 ✓'],
+      ['Meltdown','Plasma crits wreck metallic armor — EW 90 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"PHOENIX" Monocyte Breeder': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":78,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":78,"MEDICINE":80,"MELEE WEAPONS":0,"REPAIR":80,"SCIENCE":80,"SNEAK":0,"SPEECH":0,"SURVIVAL":80,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"ENERGY WEAPONS":5,"SURVIVAL":8},gains:{"ENERGY WEAPONS":10,"SURVIVAL":16},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:3,allocation:{"ENERGY WEAPONS":13},gains:{"ENERGY WEAPONS":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:4,allocation:{"ENERGY WEAPONS":13},gains:{"ENERGY WEAPONS":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:5,allocation:{"ENERGY WEAPONS":8,"SCIENCE":5},gains:{"ENERGY WEAPONS":16,"SCIENCE":10},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:6,allocation:{"SCIENCE":13},gains:{"SCIENCE":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:7,allocation:{"SCIENCE":13},gains:{"SCIENCE":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:8,allocation:{"SCIENCE":9,"SURVIVAL":4},gains:{"SCIENCE":18,"SURVIVAL":8},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:9,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:10,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:11,allocation:{"REPAIR":11,"SURVIVAL":2},gains:{"REPAIR":11,"SURVIVAL":4},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:12,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:13,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:14,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:15,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:16,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:17,allocation:{"MEDICINE":9,"REPAIR":4},gains:{"MEDICINE":9,"REPAIR":4},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:18,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:19,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:20,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:21,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:22,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:23,allocation:{"LOCKPICK":7,"MEDICINE":6},gains:{"LOCKPICK":7,"MEDICINE":6},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:24,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:25,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:26,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:27,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:28,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:29,allocation:{"LOCKPICK":6},gains:{"LOCKPICK":6},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13},
+      {level:30,allocation:{},gains:{},tagged:["ENERGY WEAPONS","SCIENCE","SURVIVAL"],pointsTotal:13}
+    ],
+    description:"Solar Powered grants +1 STR, AGL and END during daylight — stacking on an already high-END build for additional Toughness DT. Early Bird (if taken as a Thought trait) extends this further: +1 to all SPECIAL from 5AM to noon. Ideologue at Good karma pays out +4% XP and +1 LCK passively. Burning Wasteland Sun at LVL14 is the keystone: between 5AM and 7PM, laser and fire weapons gain +8% crit chance and +15% crit damage. Built to Destroy adds another +10% crit chance. PHOENIX Monocyte Breeder turns sunlight into passive HP regeneration — staying outdoors in daylight is both mechanically and narratively the right choice.",
+    notes:"WEAPONS: AER14 Prototype · Euclid's C-Finder · YCS/186 · Multiplas Rifle | ARMOUR: NCR Ranger Combat Armor · Rebreather · Explorer's Gear · 1st Recon Beret\n\nPLAY STYLE: Burning Wasteland Sun requires being outdoors and operational between 5AM and 7PM — plan rest cycles around the solar window. Solar Powered adds +1 STR, AGL and END during daylight. Ideologue at Good karma pays passively. PHOENIX Monocyte Breeder regenerates HP while you're in the sun. The build's peak hours are midday — plan major fights for then.\nRP: Developed a theological relationship with solar energy somewhere between the bombs and now. Does not push it on others. Has morning rituals facing east. Very calm about everything, including violence. The serenity is genuine.",
+  },
+
+  /* ── 43. THE PLAGUE DOCTOR ───────────────────────────────── */
+  {
+    id:'plaguedoctor', name:'The Plague Doctor', tagline:'Where others see death, you see a test subject.',
+    icon:'🧪', color:'#80C080', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:3,
+    special:{STR:5,PER:6,END:8,CHA:4,INT:9,AGI:5,LCK:9},
+    tags:[false,false,false,false,false,false,true,false,true,true,false,false,false,false],
+    startingTraits:[{name:'Educated'},{name:'Theories and Hypothesis'},{name:'Hoarder'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Lead Belly','Radiation from food/drink -50% (rank 2) — END 7 ✓'],
+      ['In Shining Armor','+5 DT vs energy in metal armor — Repair 40 ✓, Science 30 ✓'],
+      ['Hardy','Hunger/thirst >150: +15 Survival, +15% healing — END 5 ✓, Survival 25 ✓'],
+      ['Rad Resistance','+25% Radiation Resistance — Survival 40 ✓... wait Repair 40, Science 40 ✓'],
+      ['Radiation Renegade','Rad suit: +10 DT, +25 AP, -25% enemy crit — Science 50 ✓'],
+      ['Monkey Wrench','+50% melee damage vs robots — Repair 60 ✓'],
+      ['Cyborg','+10% Poison, Rad, Energy, Fire resistance — Med 60 ✓, Sci 60 ✓'],
+      ['Rad Absorption','Radiation dissipates 1 per 10 seconds — END 7 ✓ or Survival 50 ✓'],
+      ['Anodized Armor','Scrap electronics magnetise metal armor: +8% DR — Science 40 ✓'],
+      ['Tenacious','Crippled limb bonuses — END 8 ✓, LCK 3 ✓, Survival 50 ✓'],
+      ['Living Anatomy','+5% damage vs humans/ghouls; see HP and DT — Medicine 70 ✓'],
+      ['Nerd Rage!','Below 20% HP: enemy crit -10% per INT — INT 9 ✓, Science 75 ✓'],
+      ['Jury Rigging','Repair any item with similar item — Repair 90 ✓, INT 7 ✓'],
+      ['Certified Tech','+25% crit vs robots; more robot loot — INT 5 ✓, Sci 60 ✓, Repair 60 ✓'],
+      ['Fast Metabolism','Stimpak +20% heal — END 5 ✓, Survival 25 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"PHOENIX" Monocyte Breeder': true,
+      'Implant Y-3': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":49,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":81,"MEDICINE":75,"MELEE WEAPONS":0,"REPAIR":75,"SCIENCE":75,"SNEAK":0,"SPEECH":85,"SURVIVAL":77,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"MEDICINE":6,"REPAIR":8},gains:{"MEDICINE":12,"REPAIR":16},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:3,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:4,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:5,allocation:{"MEDICINE":4,"SCIENCE":10},gains:{"MEDICINE":7,"SCIENCE":20},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:6,allocation:{"SCIENCE":14},gains:{"SCIENCE":28},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:7,allocation:{"SCIENCE":14},gains:{"SCIENCE":27},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:8,allocation:{"REPAIR":14},gains:{"REPAIR":28},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:9,allocation:{"REPAIR":14},gains:{"REPAIR":28},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:10,allocation:{"LOCKPICK":12,"REPAIR":2},gains:{"LOCKPICK":12,"REPAIR":3},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:11,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:12,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:13,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:14,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:15,allocation:{"LOCKPICK":13,"SPEECH":1},gains:{"LOCKPICK":13,"SPEECH":1},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:16,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:17,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:18,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:19,allocation:{"SPEECH":1,"SURVIVAL":13},gains:{"SPEECH":1,"SURVIVAL":13},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:20,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:21,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:22,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:23,allocation:{"SPEECH":13,"SURVIVAL":1},gains:{"SPEECH":13,"SURVIVAL":1},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:24,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:25,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:26,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:27,allocation:{"BARTER":7,"SURVIVAL":7},gains:{"BARTER":7,"SURVIVAL":7},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:28,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:29,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14},
+      {level:30,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SCIENCE"],pointsTotal:14}
+    ],
+    description:"Educated and Theories and Hypothesis stack on INT 9 base for a PPL of 14, giving the Plague Doctor more free skill points per level than almost any build in the roster. The entire perk chain is defensive resistance stacking: Rad Resistance, Radiation Renegade, Cyborg (+10% to all damage types), Rad Absorption, and Anodized Armor. PHOENIX Monocyte Breeder provides passive HP regeneration. Implant Y-3 strips radioactive particles from any liquid consumed — a Big Mountain upgrade that fits the scientific self-modification identity completely. Living Anatomy at LVL22 reveals every enemy's HP and DT.",
+    notes:"WEAPONS: Laser Pistol · Plasma Defender · Jingwei's Shocksword · Bumper Sword | ARMOUR: Radiation Suit · Rebreather · All-Purpose Science Suit · Neural Interface Suit\n\nPLAY STYLE: PHOENIX Monocyte Breeder and Rad Absorption together mean environmental hazards regenerate you faster than they deplete you. Implant Y-3 strips all rads from any liquid. Cyborg gives +10% to every damage type resistance. Nerd Rage at nearly dead makes INT 9 reduce enemy crit chance significantly.\nRP: The wasteland is a laboratory. Takes notes during combat. Has a medical bag others are not permitted to open.",
+  },
+
+  /* ── 44. THE PILGRIM ─────────────────────────────────────── */
+  {
+    id:'pilgrim', name:'The Pilgrim', tagline:'Two souls. One body. Neither fully in control.',
+    icon:'🔄', color:'#B060D0', origin:'MW', mode:'std', buildKarma:'neutral', difficulty:4,
+    special:{STR:7,PER:6,END:7,CHA:7,INT:6,AGI:4,LCK:9},
+    tags:[false,false,false,false,false,false,false,true,false,false,false,true,true,false],
+    startingTraits:[{name:'Polar Personality'},{name:'Bloody Mess'},{name:'Hoarder'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Heave, Ho!','Thrown weapons +25% velocity and damage — STR 7 ✓'],
+      ['Scoundrel','+8% vendor discount; XP for speech — CHR 7 ✓ — rank 1'],
+      ['Hardy','Hunger/thirst >150: +15 Survival, +15% healing — END 5 ✓, Survival 25 ✓'],
+      ['Threat Range','+10% attack speed and damage with heavy melee — STR 7 ✓, Melee 40 ✓'],
+      ['Wolf In Sheep\'s Clothing','+2 CHR, +10 Sneak, +5 crit in enemy faction armor — Speech 40 ✓'],
+      ['Super Slam','Melee attacks knockdown on DT penetration — STR 6 ✓, Melee 55 ✓'],
+      ['Piercing Strike','Negate 2 DT per STR with melee — STR 7 = 14 DT ignored'],
+      ['Stonewall','+1 DT per END vs melee; knockdown immune — END 7 ✓, STR 7 ✓'],
+      ['Scoundrel','+8% vendor discount — rank 2'],
+      ['Collective Consciousness','+2 Speech per allied faction — CHR 6 ✓'],
+      ['Scoundrel','Maximum vendor discount — rank 3'],
+      ['Unstoppable Force','4x damage through blocks — STR 7 ✓, Melee 60 ✓'],
+      ['Tenacious','Crippled limb bonuses — END 7 ✓, LCK 3 ✓, Survival 50 ✓'],
+      ['Master Trader','3% discount per 10 Speech — CHR 7 ✓, Barter/Speech 50 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 6 = +18% — LCK 6 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Empathy Synthesizer" Charisma Implant': true,
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":79,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":16,"MEDICINE":81,"MELEE WEAPONS":79,"REPAIR":81,"SCIENCE":0,"SNEAK":0,"SPEECH":79,"SURVIVAL":79,"UNARMED":0},
+    levelUpBonuses:["hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","cw","cw","cw","cw","cw","cw","cw","cw","cw"],
+    skillHistory:[
+      {level:2,allocation:{"MELEE WEAPONS":13},gains:{"MELEE WEAPONS":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:3,allocation:{"MELEE WEAPONS":13},gains:{"MELEE WEAPONS":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:4,allocation:{"MELEE WEAPONS":6,"SPEECH":7},gains:{"MELEE WEAPONS":12,"SPEECH":14},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:5,allocation:{"MELEE WEAPONS":8,"SPEECH":5},gains:{"MELEE WEAPONS":15,"SPEECH":10},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:6,allocation:{"SPEECH":13},gains:{"SPEECH":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:7,allocation:{"SPEECH":13},gains:{"SPEECH":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:8,allocation:{"SPEECH":2,"SURVIVAL":11},gains:{"SPEECH":3,"SURVIVAL":22},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:9,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:10,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:11,allocation:{"BARTER":10,"SURVIVAL":3},gains:{"BARTER":10,"SURVIVAL":5},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:12,allocation:{"BARTER":13},gains:{"BARTER":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:13,allocation:{"BARTER":13},gains:{"BARTER":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:14,allocation:{"BARTER":13},gains:{"BARTER":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:15,allocation:{"BARTER":13},gains:{"BARTER":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:16,allocation:{"BARTER":13},gains:{"BARTER":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:17,allocation:{"BARTER":4,"MEDICINE":9},gains:{"BARTER":4,"MEDICINE":9},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:18,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:19,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:20,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:21,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:22,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:23,allocation:{"MEDICINE":7,"REPAIR":6},gains:{"MEDICINE":7,"REPAIR":6},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:24,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:25,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:26,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:27,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:28,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:29,allocation:{"LOCKPICK":3,"REPAIR":10},gains:{"LOCKPICK":3,"REPAIR":10},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13},
+      {level:30,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SPEECH","SURVIVAL"],pointsTotal:13}
+    ],
+    description:"Polar Personality is the most mechanically unusual trait in the roster. At odd-numbered levels: +4 to Melee Weapons, Unarmed, Guns and Survival. At even-numbered levels: +4 to Speech, Barter, Science and Medicine. The Pilgrim alternates between a brutal combatant and a persuasive diplomat depending on which level they're currently at. Three Scoundrel ranks exploit the even-level Speech bonus. Stonewall and Piercing Strike exploit the odd-level Melee bonus. The NEMEAN Sub-Dermal Armor adds +4 DT — the only non-crafted body modification in the roster.",
+    notes:"WEAPONS: Oh, Baby! · Nuka-Breaker · Lucky · Maria | ARMOUR: Wanderer's Leather Armor · Benny's Suit · Ambassador Crocker's Suit · Rebreather\n\nPLAY STYLE: Know your current level — odd levels favour melee, even levels favour speech and Scoundrel discounts. The NEMEAN implant covers the melee half's defence needs. Scoundrel ×3 maximises vendor discount during even-level social windows.\nRP: Two things sharing one body, neither fully comfortable with the arrangement. The melee half doesn't remember the negotiations. The speech half doesn't ask about the bruises.",
+  },
+
+  /* ── 45. THE ADDICT ──────────────────────────────────────── */
+  {
+    id:'theaddict', name:'The Addict', tagline:'The come-down is just the start of the next high.',
+    icon:'⚗️', color:'#FF44CC', origin:'MW', mode:'std', buildKarma:'evil', difficulty:4,
+    special:{STR:6,PER:7,END:7,CHA:4,INT:8,AGI:6,LCK:8},
+    tags:[false,false,false,false,true,false,true,false,false,false,false,false,true,false],
+    startingTraits:[{name:'Twisted'},{name:'Hot Blooded'},{name:'Bloody Mess'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Old World Gourmet','+25% Addiction Resist; bonus from junk food and pre-war liquor — END 6 ✓, Surv 45 ✓'],
+      ['Daddy\'s Boy/Girl','Hacking easier per rank; chems 10% more effective — INT 6 ✓'],
+      ['Gunslinger','+15% accuracy with one-handed weapons — Guns 40 ✓ — rank 1'],
+      ['Party Hard','Ignore all negative alcohol effects — END 6 ✓'],
+      ['Fight Hungry','Hunger >150: +10% damage, +1 END — Survival 20 ✓'],
+      ['Friction Addiction','Blocking: +1 DT and -3% enemy crit per STR, AP on hit — END 7 ✓'],
+      ['Chemist','All chems last twice as long — Med 60 ✓'],
+      ['Fast Metabolism','Stimpak +20% heal; alcohol removes rads 2x — END 5 ✓, Survival 25 ✓'],
+      ['Nuka Chemist','Special Nuka-Cola recipes at Workbench — Science 65 ✓'],
+      ['Finesse','+5 effective Luck crit chance — AGL 5 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 7 = +21% — LCK 6 ✓'],
+      ['Death Wish','XP from enemy crits — Twisted evil chems make every crit pay double'],
+      ['Servant of Chaos','XP when karma changes opposite direction — Evil karma cycling ensures regular swings'],
+      ['Grim Reaper\'s Sprint','Kill in BT restores 20 AP — LCK 6 ✓ — rank 1'],
+      ['Grim Reaper\'s Sprint','Kill in BT restores 60 AP — rank 2'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"PHOENIX" Monocyte Breeder': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":82,"LOCKPICK":80,"MEDICINE":78,"MELEE WEAPONS":0,"REPAIR":78,"SCIENCE":78,"SNEAK":0,"SPEECH":50,"SURVIVAL":80,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"GUNS":1,"SURVIVAL":13},gains:{"GUNS":2,"SURVIVAL":26},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:3,allocation:{"GUNS":14},gains:{"GUNS":28},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:4,allocation:{"GUNS":14},gains:{"GUNS":28},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:5,allocation:{"GUNS":12,"MEDICINE":2},gains:{"GUNS":24,"MEDICINE":4},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:6,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:7,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:8,allocation:{"MEDICINE":9,"SURVIVAL":5},gains:{"MEDICINE":18,"SURVIVAL":10},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:9,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":28},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:10,allocation:{"SCIENCE":6,"SURVIVAL":8},gains:{"SCIENCE":6,"SURVIVAL":16},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:11,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:12,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:13,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:14,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:15,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:16,allocation:{"LOCKPICK":12,"SCIENCE":2},gains:{"LOCKPICK":12,"SCIENCE":2},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:17,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:18,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:19,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:20,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:21,allocation:{"LOCKPICK":12,"REPAIR":2},gains:{"LOCKPICK":12,"REPAIR":2},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:22,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:23,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:24,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:25,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:26,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:27,allocation:{"REPAIR":6,"SPEECH":8},gains:{"REPAIR":6,"SPEECH":8},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:28,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:29,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14},
+      {level:30,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","MEDICINE","SURVIVAL"],pointsTotal:14}
+    ],
+    description:"Twisted is the keystone: while on any chems, XP and AP regeneration are both doubled. Hot Blooded fires below 50% HP. Chemist at LVL14 doubles all chem durations — on top of Twisted's double XP/AP. Daddy's Boy/Girl makes every chem 10% more effective per rank. The build deliberately avoids Logan's Loophole (used by the Chem-Addict Chemist) — instead of preventing addiction, this build embraces the cycle. Implant GRX at LVL26/28 provides the only non-addictive Turbo in the game, keeping the momentum going even between doses. PHOENIX Monocyte Breeder means you regenerate through the crash.",
+    notes:"WEAPONS: Lucky · Sleepytyme · Maria · Blackhawk | ARMOUR: Grifter's Fit · Leather Rebel · Cryptochromatic Spectacles · Lucky Shades\n\nPLAY STYLE: The chem rotation: Psycho before combat, Turbo in Bullet Time, avoid withdrawal by rotating types. Twisted doubles XP and AP on any active chem. Hot Blooded at 50% HP. PHOENIX Monocyte Breeder provides passive regen for the crash periods. Chemist at LVL14 doubles durations — one Psycho lasts long enough to clear most encounters twice over.\nRP: Has tried to stop. Once. For about a week. The wasteland is what it is and they are what they are and both of those things were true before the addiction and will be true after. Remarkably functional. Remarkably honest about it.",
+  },
+
+  /* ── 46. THE DESPERADO ───────────────────────────────────── */
+  {
+    id:'desperado', name:'The Desperado', tagline:'Six shots. The legend writes itself.',
+    icon:'🤠', color:'#D4901A', origin:'MW', mode:'std', buildKarma:'good', difficulty:3,
+    special:{STR:6,PER:8,END:6,CHA:6,INT:5,AGI:8,LCK:6},
+    tags:[false,false,false,false,true,false,false,false,false,false,false,true,true,false],
+    startingTraits:[{name:'Right Handed'},{name:'Magnate'},{name:'Ideologue'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Heave, Ho!','Thrown weapons +25% velocity and damage — STR 6 ✓ or AGL 8 ✓'],
+      ['Lucky Number','Perfect accuracy when ammo count matches LCK — LCK 6 ✓'],
+      ['Home on the Range','Sleep at any campfire with Well Rested benefit — Survival 35 ✓'],
+      ['Fortune Finder','More caps in containers — LCK 5 ✓, Survival 35 ✓'],
+      ['Cowboy','+25% damage with cowboy weapons — Guns 45 ✓, Melee 25 ✓'],
+      ['Finesse','+5 effective Luck crit chance — AGL 5 ✓'],
+      ['Desperado','Cowboy weapons: +15% damage, +0.5 crit per PER — PER 7 ✓, Cowboy ✓'],
+      ['Gunslinger','+15% accuracy with one-handed weapons — Guns 40 ✓ — rank 1'],
+      ['Boiadero','+5 crit with 10+ cigarettes — CHR 5 ✓, Survival 35 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 8 = +24% — LCK 6 ✓'],
+      ['Sweet Six Shooter','+10% dmg/crit/crit dmg with revolvers — CHR 6 ✓, Guns 66 ✓, Good Karma ✓'],
+      ['Gunslinger','+15% accuracy with one-handed weapons — rank 2'],
+      ['Concentrated Fire','BT accuracy stacks per hit on same body part — Guns 60 ✓'],
+      ['Sniper','+25% head BT; +25% crit while scoped crouched — PER 8 ✓, Guns 75 ✓'],
+      ['Hobbler','Leg hits double limb dmg; +5 DT pen vs legs in BT — PER 7 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Optics Enhancer" Perception Implant': true,
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      'Implant M-5': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":83,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":79,"LOCKPICK":0,"MEDICINE":85,"MELEE WEAPONS":8,"REPAIR":48,"SCIENCE":0,"SNEAK":0,"SPEECH":83,"SURVIVAL":83,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"GUNS":12},gains:{"GUNS":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:3,allocation:{"GUNS":12},gains:{"GUNS":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:4,allocation:{"GUNS":12},gains:{"GUNS":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:5,allocation:{"GUNS":4,"SPEECH":8},gains:{"GUNS":7,"SPEECH":16},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:6,allocation:{"SPEECH":3,"SURVIVAL":9},gains:{"SPEECH":6,"SURVIVAL":18},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:7,allocation:{"SPEECH":12},gains:{"SPEECH":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:8,allocation:{"MELEE WEAPONS":8,"SPEECH":4},gains:{"MELEE WEAPONS":8,"SPEECH":8},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:9,allocation:{"SPEECH":12},gains:{"SPEECH":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:10,allocation:{"SPEECH":3,"SURVIVAL":9},gains:{"SPEECH":5,"SURVIVAL":18},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:11,allocation:{"SURVIVAL":12},gains:{"SURVIVAL":24},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:12,allocation:{"SURVIVAL":12},gains:{"SURVIVAL":23},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:13,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:14,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:15,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:16,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:17,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:18,allocation:{"BARTER":12},gains:{"BARTER":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:19,allocation:{"BARTER":11,"MEDICINE":1},gains:{"BARTER":11,"MEDICINE":1},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:20,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:21,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:22,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:23,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:24,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:25,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:26,allocation:{"MEDICINE":12},gains:{"MEDICINE":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:27,allocation:{"REPAIR":12},gains:{"REPAIR":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:28,allocation:{"REPAIR":12},gains:{"REPAIR":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:29,allocation:{"REPAIR":12},gains:{"REPAIR":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12},
+      {level:30,allocation:{"REPAIR":12},gains:{"REPAIR":12},tagged:["GUNS","SPEECH","SURVIVAL"],pointsTotal:12}
+    ],
+    description:"Right Handed adds +25% damage with one-handed weapons and +15% accuracy in Bullet Time. Ideologue at Good karma pays passively. Magnate rewards holding 3000+ caps with lower buying prices — a roaming gunfighter who accumulates and moves on. The perk chain is the only complete Cowboy → Desperado progression in the roster: Cowboy at LVL10, Desperado at LVL12, Sweet Six Shooter at LVL22. Desperado specifically rewards high PER for crit scaling: PER 8 post-implant gives +4% crit chance from Desperado alone. Implant M-5 adds +10% crouched movement speed — the quick draw works equally well on the move.",
+    notes:"WEAPONS: Ranger Sequoia... (BIG GUNS) — Lucky · Callahan's Magnum · That Gun... wait That Gun is Big Guns — Maria · Wild Bill's Sidearm | ARMOUR: Paulson's Outfit · Desert Ranger Combat Armor · 1st Recon Beret · Lucky Shades\n\nPLAY STYLE: Revolvers and lever-actions exclusively — Right Handed adds 25% one-handed weapon damage. Carry cigarettes at all times for Boiadero's crit bonus. At LVL22 Sweet Six Shooter requires Good karma and 66 Guns — it is worth reaching for both. Implant M-5 adds 10% crouch speed for repositioning between shots. The full Cowboy chain is the only build in the roster that completes it.\nRP: The legend is mostly accurate. The parts that aren't are deliberate. Has a very specific hat. Has opinions about other people's hats. Would like to be left alone to do their job and would also like everyone to know about the job being done.",
+  },
+
+  /* ── 47. THE VOIDWALKER ──────────────────────────────────── */
+  {
+    id:'voidwalker', name:'The Voidwalker', tagline:'Blind. Lucky. Terrifying.',
+    icon:'🎱', color:'#6030D0', origin:'CW', mode:'std', buildKarma:'very-evil', difficulty:5,
+    special:{STR:7,PER:4,END:7,CHA:4,INT:6,AGI:7,LCK:10},
+    tags:[false,false,false,false,true,false,false,false,false,false,false,false,true,true],
+    startingTraits:[{name:'Blind Luck'},{name:'Doom Spiral'},{name:'Fickle'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Death Wish','XP from enemy crits — Blind Luck means enemies crit often; farm it back'],
+      ['Lucky Number','Perfect accuracy when ammo count matches LCK — LCK 10 every shot ✓'],
+      ['Eye for An Eye','+25 crit dmg and chance with crippled head — LCK 5 ✓'],
+      ['Fortune Finder','More caps in containers — LCK 5 ✓, Survival 35 ✓'],
+      ['Finesse','+5 effective Luck of crit chance — AGL 5 ✓'],
+      ['Rolling With The Punches','+12% speed for 5 sec when hit by melee — END 5 ✓, Unarmed 25 ✓'],
+      ['Servant of Chaos','XP when karma changes direction — Very Evil ensures constant swings'],
+      ['Grim Reaper\'s Sprint','Kill in BT restores 20 AP — LCK 6 ✓ — rank 1'],
+      ['Fight Hungry','Hunger >150: +10% damage, +1 END — Survival 20 ✓'],
+      ['Sucker Punch','+15 unarmed damage when target unaware — AGL 6 ✓, Sneak 40 ✓, Unarmed 40 ✓'],
+      ['Piercing Strike','Negate 2 DT per STR — STR 7 = 14 DT ignored'],
+      ['Concentrated Fire','BT accuracy stacks per hit on same body part — Guns 60 ✓'],
+      ['Super Slam','Unarmed attacks knockdown on DT penetration — STR 6 ✓, Unarmed 55 ✓'],
+      ['Grim Reaper\'s Sprint','Kill in BT restores 60 AP — rank 2'],
+      ['Winning Streak','After any crit: crit chance doubled — LCK 10 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":79,"LOCKPICK":0,"MEDICINE":81,"MELEE WEAPONS":0,"REPAIR":81,"SCIENCE":0,"SNEAK":79,"SPEECH":0,"SURVIVAL":79,"UNARMED":79},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"GUNS":6,"SURVIVAL":7},gains:{"GUNS":12,"SURVIVAL":14},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:3,allocation:{"GUNS":13},gains:{"GUNS":26},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:4,allocation:{"GUNS":11,"UNARMED":2},gains:{"GUNS":22,"UNARMED":4},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:5,allocation:{"GUNS":10,"SURVIVAL":3},gains:{"GUNS":19,"SURVIVAL":6},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:6,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:7,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:8,allocation:{"SURVIVAL":4,"UNARMED":9},gains:{"SURVIVAL":7,"UNARMED":18},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:9,allocation:{"UNARMED":13},gains:{"UNARMED":26},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:10,allocation:{"UNARMED":13},gains:{"UNARMED":26},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:11,allocation:{"MEDICINE":10,"UNARMED":3},gains:{"MEDICINE":10,"UNARMED":5},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:12,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:13,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:14,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:15,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:16,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:17,allocation:{"MEDICINE":6,"SNEAK":7},gains:{"MEDICINE":6,"SNEAK":7},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:18,allocation:{"SNEAK":13},gains:{"SNEAK":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:19,allocation:{"SNEAK":13},gains:{"SNEAK":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:20,allocation:{"SNEAK":13},gains:{"SNEAK":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:21,allocation:{"SNEAK":13},gains:{"SNEAK":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:22,allocation:{"SNEAK":13},gains:{"SNEAK":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:23,allocation:{"REPAIR":6,"SNEAK":7},gains:{"REPAIR":6,"SNEAK":7},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:24,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:25,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:26,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:27,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:28,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:29,allocation:{"REPAIR":10},gains:{"REPAIR":10},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:30,allocation:{},gains:{},tagged:["GUNS","SURVIVAL","UNARMED"],pointsTotal:13}
+    ],
+    description:"Blind Luck requires PER below 4 — base PER 3. Doom Spiral hands a free perk in exchange for a scaling instant-death chance as health drops (PER < 7 ✓ with post-implant PER 4). Fickle hands another free perk for -50% crit damage after non-crit hits. That's three free perks at character creation from traits alone — the highest trait-granted perk count in the roster. LCK 10 base makes Lucky Number activate every single shot, and Winning Streak at LVL30 doubles an already massive crit chance after every critical. The NEMEAN Sub-Dermal Armor is the only defensive layer — everything else is offense.",
+    notes:"WEAPONS: Lucky · Love and Hate · Pushy · Wild Bill's Sidearm | ARMOUR: Grifter's Fit · Leather Rebel · Lucky Shades · Pint-Sized Slasher Mask\n\nPLAY STYLE: Three free perks at character creation from Blind Luck, Doom Spiral and Fickle combined. LCK 10 base means Lucky Number activates every single shot. Winning Streak at LVL30 doubles crit chance after every crit — once the chain starts you do not stop shooting. NEMEAN Sub-Dermal Armor is the only defensive layer. The Voidwalker bets everything on never needing defence.\nRP: PER 3 means they notice less but somehow the things they notice matter more. Operates on instinct and calls it strategy. Has a relationship with randomness that borders on spiritual. Has never once described a near-death experience as anything other than fine.",
+  },
+
+  /* ── 48. THE INSOLENT ────────────────────────────────────── */
+  {
+    id:'insolent', name:'The Insolent', tagline:'Everyone hates you. That\'s the point.',
+    icon:'😤', color:'#C03030', origin:'CW', mode:'std', buildKarma:'very-evil', difficulty:4,
+    special:{STR:9,PER:6,END:9,CHA:2,INT:6,AGI:6,LCK:8},
+    tags:[false,false,false,false,false,false,false,true,false,false,false,false,true,true],
+    startingTraits:[{name:'Insolent'},{name:'Bad Influence'},{name:'Bloody Mess'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Rolling With The Punches','+12% speed for 5 sec when hit by melee — END 5 ✓, Unarmed 25 ✓'],
+      ['Fight Hungry','Hunger >150: +10% damage, +1 END — Survival 20 ✓'],
+      ['Blunt Force Trauma','Crit and attack speed with blunt weapons — STR 9 ✓, Melee 35 ✓'],
+      ['Toughness','+1 DT per END — END 9 = +9 DT'],
+      ['Heavyweight','Weapons over 10 lbs weigh half as much — STR 7 ✓'],
+      ['Road Rage','+25% attack speed/+10% dmg wasteland weapons — END 6 ✓, Surv 50 ✓'],
+      ['Super Slam','Melee attacks knockdown on DT penetration — STR 6 ✓, Melee 55 ✓'],
+      ['Piercing Strike','Negate 2 DT per STR — STR 9 = 18 DT ignored'],
+      ['Purifier','+50% damage vs Centaurs, Deathclaws, Super Mutants, Feral Ghouls'],
+      ['Stonewall','+1 DT per END vs melee; knockdown immune — END 9 ✓, STR 9 ✓'],
+      ['Unstoppable Force','4x damage through blocks — STR 7 ✓, Melee 60 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 6 = +18% — LCK 6 ✓'],
+      ['Servant of Chaos','XP when karma changes direction — Very Evil earns constantly'],
+      ['Life Giver','+30 HP to you and all companions'],
+      ['Tenacious','Crippled limb bonuses across the board — END 9 ✓, LCK 3 ✓, Survival 50 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"NEMEAN" Sub-Dermal Armor': true,
+      '"PHOENIX" Monocyte Breeder': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":0,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":0,"LOCKPICK":82,"MEDICINE":82,"MELEE WEAPONS":76,"REPAIR":82,"SCIENCE":0,"SNEAK":0,"SPEECH":0,"SURVIVAL":76,"UNARMED":76},
+    levelUpBonuses:["hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","ap","ap","ap","ap","ap","ap","ap","ap","ap"],
+    skillHistory:[
+      {level:2,allocation:{"MELEE WEAPONS":12,"UNARMED":1},gains:{"MELEE WEAPONS":24,"UNARMED":2},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:3,allocation:{"MELEE WEAPONS":13},gains:{"MELEE WEAPONS":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:4,allocation:{"MELEE WEAPONS":13},gains:{"MELEE WEAPONS":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:5,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:6,allocation:{"SURVIVAL":13},gains:{"SURVIVAL":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:7,allocation:{"SURVIVAL":12,"UNARMED":1},gains:{"SURVIVAL":24,"UNARMED":2},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:8,allocation:{"UNARMED":13},gains:{"UNARMED":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:9,allocation:{"UNARMED":13},gains:{"UNARMED":26},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:10,allocation:{"MEDICINE":3,"UNARMED":10},gains:{"MEDICINE":3,"UNARMED":20},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:11,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:12,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:13,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:14,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:15,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:16,allocation:{"MEDICINE":13},gains:{"MEDICINE":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:17,allocation:{"MEDICINE":1,"REPAIR":12},gains:{"MEDICINE":1,"REPAIR":12},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:18,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:19,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:20,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:21,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:22,allocation:{"REPAIR":13},gains:{"REPAIR":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:23,allocation:{"LOCKPICK":8,"REPAIR":5},gains:{"LOCKPICK":8,"REPAIR":5},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:24,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:25,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:26,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:27,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:28,allocation:{"LOCKPICK":13},gains:{"LOCKPICK":13},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:29,allocation:{"LOCKPICK":9},gains:{"LOCKPICK":9},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13},
+      {level:30,allocation:{},gains:{},tagged:["MELEE WEAPONS","SURVIVAL","UNARMED"],pointsTotal:13}
+    ],
+    description:"Insolent requires CHR below 3 — base CHA 2. Bad Influence requires CHR below 5 ✓ and INT below 7 ✓ (INT 6 post-implant). Insolent permanently reduces Speech and Barter, but grants bonuses when enemies are frightened by your presence. Bad Influence lets you turn your drunk companions into intimidation tools. CHA 2 makes this the lowest-Charisma build in the roster — no companion will follow you, no merchant likes you, and no faction trusts you. NEMEAN Sub-Dermal Armor and PHOENIX Monocyte Breeder make up for the complete absence of healing or social support. END 9 post-implant gives +9 DT from Toughness and +9 DT from Stonewall simultaneously.",
+    notes:"WEAPONS: Oh, Baby! · Super Sledge · Love and Hate · Pushy | ARMOUR: Ledoux's Hockey Mask · Tribal Power Armor · Remnants Power Armor · Composite Recon Armor\n\nPLAY STYLE: CHA 2 means every faction dislikes you and that is mechanically irrelevant — Insolent and Bad Influence replace social capital with physical dominance. NEMEAN Sub-Dermal Armor and PHOENIX Monocyte Breeder together mean you regen and absorb damage without diplomatic support. END 9 post-implant gives +9 DT from Toughness and +9 DT from Stonewall at the same time.\nRP: Absolutely intolerable company. Has been asked to leave every settlement they've visited and returned to most of them. The companions who travel with them have made peace with being glared at by proxy. Does not apologise. Has never apologised. Would not know how.",
+  },
+
+  /* ── 49. THE WASTELAND DOCTOR ────────────────────────────── */
+  {
+    id:'wastelanddoctor', name:'The Wasteland Doctor', tagline:'Know your enemy. Anatomically.',
+    icon:'🩻', color:'#40C0C0', origin:'CW', mode:'std', buildKarma:'good', difficulty:3,
+    special:{STR:4,PER:7,END:6,CHA:6,INT:9,AGI:5,LCK:8},
+    tags:[false,false,false,false,true,true,true,false,false,false,false,false,false,false],
+    startingTraits:[{name:'Good Natured'},{name:'Educated'},{name:'Vain'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Nowhere To Hide','2x damage to fleeing targets; +50% to cloaked — PER 6 ✓'],
+      ['Swift Learner','XP bonus — INT 4 ✓, PER 4 ✓'],
+      ['Hardy','Hunger/thirst >150: +15 Survival, +15% healing — END 5 ✓, Survival 25 ✓'],
+      ['Scoundrel','+8% vendor discount; XP for speech — CHR 7 ✓ (Good Natured)'],
+      ['Anodized Armor','Scrap electronics: +8% DR — Science 40 ✓'],
+      ['Life Giver','+30 HP to you and companions'],
+      ['Living Anatomy','+5% damage vs humans/ghouls; see HP and DT — Medicine 70 ✓'],
+      ['Fast Metabolism','Stimpak +20% heal; alcohol removes rads 2x — END 5 ✓, Survival 25 ✓'],
+      ['Hobbler','Leg hits double limb damage; +5 DT pen vs legs — PER 7 ✓'],
+      ['Fortune Finder','More caps in containers — LCK 5 ✓, Survival 35 ✓'],
+      ['Rad Absorption','Radiation dissipates 1 per 10 seconds — END 6 ✓ or Survival 50 ✓'],
+      ['Better Criticals','+3% crit damage per PER — PER 7 = +21% — LCK 6 ✓'],
+      ['Master Trader','3% discount per 10 Speech — CHR 7 ✓, Barter/Speech 50 ✓'],
+      ['Concentrated Fire','BT accuracy stacks per hit on same body part — Guns 60 ✓'],
+      ['High Roller','+2% crit per 2500 casino chips (10% max) — LCK 8 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"PHOENIX" Monocyte Breeder': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":82,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":84,"LOCKPICK":80,"MEDICINE":76,"MELEE WEAPONS":0,"REPAIR":46,"SCIENCE":76,"SNEAK":0,"SPEECH":82,"SURVIVAL":0,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:3,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:4,allocation:{"GUNS":14},gains:{"GUNS":28},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:5,allocation:{"GUNS":8,"MEDICINE":6},gains:{"GUNS":16,"MEDICINE":12},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:6,allocation:{"GUNS":10,"MEDICINE":4},gains:{"GUNS":20,"MEDICINE":8},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:7,allocation:{"GUNS":10,"LOCKPICK":4},gains:{"GUNS":20,"LOCKPICK":8},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:8,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":28},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:9,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":28},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:10,allocation:{"LOCKPICK":8,"SCIENCE":6},gains:{"LOCKPICK":16,"SCIENCE":6},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:11,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:12,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:13,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:14,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:15,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:16,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:17,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:18,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:19,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:20,allocation:{"SPEECH":14},gains:{"SPEECH":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:21,allocation:{"BARTER":2,"SPEECH":12},gains:{"BARTER":2,"SPEECH":12},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:22,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:23,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:24,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:25,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:26,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:27,allocation:{"BARTER":10,"REPAIR":4},gains:{"BARTER":10,"REPAIR":4},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:28,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:29,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14},
+      {level:30,allocation:{"REPAIR":14},gains:{"REPAIR":14},tagged:["GUNS","LOCKPICK","MEDICINE"],pointsTotal:14}
+    ],
+    description:"Good Natured gives +5 Medicine directly, pushes effective CHR to 7 for Scoundrel, and covers the combat skill penalties for a build that doesn't rely on raw combat. Vain adds +1 CHR while sober. Living Anatomy at LVL14 is the identity perk: you see every enemy's current HP and DT in real time. Hobbler at LVL16 makes leg shots double limb damage and adds +5 DT penetration in Bullet Time against legs — knowing the anatomy means targeting it. Concentrated Fire and Sniper let you exploit that knowledge through precise BT headshots. PHOENIX Monocyte Breeder provides passive recovery for a build with no defensive perks.",
+    notes:"WEAPONS: This Machine · All-American · Lucky · Medicine Stick | ARMOUR: Doctor Li's Outfit · All-Purpose Science Suit · Cryptochromatic Spectacles · 1st Recon Beret\n\nPLAY STYLE: Living Anatomy at LVL14 reveals every enemy's current HP and DT — use this information to target the weakest armour point in Bullet Time. Hobbler at LVL16 makes leg shots double limb damage with +5 DT penetration. Good Natured gives +5 Medicine and pushes CHR for Scoundrel discounts. This build ends encounters before they become surgery problems.\nRP: Trained in pre-war medicine, currently practising in post-war conditions with greatly reduced resources. Treats everyone who needs treating, regardless of faction. Charges a fair rate. Keeps records. Has a patient list that would frighten most people.",
+  },
+
+  /* ── 50. THE TINKERER ────────────────────────────────────── */
+  {
+    id:'tinkerer', name:'The Tinkerer', tagline:'If it\'s broken, it\'s just not finished.',
+    icon:'⚙️', color:'#80A0C0', origin:'CW', mode:'std', buildKarma:'neutral', difficulty:2,
+    special:{STR:6,PER:6,END:7,CHA:4,INT:9,AGI:6,LCK:8},
+    tags:[false,false,false,false,false,false,true,false,true,false,false,false,true,false],
+    startingTraits:[{name:'Educated'},{name:'Theories and Hypothesis'},{name:'Hoarder'}],
+    traits:['','','','','','','','','','','',''],
+    perks:[
+      ['Junk Rounds','Craft ammo from scrap metal and tin cans — INT 6 ✓, Repair 25 ✓'],
+      ['Gun Nut','Spread and condition loss -5% per rank — INT 4 ✓, Repair 30 ✓ — rank 1'],
+      ['Repair Rascal','+15% damage/speed with repair weapons — Survival 40 ✓, Repair 40 ✓'],
+      ['Soda Sommelier','Bonus max HP and healing from bubbly drinks — Survival 40 ✓, Repair 40 ✓'],
+      ['Home on the Range','Sleep at campfire with Well Rested benefit — Survival 35 ✓'],
+      ['Mad Bomber','Throwable explosive crafting -35% — Repair 40 ✓, Explos 35 ✓'],
+      ['Monkey Wrench','+50% melee damage vs robots — Repair 60 ✓'],
+      ['Gun Nut','Spread and condition loss -5% per rank — rank 2'],
+      ['Life Giver','+30 HP to you and companions'],
+      ['Hand Loader','More brass/hull recovery; better ammo crafting — Repair 60 ✓, Guns 50 ✓'],
+      ['Fast Metabolism','Stimpak +20% heal; alcohol removes rads 2x — END 5 ✓, Survival 25 ✓'],
+      ['Gun Nut','Spread and condition loss -5% per rank — rank 3'],
+      ['Certified Tech','+25% crit vs robots; more robot loot — INT 5 ✓, Sci 60 ✓, Repair 60 ✓'],
+      ['Jury Rigging','Repair any item with a similar item — Repair 90 ✓, INT 7 ✓'],
+      ['Survivalist','Sating needs twice as effective — END 6 ✓, Survival 75 ✓'],
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT,
+      _EMPTY_PERK_SLOT
+    ],
+    implantsTaken:{
+      '"Logic Co-Processor" Intelligence Implant': true,
+      '"Probability Calculator" Luck Implant': true,
+      '"Optics Enhancer" Perception Implant': true,
+      '"Nociception Regulator" Endurance Implant': true,
+      '"Hypertrophy Accelerator" Strength Implant': true,
+      '"Reflex Booster" Agility Implant': true,
+      'Implant Y-7': true
+    },
+    charLevel:30,
+    skillPoints:{"BARTER":50,"BIG GUNS":0,"ENERGY WEAPONS":0,"EXPLOSIVES":0,"GUNS":82,"LOCKPICK":82,"MEDICINE":76,"MELEE WEAPONS":0,"REPAIR":76,"SCIENCE":76,"SNEAK":0,"SPEECH":0,"SURVIVAL":80,"UNARMED":0},
+    levelUpBonuses:["ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","ap","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp","hp"],
+    skillHistory:[
+      {level:2,allocation:{"REPAIR":14},gains:{"REPAIR":28},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:3,allocation:{"REPAIR":14},gains:{"REPAIR":28},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:4,allocation:{"MEDICINE":4,"REPAIR":10},gains:{"MEDICINE":8,"REPAIR":20},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:5,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:6,allocation:{"MEDICINE":4,"SURVIVAL":10},gains:{"MEDICINE":8,"SURVIVAL":20},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:7,allocation:{"MEDICINE":14},gains:{"MEDICINE":28},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:8,allocation:{"MEDICINE":2,"SURVIVAL":12},gains:{"MEDICINE":4,"SURVIVAL":24},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:9,allocation:{"SURVIVAL":14},gains:{"SURVIVAL":28},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:10,allocation:{"SCIENCE":10,"SURVIVAL":4},gains:{"SCIENCE":10,"SURVIVAL":8},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:11,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:12,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:13,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:14,allocation:{"SCIENCE":14},gains:{"SCIENCE":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:15,allocation:{"GUNS":4,"SCIENCE":10},gains:{"GUNS":4,"SCIENCE":10},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:16,allocation:{"GUNS":14},gains:{"GUNS":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:17,allocation:{"GUNS":14},gains:{"GUNS":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:18,allocation:{"GUNS":14},gains:{"GUNS":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:19,allocation:{"GUNS":14},gains:{"GUNS":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:20,allocation:{"GUNS":14},gains:{"GUNS":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:21,allocation:{"GUNS":8,"LOCKPICK":6},gains:{"GUNS":8,"LOCKPICK":6},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:22,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:23,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:24,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:25,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:26,allocation:{"LOCKPICK":14},gains:{"LOCKPICK":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:27,allocation:{"BARTER":8,"LOCKPICK":6},gains:{"BARTER":8,"LOCKPICK":6},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:28,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:29,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14},
+      {level:30,allocation:{"BARTER":14},gains:{"BARTER":14},tagged:["MEDICINE","REPAIR","SURVIVAL"],pointsTotal:14}
+    ],
+    description:"Educated and Theories and Hypothesis stack on INT 9 base for PPL 14 — the full REPAIR skill reaches 100 quickly with it tagged. Gun Nut across all three ranks reduces weapon spread and condition loss by 15% total, meaning weapons last longer before they need fixing. Jury Rigging at LVL26 — the highest Repair investment perk in the game — lets you repair any weapon or armor with any similar item. Home on the Range means the Tinkerer never needs a bed: any campfire provides the Well Rested bonus. Implant Y-7 from Big Mountain increases HP and restores AP from food consumption, synergising with a character who crafts and manages supplies as their primary activity.",
+    notes:"WEAPONS: This Machine · All-American · Medicine Stick · Gobi Campaign Scout Rifle | ARMOUR: All-Purpose Science Suit · Neural Interface Suit · Vault Lab Uniform · Rebreather\n\nPLAY STYLE: Gun Nut ×3 reduces condition decay 15% total — maintain weapons before combat, not after. Jury Rigging at LVL26 is the build's freedom perk: any item repaired with any similar item. Repair Rascal gives +15% damage with weapons that are also tools. Implant Y-7 adds HP and AP from food — the Tinkerer eats regularly, works regularly and fights when necessary.\nRP: Something can always be improved. Always. Has modified every piece of equipment they own in some way that is not obvious until the moment it matters. Speaks about broken things with the same tone others use for the sick. Fixes things for free and acts annoyed when thanked.",
   }
 ];
