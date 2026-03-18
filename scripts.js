@@ -2234,7 +2234,19 @@ function updateAll() {
 
     document.getElementById('ov-name').innerText = (document.getElementById('char-name').value || "NO_ID").toUpperCase();
     document.getElementById('ov-spec').innerHTML = sKeys.map(k => `<div class="char-banner-stat"><span class="char-banner-stat-key">${k}</span><span class="char-banner-stat-val">${special[k]}</span></div>`).join('');
-    document.getElementById('ov-tags').innerHTML = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => { const label = c.parentElement.querySelectorAll('span')[1]; return `<div class="ov-entry"><span>${label ? label.innerText : ''}</span></div>`; }).join('') || "NONE";
+    document.getElementById('ov-tags').innerHTML = (() => {
+        const entries = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => {
+            const label = c.parentElement.querySelectorAll('span')[1];
+            const skillName = label ? label.innerText : '';
+            const isFourth = _fourthTagSkill && skillName === _fourthTagSkill;
+            return `<div class="ov-entry"><span>${skillName}${isFourth ? '<span style="font-size:0.6rem;color:rgba(255,200,80,0.8);margin-left:5px;letter-spacing:0.5px;opacity:0.9;">TAG!</span>' : ''}</span></div>`;
+        });
+        // If Tag! perk taken but the 4th skill isn't already showing via checkbox, add it explicitly
+        if (_fourthTagSkill && !Array.from(document.querySelectorAll('#tag-area input:checked')).some(c => { const l = c.parentElement.querySelectorAll('span')[1]; return l && l.innerText === _fourthTagSkill; })) {
+            entries.push(`<div class="ov-entry"><span>${_fourthTagSkill}<span style="font-size:0.6rem;color:rgba(255,200,80,0.8);margin-left:5px;letter-spacing:0.5px;opacity:0.9;">TAG!</span></span></div>`);
+        }
+        return entries.join('') || 'NONE';
+    })();
         const startingTraitHTML = startingTraits.map((t) => {
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
@@ -2258,7 +2270,7 @@ function updateAll() {
         function baseName(v) { return v.replace(/\s*[\[(].*?[\])]$/, '').trim(); }
         // Helper: check if perk meets requirements
         function getReqIndicator(perkName) {
-            const perk = PERKS_DATA.find(p => p.name.toUpperCase() === perkName.toUpperCase());
+            const perk = PERKS_DATA.find(p => p.name.trim().toUpperCase() === perkName.trim().toUpperCase());
             if (!perk) return ''; // Not a standard perk
             const meets = meetsRequirements(perk);
             return meets 
@@ -2270,8 +2282,11 @@ function updateAll() {
             const val = r.querySelector('.prog-name-input')?.value || '';
             if (!val) return '';
             const reqIndicator = getReqIndicator(baseName(val));
+            // Annotate Tag! perk with chosen 4th skill
+            const isTagPerk = baseName(val).trim().toUpperCase() === 'TAG!';
+            const tagAnnotation = (isTagPerk && _fourthTagSkill) ? `<span style="font-size:0.6rem;color:rgba(255,200,80,0.8);margin-left:5px;letter-spacing:0.5px;">- ${_fourthTagSkill}</span>` : '';
             // always set onclick — ovPerkClick will look up across all data sources
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}</span><span style="opacity:0.5;">${lvl}</span></div>`;
+            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}${tagAnnotation}</span><span style="opacity:0.5;">${lvl}</span></div>`;
         }).join('');
         const bonusPerks = Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).map(r => {
             const val = r.querySelector('.prog-name-input')?.value || '';
@@ -3044,6 +3059,17 @@ function hydrate(d) {
     rewardPerksList = Array.isArray(d.rewardPerksList) ? d.rewardPerksList : [];
     internalizedTraitsList = Array.isArray(d.internalizedTraitsList) ? d.internalizedTraitsList : [];
     _fourthTagSkill = d.fourthTagSkill || null;
+    // If we have a 4th tag skill, ensure its checkbox is checked in the tag area
+    if (_fourthTagSkill) {
+        const skills_list = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+        const skillIdx = skills_list.indexOf(_fourthTagSkill);
+        const tagCbs = document.querySelectorAll('#tag-area input');
+        if (skillIdx >= 0 && tagCbs[skillIdx]) {
+            tagCbs[skillIdx].checked = true;
+            const marker = tagCbs[skillIdx].parentElement.querySelector('.tag-marker');
+            if (marker) marker.textContent = '[X]';
+        }
+    }
     startingTraits = Array.isArray(d.startingTraits) ? d.startingTraits : [];
     skillHistory = Array.isArray(d.skillHistory) ? d.skillHistory : [];
     conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object') ? d.conditionalToggles : {};
@@ -3117,6 +3143,10 @@ function openArchetypesModal() {
     Object.keys(_archFilters).forEach(k => _archFilters[k] = '');
     const search = document.getElementById('arch-search');
     if (search) search.value = '';
+    const perkSearch = document.getElementById('arch-perk-search');
+    if (perkSearch) perkSearch.value = '';
+    const perkResults = document.getElementById('arch-perk-results');
+    if (perkResults) perkResults.style.display = 'none';
     document.querySelectorAll('.arch-chip').forEach(c => {
         c.classList.toggle('active', c.dataset.val === '');
     });
@@ -3143,6 +3173,42 @@ function toggleArchChip(btn) {
         c.classList.toggle('active', c.dataset.val === _archFilters[filter] || (c.dataset.val === '' && _archFilters[filter] === ''));
     });
     renderArchetypeGrid();
+}
+
+function renderArchPerkSearch() {
+    const q = (document.getElementById('arch-perk-search')?.value || '').trim();
+    const resultsEl = document.getElementById('arch-perk-results');
+    if (!resultsEl) return;
+    if (!q) { resultsEl.style.display = 'none'; return; }
+    const ql = q.toLowerCase();
+    const matches = [];
+    ARCHETYPES_DATA.forEach(a => {
+        const perkMatches = a.perks
+            .filter(p => p && p[0] && p[0].toLowerCase().includes(ql))
+            .map(p => p[0]);
+        if (perkMatches.length) {
+            matches.push({ name: a.name, icon: a.icon, color: a.color, perks: perkMatches });
+        }
+    });
+    if (!matches.length) {
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = '<span style="opacity:0.4;">NO BUILDS USE A PERK MATCHING "' + q.toUpperCase() + '"</span>';
+        return;
+    }
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const html = matches.map(m => {
+        const perkList = m.perks.map(p => {
+            const highlighted = p.replace(new RegExp('(' + escaped + ')', 'gi'), '<span style="color:#ffd080;">$1</span>');
+            return '<span style="opacity:0.7;">' + highlighted + '</span>';
+        }).join(', ');
+        return '<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);">'
+            + '<span style="color:' + m.color + ';font-size:1rem;line-height:1;">' + m.icon + '</span>'
+            + '<span style="color:' + m.color + ';font-weight:600;min-width:160px;">' + m.name + '</span>'
+            + '<span>' + perkList + '</span>'
+            + '</div>';
+    }).join('');
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div style="opacity:0.5;margin-bottom:6px;font-size:0.65rem;">BUILDS USING: ' + q.toUpperCase() + ' (' + matches.length + ' FOUND)</div>' + html;
 }
 
 function renderArchetypeGrid() {
@@ -3286,7 +3352,21 @@ function loadArchetype(id) {
         implantsTaken: a.implantsTaken ? Object.assign({}, a.implantsTaken) : {},
         rewardPerksList: [],
         internalizedTraitsList: [],
-        fourthTagSkill: null,
+        fourthTagSkill: (() => {
+            // Detect 4th tag skill if build has Tag! perk in its perks list
+            const hasTagPerk = a.perks.some(p => p && p[0] && p[0].trim().toUpperCase() === 'TAG!');
+            if (!hasTagPerk) return null;
+            // Starting tags come from a.tags boolean array
+            const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+            const startingTagged = new Set(skillNames.filter((_, i) => a.tags[i]));
+            // Find any skill in the last skillHistory entry's tagged array that isn't a starting tag
+            const lastEntry = a.skillHistory && a.skillHistory[a.skillHistory.length - 1];
+            if (lastEntry && Array.isArray(lastEntry.tagged)) {
+                const fourth = lastEntry.tagged.find(s => !startingTagged.has(s));
+                if (fourth) return fourth;
+            }
+            return null;
+        })(),
         perkWishlist: [],
         currentBuildName: a.name,
         levelUpBonuses: a.levelUpBonuses ? a.levelUpBonuses.slice() : [],

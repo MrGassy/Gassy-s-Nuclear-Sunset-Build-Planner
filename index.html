@@ -32,6 +32,8 @@
             <!-- FILTER BAR -->
             <div id="arch-filter-bar">
                 <input type="text" id="arch-search" class="pip-search" placeholder="SEARCH BY NAME OR TAGLINE..." oninput="renderArchetypeGrid()">
+                <input type="text" id="arch-perk-search" class="pip-search" placeholder="SEARCH BUILDS BY PERK NAME..." oninput="renderArchPerkSearch()" style="margin-top:6px;">
+                <div id="arch-perk-results" style="display:none; margin-top:8px; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); font-size:0.7rem; letter-spacing:0.5px;"></div>
                 <div class="arch-filter-grid">
                     <div class="arch-filter-row">
                         <span class="arch-filter-label">ORIGIN</span>
