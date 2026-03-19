@@ -3224,277 +3224,7 @@ body.mode-hc .hc-trait-counter { display: inline-block; }
 
 
 
-/* ── Vault 21 — Vegas Strip Magenta Neon ────────────────────────
-   "When the chips are down, the House always has more."
-   Hot pink neon on pitch black. Garish, glamorous, electric.
-   Tight diamond lattice — casino floor tile pattern.
-──────────────────────────────────────────────────────────────── */
-body.theme-vault21:not(.mode-hc) {
-    --pip-color:  #ff2880;
-    --pip-bg:     #080006;
-    --pip-bg-2:   #100010;
-    --pip-bg-3:   #180018;
-    --pip-border: #500030;
-    --glow-sm:    0 0 8px  rgba(255,40,128,.32);
-    --glow-md:    0 0 20px rgba(255,40,128,.26);
-    --glow-lg:    0 0 42px rgba(255,40,128,.18);
-    --tc-r: 255; --tc-g: 40; --tc-b: 128;
-    --accent-gold: #ffd040;
-}
-body.theme-vault21:not(.mode-hc) {
-    background-image:
-        /* casino diamond tile lattice */
-        repeating-linear-gradient(45deg, transparent, transparent 14px,
-            rgba(255,40,128,.018) 14px, rgba(255,40,128,.018) 16px),
-        repeating-linear-gradient(-45deg, transparent, transparent 14px,
-            rgba(255,40,128,.018) 14px, rgba(255,40,128,.018) 16px),
-        /* gold accent rule */
-        repeating-linear-gradient(90deg, transparent, transparent 90px,
-            rgba(255,208,64,.010) 90px, rgba(255,208,64,.010) 91px),
-        radial-gradient(ellipse at 50% 0%, rgba(100,0,80,.72) 0%, transparent 65%);
-}
-body.theme-vault21:not(.mode-hc) header {
-    background: linear-gradient(180deg, #300020 0%, #080006 100%);
-    border-bottom: 2px solid rgba(255,40,128,.65);
-    box-shadow: 0 0 36px rgba(255,40,128,.30), 0 0 6px rgba(255,208,64,.08), inset 0 -1px 0 rgba(255,40,128,.30);
-}
-body.theme-vault21:not(.mode-hc) .os-title {
-    color: #ff2880;
-    text-shadow: 0 0 14px rgba(255,40,128,.65), 0 0 32px rgba(255,40,128,.28);
-    letter-spacing: 0.2em;
-}
-body.theme-vault21:not(.mode-hc) .tab-nav button.active {
-    background: rgba(255,40,128,.14);
-    border-color: rgba(255,40,128,.65);
-    color: #ff70a8;
-}
 
-/* ── Legion — SPQR Blood & Stone ───────────────────────────────
-   "The Legion does not retreat. Ave, true to Caesar."
-   Blood crimson on deep maroon-black. Roman severity.
-   Cross-hatch stone carving texture — chiselled in war.
-──────────────────────────────────────────────────────────────── */
-body.theme-legion:not(.mode-hc) {
-    --pip-color:  #cc2800;
-    --pip-bg:     #0a0100;
-    --pip-bg-2:   #140200;
-    --pip-bg-3:   #1e0300;
-    --pip-border: #5a1000;
-    --glow-sm:    0 0 6px  rgba(204,40,0,.30);
-    --glow-md:    0 0 16px rgba(204,40,0,.25);
-    --glow-lg:    0 0 32px rgba(204,40,0,.18);
-    --tc-r: 204; --tc-g: 40; --tc-b: 0;
-    --accent-gold: #a87818;  /* aged brass */
-}
-body.theme-legion:not(.mode-hc) {
-    background-image:
-        /* cross-hatch stone carving — Roman chisel marks */
-        repeating-linear-gradient(45deg, transparent, transparent 10px,
-            rgba(80,10,0,.05) 10px, rgba(80,10,0,.05) 11px),
-        repeating-linear-gradient(-45deg, transparent, transparent 10px,
-            rgba(0,0,0,.06) 10px, rgba(0,0,0,.06) 11px),
-        /* heavy maroon vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(90,10,0,.75) 0%, transparent 65%),
-        radial-gradient(ellipse at 50% 100%, rgba(60,5,0,.40) 0%, transparent 60%);
-}
-body.theme-legion:not(.mode-hc) header {
-    background: linear-gradient(180deg, #2a0400 0%, #0a0100 100%);
-    border-bottom: 3px solid rgba(204,40,0,.70);
-    border-top: 1px solid rgba(168,120,24,.25);
-    box-shadow: 0 0 24px rgba(204,40,0,.22), inset 0 -2px 0 rgba(100,10,0,.50);
-}
-body.theme-legion:not(.mode-hc) .os-title {
-    color: #cc2800;
-    text-shadow: 0 0 10px rgba(204,40,0,.55), 0 0 22px rgba(204,40,0,.22);
-    letter-spacing: 0.22em;
-}
-body.theme-legion:not(.mode-hc) h2 {
-    border-left: 3px solid rgba(204,40,0,.55);
-    padding-left: 8px;
-}
-body.theme-legion:not(.mode-hc) section {
-    background: linear-gradient(160deg, #1e0300 0%, #0a0100 60%) !important;
-}
-
-/* ── NCR — New California Republic ─────────────────────────────
-   Desert ochre. Frontier ranger weathered. Dry heat and law.
-──────────────────────────────────────────────────────────────── */
-body.theme-ncr:not(.mode-hc) {
-    --pip-color:  #c8a840;
-    --pip-bg:     #090700;
-    --pip-bg-2:   #110e02;
-    --pip-bg-3:   #181403;
-    --pip-border: #3e3208;
-    --glow-sm:    0 0 6px  rgba(200,168,64,.28);
-    --glow-md:    0 0 14px rgba(200,168,64,.22);
-    --glow-lg:    0 0 28px rgba(200,168,64,.15);
-    --tc-r: 200; --tc-g: 168; --tc-b: 64;
-}
-body.theme-ncr:not(.mode-hc) {
-    background-image:
-        radial-gradient(ellipse at 50% 0%, rgba(52,40,5,.58) 0%, transparent 65%),
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(0,0,0,.07) 2px, rgba(0,0,0,.07) 4px),
-        repeating-linear-gradient(90deg, transparent, transparent 32px,
-            rgba(200,168,64,.015) 32px, rgba(200,168,64,.015) 33px),  /* survey grid */
-        repeating-linear-gradient(0deg, transparent, transparent 32px,
-            rgba(200,168,64,.015) 32px, rgba(200,168,64,.015) 33px);
-}
-
-
-/* ═════════════════════════════════════════════════════════════════
-   STRUCTURAL OVERRIDES — applied to all 6 custom themes at once
-   Everything that used hard-coded rgba(40,255,40,…) gets swapped
-   to use var(--pip-color) tints or the --tc-r/g/b rebuild trick.
-═════════════════════════════════════════════════════════════════ */
-body.theme-bos:not(.mode-hc),
-body.theme-enclave:not(.mode-hc),
-body.theme-vault21:not(.mode-hc),
-body.theme-legion:not(.mode-hc),
-body.theme-ncr:not(.mode-hc) {
-
-    /* header */
-    & header {
-        box-shadow: var(--glow-md), inset 0 -1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-    }
-    /* section panels */
-    & section {
-        background: linear-gradient(160deg, var(--pip-bg-3) 0%, var(--pip-bg) 60%);
-        box-shadow: inset 0 0 60px rgba(0,0,0,.22), 0 1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.05);
-    }
-    /* h2 banners */
-    & h2 { background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07); }
-    /* overview cards */
-    & .ov-card {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
-        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
-    }
-    & .ov-sub { border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15); }
-    /* tab active glow */
-    & .tab-nav button.active {
-        box-shadow: 0 0 9px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
-    }
-    /* modal */
-    & .modal-box, & .lvlup-box, & .perk-picker-box, & .perk-zoom-box {
-        background: var(--pip-bg-2) !important;
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35) !important;
-        box-shadow: var(--glow-lg), 0 0 80px rgba(0,0,0,.85) !important;
-    }
-    /* perk picker perk cards */
-    & .pperk-card {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
-    }
-    & .pperk-card:hover {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
-    }
-    & .pperk-name { color: var(--pip-color); }
-    & .pperk-rank-badge {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35);
-        color: var(--pip-color);
-    }
-    /* trait picker cards */
-    & .ptrait-card {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.025);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
-    }
-    & .ptrait-card:hover {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.09);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
-    }
-    & .ptrait-name, & .trait-card-name, & .trait-slot-name { color: var(--pip-color); }
-    & .ptrait-take-btn {
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38) !important;
-        color: var(--pip-color);
-    }
-    & .ptrait-elig-badge {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
-        color: var(--pip-color);
-    }
-    /* trait chips */
-    & .trait-chip {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
-        color: var(--pip-color);
-    }
-    /* level-trait tag */
-    & .lvl-tag.is-trait {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
-        color: var(--pip-color);
-    }
-    /* progression rows */
-    & .prog-row {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.018);
-        border-color:      rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15);
-    }
-    & .prog-row.has-perk {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.036) !important;
-        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55) !important;
-    }
-    /* section labels */
-    & .plab-perk { color: var(--pip-color); border-color: var(--pip-color); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.04); }
-    & .plab-trait { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.03); }
-    /* level-up banners */
-    & #perk-lvlup-banner {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
-        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.50);
-        color: var(--pip-color);
-    }
-    & #trait-lvlup-banner {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07);
-        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
-        color: var(--pip-color);
-    }
-    /* level-up ready button glow */
-    & .lvlup-btn-ready {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
-        box-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.22);
-    }
-    /* action buttons */
-    & .action-btn { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40) !important; color: var(--pip-color); }
-    & .action-btn:hover { background: var(--pip-color) !important; color: #000 !important; box-shadow: 0 0 10px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.25); }
-    /* gear cards */
-    & .gear-card {
-        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.020);
-        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.14);
-    }
-    /* perk zoom modal name */
-    & #perk-zoom-name { color: var(--pip-color); }
-    /* spec rank title glow */
-    & .spec-rank-title {
-        color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.70);
-        text-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
-    }
-    /* scrollbar */
-    & .scroll-v::-webkit-scrollbar-thumb { background: var(--pip-border); }
-    & .scroll-v::-webkit-scrollbar-thumb:hover { background: var(--pip-color); }
-}
-
-/* ── Legion only: action buttons go white text (dark red bg is unreadable) ─ */
-body.theme-legion:not(.mode-hc) .action-btn:hover { color: #fff !important; }
-/* ── Legion: skill-delta positive tint should be brass, not green ── */
-body.theme-legion:not(.mode-hc) .skill-delta-badge.sdelta-pos,
-body.theme-legion:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #b88a10; border-color: rgba(184,138,16,.40); }
-/* ── NCR: same — use ochre for positive deltas ── */
-body.theme-ncr:not(.mode-hc) .skill-delta-badge.sdelta-pos,
-body.theme-ncr:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #c8a840; border-color: rgba(200,168,64,.40); }
-
-/* ── plab-trait colour per theme (these have their own identity hue) ── */
-body.theme-bos:not(.mode-hc)     .plab-trait { color: #90c0f0; }
-body.theme-enclave:not(.mode-hc) .plab-trait { color: #a8c0d8; }
-body.theme-vault21:not(.mode-hc) .plab-trait { color: #ff70a8; }
-body.theme-legion:not(.mode-hc)  .plab-trait { color: #c8960c; }
-body.theme-ncr:not(.mode-hc)     .plab-trait { color: #ddc060; }
-body.theme-house:not(.mode-hc)    .plab-trait { color: #c060ff; }
-body.theme-shi:not(.mode-hc)      .plab-trait { color: #38c8a8; }
-body.theme-dos:not(.mode-hc)      .plab-trait { color: #c0c0c0; }
-body.theme-nukacola:not(.mode-hc) .plab-trait { color: #ff6060; }
-body.theme-sierramadre:not(.mode-hc) .plab-trait { color: #ffa070; }
 
 
 /* ═══════════════════════════════════════════════════════
@@ -3798,42 +3528,50 @@ body.theme-sierramadre:not(.mode-hc) .plab-trait { color: #ffa070; }
    Fine ruled government-form lines — federal data terminal.
 ──────────────────────────────────────────────────────────────── */
 body.theme-enclave:not(.mode-hc) {
-    --pip-color:  #c8d8ec;
-    --pip-bg:     #010204;
-    --pip-bg-2:   #020408;
-    --pip-bg-3:   #03060c;
-    --pip-border: #182838;
-    --glow-sm:    0 0 5px  rgba(200,216,236,.22);
-    --glow-md:    0 0 14px rgba(200,216,236,.16);
-    --glow-lg:    0 0 28px rgba(200,216,236,.10);
-    --tc-r: 200; --tc-g: 216; --tc-b: 236;
+    --pip-color:  #d8e8f8;
+    --pip-bg:     #000102;
+    --pip-bg-2:   #010306;
+    --pip-bg-3:   #020508;
+    --pip-border: #0e1c2c;
+    --glow-sm:    0 0 4px  rgba(216,232,248,.18);
+    --glow-md:    0 0 10px rgba(216,232,248,.12);
+    --glow-lg:    0 0 22px rgba(216,232,248,.07);
+    --tc-r: 216; --tc-g: 232; --tc-b: 248;
 }
 body.theme-enclave:not(.mode-hc) {
     background-image:
-        /* fine ruled data-terminal lines — government form */
-        repeating-linear-gradient(0deg, transparent, transparent 18px,
-            rgba(200,216,236,.008) 18px, rgba(200,216,236,.008) 19px),
-        /* vertical column markers */
-        repeating-linear-gradient(90deg, transparent, transparent 120px,
-            rgba(200,216,236,.007) 120px, rgba(200,216,236,.007) 121px),
-        /* cold top vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(10,25,50,.80) 0%, transparent 65%);
+        /* government form — tight ruled lines, very bureaucratic */
+        repeating-linear-gradient(0deg, transparent, transparent 20px,
+            rgba(216,232,248,.010) 20px, rgba(216,232,248,.010) 21px),
+        /* heavy vertical column separators — classified doc structure */
+        repeating-linear-gradient(90deg, transparent, transparent 80px,
+            rgba(216,232,248,.016) 80px, rgba(216,232,248,.016) 82px,
+            transparent 82px, transparent 320px,
+            rgba(216,232,248,.008) 320px, rgba(216,232,248,.008) 321px),
+        /* cold institutional vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(5,18,36,.92) 0%, transparent 60%);
 }
 body.theme-enclave:not(.mode-hc) header {
-    background: linear-gradient(180deg, #0a1828 0%, #010204 100%);
-    border-bottom: 1px solid rgba(200,216,236,.50);
-    border-top: 2px solid rgba(200,216,236,.30);
-    box-shadow: 0 0 20px rgba(200,216,236,.10), inset 0 -1px 0 rgba(200,216,236,.15);
+    background: linear-gradient(180deg, #060e18 0%, #000102 100%);
+    border-bottom: 1px solid rgba(216,232,248,.55);
+    border-top: 3px solid rgba(216,232,248,.35);
+    box-shadow: 0 0 16px rgba(216,232,248,.08), inset 0 -1px 0 rgba(216,232,248,.18);
 }
 body.theme-enclave:not(.mode-hc) .os-title {
-    color: #c8d8ec;
-    text-shadow: 0 0 8px rgba(200,216,236,.35);
-    letter-spacing: 0.28em;
+    color: #d8e8f8;
+    text-shadow: 0 0 6px rgba(216,232,248,.28);
+    letter-spacing: 0.32em;
     font-variant: small-caps;
 }
 body.theme-enclave:not(.mode-hc) h2 {
-    border-left: 2px solid rgba(200,216,236,.40);
+    border-left: 1px solid rgba(216,232,248,.50);
+    border-right: 1px solid rgba(216,232,248,.12);
     padding-left: 8px;
+}
+body.theme-enclave:not(.mode-hc) .tab-nav button.active {
+    background: rgba(216,232,248,.08);
+    border-color: rgba(216,232,248,.55);
+    color: #d8e8f8;
 }
 
 /* ── Brotherhood of Steel — Cold Power-Armour Blue ─────────────
@@ -3842,43 +3580,48 @@ body.theme-enclave:not(.mode-hc) h2 {
    Circuit-board grid with structural corner rivets.
 ──────────────────────────────────────────────────────────────── */
 body.theme-bos:not(.mode-hc) {
-    --pip-color:  #60a8f0;
-    --pip-bg:     #010408;
-    --pip-bg-2:   #020810;
-    --pip-bg-3:   #030d18;
-    --pip-border: #0c2240;
-    --glow-sm:    0 0 6px  rgba(96,168,240,.28);
-    --glow-md:    0 0 16px rgba(96,168,240,.22);
-    --glow-lg:    0 0 32px rgba(96,168,240,.15);
-    --tc-r: 96; --tc-g: 168; --tc-b: 240;
+    --pip-color:  #4090e0;
+    --pip-bg:     #010306;
+    --pip-bg-2:   #010610;
+    --pip-bg-3:   #020a1a;
+    --pip-border: #0a1e40;
+    --glow-sm:    0 0 8px  rgba(64,144,224,.35);
+    --glow-md:    0 0 20px rgba(64,144,224,.26);
+    --glow-lg:    0 0 40px rgba(64,144,224,.18);
+    --tc-r: 64; --tc-g: 144; --tc-b: 224;
 }
 body.theme-bos:not(.mode-hc) {
     background-image:
-        /* circuit-board grid — hardtech military */
-        repeating-linear-gradient(90deg, transparent, transparent 40px,
-            rgba(96,168,240,.018) 40px, rgba(96,168,240,.018) 42px),
-        repeating-linear-gradient(0deg, transparent, transparent 40px,
-            rgba(96,168,240,.018) 40px, rgba(96,168,240,.018) 42px),
-        /* structural corner corner-rivet dots at grid intersections */
-        radial-gradient(circle at 0% 0%, rgba(96,168,240,.05) 0%, transparent 45%),
-        radial-gradient(circle at 100% 0%, rgba(96,168,240,.04) 0%, transparent 40%),
-        radial-gradient(ellipse at 50% 0%, rgba(4,20,60,.70) 0%, transparent 65%);
+        /* power armour plating — heavy hexagonal armour tiles */
+        repeating-linear-gradient(30deg, transparent, transparent 22px,
+            rgba(64,144,224,.020) 22px, rgba(64,144,224,.020) 24px),
+        repeating-linear-gradient(-30deg, transparent, transparent 22px,
+            rgba(64,144,224,.020) 22px, rgba(64,144,224,.020) 24px),
+        repeating-linear-gradient(90deg, transparent, transparent 22px,
+            rgba(64,144,224,.010) 22px, rgba(64,144,224,.010) 23px),
+        /* heavy top vignette — bunker depth */
+        radial-gradient(ellipse at 50% 0%, rgba(2,12,40,.82) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(1,6,20,.50) 0%, transparent 55%);
 }
 body.theme-bos:not(.mode-hc) header {
-    background: linear-gradient(180deg, #061828 0%, #010408 100%);
-    border-bottom: 2px solid rgba(96,168,240,.60);
-    border-top: 1px solid rgba(96,168,240,.15);
-    box-shadow: 0 0 28px rgba(96,168,240,.18), inset 0 -1px 0 rgba(96,168,240,.25);
+    background: linear-gradient(180deg, #04122a 0%, #010306 100%);
+    border-bottom: 3px solid rgba(64,144,224,.70);
+    border-top: 1px solid rgba(64,144,224,.18);
+    box-shadow: 0 0 32px rgba(64,144,224,.22), inset 0 -2px 0 rgba(64,144,224,.28);
 }
 body.theme-bos:not(.mode-hc) .os-title {
-    color: #60a8f0;
-    text-shadow: 0 0 10px rgba(96,168,240,.5), 0 0 22px rgba(96,168,240,.22);
+    color: #4090e0;
+    text-shadow: 0 0 12px rgba(64,144,224,.60), 0 0 28px rgba(64,144,224,.25);
     letter-spacing: 0.18em;
 }
 body.theme-bos:not(.mode-hc) .tab-nav button.active {
-    background: rgba(96,168,240,.12);
-    border-color: rgba(96,168,240,.6);
-    color: #a0c8ff;
+    background: rgba(64,144,224,.14);
+    border-color: rgba(64,144,224,.70);
+    color: #80b8f8;
+}
+body.theme-bos:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(64,144,224,.60);
+    padding-left: 8px;
 }
 
 /* ── Mr. House / New Vegas — Neon Strip Luxury ─────────────────
@@ -3887,41 +3630,43 @@ body.theme-bos:not(.mode-hc) .tab-nav button.active {
    Art deco geometry, casino shimmer, pure decadence.
 ──────────────────────────────────────────────────────────────── */
 body.theme-house:not(.mode-hc) {
-    --pip-color:  #c060ff;
-    --pip-bg:     #04000e;
-    --pip-bg-2:   #08001a;
-    --pip-bg-3:   #0d0022;
-    --pip-border: #300050;
-    --glow-sm:    0 0 8px  rgba(192,96,255,.32);
-    --glow-md:    0 0 22px rgba(192,96,255,.25);
-    --glow-lg:    0 0 44px rgba(192,96,255,.17);
-    --tc-r: 192; --tc-g: 96; --tc-b: 255;
+    --pip-color:  #b030ff;
+    --pip-bg:     #020008;
+    --pip-bg-2:   #050014;
+    --pip-bg-3:   #08001e;
+    --pip-border: #280048;
+    --glow-sm:    0 0 8px  rgba(176,48,255,.38);
+    --glow-md:    0 0 24px rgba(176,48,255,.28);
+    --glow-lg:    0 0 50px rgba(176,48,255,.18);
+    --tc-r: 176; --tc-g: 48; --tc-b: 255;
     --accent-gold: #e8c040;
 }
 body.theme-house:not(.mode-hc) {
     background-image:
-        /* neon diagonal casino diamond lattice */
-        repeating-linear-gradient(45deg, transparent, transparent 18px,
-            rgba(192,96,255,.016) 18px, rgba(192,96,255,.016) 20px),
-        repeating-linear-gradient(-45deg, transparent, transparent 18px,
-            rgba(192,96,255,.016) 18px, rgba(192,96,255,.016) 20px),
+        /* skyscraper window grid — New Vegas towers */
+        repeating-linear-gradient(90deg, transparent, transparent 28px,
+            rgba(176,48,255,.022) 28px, rgba(176,48,255,.022) 30px),
+        repeating-linear-gradient(0deg, transparent, transparent 20px,
+            rgba(176,48,255,.016) 20px, rgba(176,48,255,.016) 21px),
         /* gold pin-stripe accent */
-        repeating-linear-gradient(90deg, transparent, transparent 100px,
-            rgba(232,192,64,.010) 100px, rgba(232,192,64,.010) 101px),
-        radial-gradient(ellipse at 50% 0%, rgba(80,10,140,.65) 0%, transparent 65%);
+        repeating-linear-gradient(90deg, transparent, transparent 140px,
+            rgba(232,192,64,.012) 140px, rgba(232,192,64,.012) 141px),
+        /* deep upper vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(60,0,120,.75) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(30,0,80,.35) 0%, transparent 60%);
 }
 body.theme-house:not(.mode-hc) header {
-    background: linear-gradient(180deg, #160030 0%, #04000e 100%);
-    border-bottom: 2px solid rgba(192,96,255,.7);
-    box-shadow: 0 0 36px rgba(192,96,255,.30), 0 0 8px rgba(232,192,64,.12), inset 0 -1px 0 rgba(192,96,255,.28);
+    background: linear-gradient(180deg, #12002e 0%, #020008 100%);
+    border-bottom: 2px solid rgba(176,48,255,.75);
+    box-shadow: 0 0 40px rgba(176,48,255,.32), 0 0 10px rgba(232,192,64,.10), inset 0 -1px 0 rgba(176,48,255,.30);
 }
 body.theme-house:not(.mode-hc) .os-title {
-    color: #c060ff;
-    text-shadow: 0 0 14px rgba(192,96,255,.6), 0 0 30px rgba(192,96,255,.3);
+    color: #b030ff;
+    text-shadow: 0 0 16px rgba(176,48,255,.65), 0 0 36px rgba(176,48,255,.32);
     letter-spacing: 0.2em;
 }
 body.theme-house:not(.mode-hc) .tab-nav button.active {
-    background: linear-gradient(135deg, #9030cc 0%, #c060ff 100%);
+    background: linear-gradient(135deg, #7010b0 0%, #b030ff 100%);
     color: #fff;
     font-weight: bold;
 }
@@ -4018,69 +3763,6 @@ body.theme-vaulttec:not(.mode-hc) section {
 body.theme-vaulttec:not(.mode-hc) .perk-card { border-left-color: rgba(16,102,184,.6); }
 body.theme-vaulttec:not(.mode-hc) .perk-card:hover { border-left-color: #ffd000; }
 
-/* ── DOS Terminal — Classic Monochrome Computing ─────────────────
-   "C:\\> NUCLEAR_SUNSET.EXE"
-   Pure black and white. Vintage CRT phosphor glow. No frills.
-   Sharp scanlines — authentic 80s computing nostalgia.
-──────────────────────────────────────────────────────────────── */
-body.theme-dos:not(.mode-hc) {
-    --pip-color:  #ffffff;
-    --pip-bg:     #000000;
-    --pip-bg-2:   #0a0a0a;
-    --pip-bg-3:   #151515;
-    --pip-border: #404040;
-    --glow-sm:    0 0 4px  rgba(255,255,255,.15);
-    --glow-md:    0 0 8px  rgba(255,255,255,.12);
-    --glow-lg:    0 0 16px rgba(255,255,255,.08);
-    --tc-r: 255; --tc-g: 255; --tc-b: 255;
-    --accent-gold: #c0c0c0;
-}
-body.theme-dos:not(.mode-hc) {
-    background-color: #000000;
-    background-image:
-        /* CRT scanlines */
-        repeating-linear-gradient(0deg, transparent, transparent 2px,
-            rgba(255,255,255,.012) 2px, rgba(255,255,255,.012) 3px),
-        /* subtle vignette */
-        radial-gradient(ellipse at 50% 50%, transparent 40%, rgba(0,0,0,.6) 100%);
-}
-body.theme-dos:not(.mode-hc) header {
-    background: #000000;
-    border-bottom: 1px solid #ffffff;
-    box-shadow: none;
-}
-body.theme-dos:not(.mode-hc) .os-title {
-    color: #ffffff;
-    text-shadow: 0 0 8px rgba(255,255,255,.4);
-    letter-spacing: 0.3em;
-    font-weight: normal;
-}
-body.theme-dos:not(.mode-hc) .tab-nav button {
-    border-color: #404040;
-    color: #c0c0c0;
-}
-body.theme-dos:not(.mode-hc) .tab-nav button.active {
-    background: #ffffff;
-    color: #000000;
-    border-color: #ffffff;
-}
-body.theme-dos:not(.mode-hc) section {
-    background: #000000;
-    border-color: #404040 !important;
-}
-body.theme-dos:not(.mode-hc) h2 {
-    background: #151515;
-    border-left: 2px solid #ffffff;
-    color: #ffffff;
-}
-body.theme-dos:not(.mode-hc) .perk-card { 
-    border-left-color: #404040; 
-    background: #0a0a0a;
-}
-body.theme-dos:not(.mode-hc) .perk-card:hover { 
-    border-left-color: #ffffff;
-    background: #151515;
-}
 
 /* ── Nuka-Cola — Atomic Refreshment ───────────────────────────────
    "Enjoy the refreshing taste of the Atomic Age!"
@@ -4155,48 +3837,52 @@ body.theme-nukacola:not(.mode-hc) .perk-card:hover {
    Holographic shimmer — the Cloud never leaves you.
 ──────────────────────────────────────────────────────────────── */
 body.theme-sierramadre:not(.mode-hc) {
-    --pip-color:  #ff6040;
-    --pip-bg:     #0a0402;
-    --pip-bg-2:   #140804;
-    --pip-bg-3:   #1e0c06;
-    --pip-border: #5a2010;
-    --glow-sm:    0 0 10px rgba(255,96,64,.30);
-    --glow-md:    0 0 24px rgba(255,96,64,.24);
-    --glow-lg:    0 0 48px rgba(255,96,64,.16);
-    --tc-r: 255; --tc-g: 96; --tc-b: 64;
-    --accent-gold: #c89848;
-    --cloud-red: #b83030;
+    --pip-color:  #d4a050;
+    --pip-bg:     #060400;
+    --pip-bg-2:   #0e0900;
+    --pip-bg-3:   #160e00;
+    --pip-border: #3e2a00;
+    --glow-sm:    0 0 10px rgba(212,160,80,.28);
+    --glow-md:    0 0 24px rgba(212,160,80,.20);
+    --glow-lg:    0 0 48px rgba(212,160,80,.12);
+    --tc-r: 212; --tc-g: 160; --tc-b: 80;
+    --accent-cloud: #a06840;
+    --cloud-dust: rgba(255,220,160,.04);
 }
 body.theme-sierramadre:not(.mode-hc) {
     background-image:
-        /* holographic interference pattern */
-        repeating-linear-gradient(45deg, transparent, transparent 40px,
-            rgba(255,96,64,.012) 40px, rgba(255,96,64,.012) 42px),
-        repeating-linear-gradient(-45deg, transparent, transparent 40px,
-            rgba(200,152,72,.010) 40px, rgba(200,152,72,.010) 42px),
-        /* the Cloud — toxic red mist */
-        radial-gradient(ellipse at 30% 20%, rgba(184,48,48,.15) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(184,48,48,.12) 0%, transparent 50%),
-        /* deep vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(90,20,10,.80) 0%, #0a0402 100%);
+        /* art-deco etching — faded Casino Grande grandeur */
+        repeating-linear-gradient(45deg, transparent, transparent 60px,
+            rgba(212,160,80,.010) 60px, rgba(212,160,80,.010) 62px),
+        repeating-linear-gradient(-45deg, transparent, transparent 60px,
+            rgba(212,160,80,.010) 60px, rgba(212,160,80,.010) 62px),
+        /* the Cloud — drifting dust wisps */
+        radial-gradient(ellipse at 20% 15%, rgba(180,120,40,.10) 0%, transparent 45%),
+        radial-gradient(ellipse at 80% 70%, rgba(160,104,64,.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 55% 45%, rgba(200,140,60,.05) 0%, transparent 35%),
+        /* deep amber vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(80,50,0,.85) 0%, #060400 80%);
 }
 body.theme-sierramadre:not(.mode-hc) header {
-    background: linear-gradient(180deg, #5a2010 0%, #1e0c06 50%, #0a0402 100%);
-    border-bottom: 2px solid rgba(255,96,64,.60);
-    border-top: 1px solid rgba(200,152,72,.30);
-    box-shadow: 0 0 32px rgba(255,96,64,.25), inset 0 -1px 0 rgba(200,152,72,.15);
+    background: linear-gradient(180deg, #3a2200 0%, #1a0e00 50%, #060400 100%);
+    border-bottom: 2px solid rgba(212,160,80,.58);
+    border-top: 1px solid rgba(212,160,80,.22);
+    box-shadow: 0 0 28px rgba(212,160,80,.18), inset 0 -1px 0 rgba(212,160,80,.14);
 }
 body.theme-sierramadre:not(.mode-hc) .os-title {
-    color: #ff6040;
-    text-shadow: 0 0 14px rgba(255,96,64,.55), 0 0 32px rgba(255,96,64,.25),
-                 0 1px 0 rgba(200,152,72,.20);
-    letter-spacing: 0.28em;
+    color: #d4a050;
+    text-shadow: 0 0 12px rgba(212,160,80,.50), 0 0 28px rgba(212,160,80,.22);
+    letter-spacing: 0.30em;
 }
 body.theme-sierramadre:not(.mode-hc) .tab-nav button.active {
-    background: rgba(255,96,64,.12);
-    border-color: rgba(255,96,64,.70);
-    color: #ff8060;
-    box-shadow: 0 0 10px rgba(255,96,64,.35), inset 0 1px 0 rgba(200,152,72,.12);
+    background: rgba(212,160,80,.10);
+    border-color: rgba(212,160,80,.65);
+    color: #e0b870;
+    box-shadow: 0 0 10px rgba(212,160,80,.28);
+}
+body.theme-sierramadre:not(.mode-hc) h2 {
+    border-left: 2px solid rgba(212,160,80,.50);
+    padding-left: 8px;
 }
 body.theme-sierramadre:not(.mode-hc) section {
     background: linear-gradient(160deg, #1e0c06 0%, #0a0402 60%);
@@ -5836,4 +5522,962 @@ body.theme-vaulttec:not(.mode-hc) .left-panel::before {
 /* Modals — sharper */
 .modal-box {
     border-radius: 0 !important;
+}
+
+
+/* ── Old World Blues — Big Mountain Science Lab ─────────────────
+   "Why do I forget things? Oh, it's my brain. Never mind."
+   Bright electric cyan on near-black. Retro-futurist mad science.
+   Tesla coil rings, laboratory tile grid, humming neon tubes.
+──────────────────────────────────────────────────────────────── */
+body.theme-owb:not(.mode-hc) {
+    --pip-color:  #00e8d8;
+    --pip-bg:     #000a0c;
+    --pip-bg-2:   #001418;
+    --pip-bg-3:   #001e24;
+    --pip-border: #003c44;
+    --glow-sm:    0 0 8px  rgba(0,232,216,.38);
+    --glow-md:    0 0 22px rgba(0,232,216,.28);
+    --glow-lg:    0 0 48px rgba(0,232,216,.18);
+    --tc-r: 0; --tc-g: 232; --tc-b: 216;
+    --accent-white: #e0fffc;
+}
+body.theme-owb:not(.mode-hc) {
+    background-image:
+        /* laboratory tile grid — clean Big Mountain research floor */
+        repeating-linear-gradient(90deg, transparent, transparent 36px,
+            rgba(0,232,216,.022) 36px, rgba(0,232,216,.022) 38px),
+        repeating-linear-gradient(0deg, transparent, transparent 36px,
+            rgba(0,232,216,.022) 36px, rgba(0,232,216,.022) 37px),
+        /* tesla coil ring pulse — concentric glow rings */
+        radial-gradient(ellipse at 50% 50%, rgba(0,232,216,.04) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 50%, rgba(0,232,216,.025) 0%, transparent 55%),
+        /* deep science-bay vignette */
+        radial-gradient(ellipse at 50% 0%, rgba(0,60,80,.85) 0%, #000a0c 80%);
+}
+body.theme-owb:not(.mode-hc) header {
+    background: linear-gradient(180deg, #003040 0%, #001420 50%, #000a0c 100%);
+    border-bottom: 2px solid rgba(0,232,216,.75);
+    border-top: 1px solid rgba(0,232,216,.22);
+    box-shadow: 0 0 36px rgba(0,232,216,.28), inset 0 -1px 0 rgba(0,232,216,.30);
+}
+body.theme-owb:not(.mode-hc) .os-title {
+    color: #00e8d8;
+    text-shadow: 0 0 14px rgba(0,232,216,.70), 0 0 32px rgba(0,232,216,.35);
+    letter-spacing: 0.22em;
+}
+body.theme-owb:not(.mode-hc) .tab-nav button.active {
+    background: rgba(0,232,216,.14);
+    border-color: rgba(0,232,216,.70);
+    color: #80fff8;
+}
+body.theme-owb:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(0,232,216,.60);
+    padding-left: 8px;
+}
+body.theme-owb:not(.mode-hc) .plab-trait { color: #80fff8; }
+
+
+/* ── The Pitt — Steel Mill Inferno ─────────────────────────────
+   "Welcome to the Pitt. Now get back to work."
+   Molten slag orange on soot-black. Industrial horror. Furnace heat.
+   Corrugated steel plate texture, heat-bleed vignette.
+──────────────────────────────────────────────────────────────── */
+body.theme-pitt:not(.mode-hc) {
+    --pip-color:  #e06020;
+    --pip-bg:     #060200;
+    --pip-bg-2:   #0e0500;
+    --pip-bg-3:   #180800;
+    --pip-border: #4a1800;
+    --glow-sm:    0 0 8px  rgba(224,96,32,.38);
+    --glow-md:    0 0 22px rgba(224,96,32,.28);
+    --glow-lg:    0 0 50px rgba(224,96,32,.18);
+    --tc-r: 224; --tc-g: 96; --tc-b: 32;
+    --accent-slag: #ff8030;
+}
+body.theme-pitt:not(.mode-hc) {
+    background-image:
+        /* corrugated steel plate — horizontal ridges */
+        repeating-linear-gradient(0deg, transparent, transparent 4px,
+            rgba(224,96,32,.012) 4px, rgba(224,96,32,.012) 5px),
+        repeating-linear-gradient(0deg, transparent, transparent 12px,
+            rgba(0,0,0,.08) 12px, rgba(0,0,0,.08) 14px),
+        /* riveted vertical seams — steel plate joins */
+        repeating-linear-gradient(90deg, transparent, transparent 64px,
+            rgba(224,96,32,.018) 64px, rgba(224,96,32,.018) 66px),
+        /* furnace heat bloom from below */
+        radial-gradient(ellipse at 50% 110%, rgba(255,80,0,.35) 0%, rgba(180,40,0,.15) 30%, transparent 65%),
+        /* soot vignette top */
+        radial-gradient(ellipse at 50% 0%, rgba(30,10,0,.90) 0%, #060200 75%);
+}
+body.theme-pitt:not(.mode-hc) header {
+    background: linear-gradient(180deg, #2a0e00 0%, #100400 50%, #060200 100%);
+    border-bottom: 3px solid rgba(224,96,32,.72);
+    border-top: 1px solid rgba(255,128,48,.18);
+    box-shadow: 0 0 32px rgba(224,96,32,.28), inset 0 -2px 0 rgba(224,96,32,.22);
+}
+body.theme-pitt:not(.mode-hc) .os-title {
+    color: #e06020;
+    text-shadow: 0 0 14px rgba(224,96,32,.65), 0 0 32px rgba(224,96,32,.28);
+    letter-spacing: 0.20em;
+}
+body.theme-pitt:not(.mode-hc) .tab-nav button.active {
+    background: rgba(224,96,32,.12);
+    border-color: rgba(224,96,32,.68);
+    color: #ff8848;
+}
+body.theme-pitt:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(224,96,32,.58);
+    padding-left: 8px;
+}
+body.theme-pitt:not(.mode-hc) section {
+    background: linear-gradient(160deg, #180800 0%, #060200 60%) !important;
+}
+body.theme-pitt:not(.mode-hc) .plab-trait { color: #ff9050; }
+body.theme-pitt:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-pitt:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #e06020; border-color: rgba(224,96,32,.40); }
+
+
+/* ── Point Lookout — Chesapeake Swamp ──────────────────────────
+   "Something doesn't want you here. Something never will."
+   Murky swamp green on near-black. Bioluminescent decay. Fog.
+   Spanish moss drape, standing water shimmer, ghost light wisps.
+──────────────────────────────────────────────────────────────── */
+body.theme-lookout:not(.mode-hc) {
+    --pip-color:  #58c040;
+    --pip-bg:     #010501;
+    --pip-bg-2:   #020b02;
+    --pip-bg-3:   #031203;
+    --pip-border: #0e3008;
+    --glow-sm:    0 0 8px  rgba(88,192,64,.32);
+    --glow-md:    0 0 20px rgba(88,192,64,.24);
+    --glow-lg:    0 0 44px rgba(88,192,64,.14);
+    --tc-r: 88; --tc-g: 192; --tc-b: 64;
+    --accent-fog: rgba(160,220,100,.06);
+}
+body.theme-lookout:not(.mode-hc) {
+    background-image:
+        /* standing water ripple — horizontal shimmer bands */
+        repeating-linear-gradient(0deg, transparent, transparent 28px,
+            rgba(88,192,64,.012) 28px, rgba(88,192,64,.012) 29px),
+        /* vertical spanish moss drape — irregular intervals */
+        repeating-linear-gradient(90deg, transparent, transparent 18px,
+            rgba(88,192,64,.008) 18px, rgba(88,192,64,.008) 19px,
+            transparent 19px, transparent 52px,
+            rgba(88,192,64,.006) 52px, rgba(88,192,64,.006) 53px),
+        /* bioluminescent fog wisps */
+        radial-gradient(ellipse at 25% 60%, rgba(80,180,40,.07) 0%, transparent 40%),
+        radial-gradient(ellipse at 75% 30%, rgba(60,160,30,.06) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 80%, rgba(40,140,20,.05) 0%, transparent 30%),
+        /* deep bayou dark */
+        radial-gradient(ellipse at 50% 0%, rgba(8,30,4,.88) 0%, #010501 80%);
+}
+body.theme-lookout:not(.mode-hc) header {
+    background: linear-gradient(180deg, #0e2808 0%, #061204 50%, #010501 100%);
+    border-bottom: 2px solid rgba(88,192,64,.62);
+    border-top: 1px solid rgba(88,192,64,.16);
+    box-shadow: 0 0 26px rgba(88,192,64,.20), inset 0 -1px 0 rgba(88,192,64,.24);
+}
+body.theme-lookout:not(.mode-hc) .os-title {
+    color: #58c040;
+    text-shadow: 0 0 12px rgba(88,192,64,.55), 0 0 28px rgba(88,192,64,.24);
+    letter-spacing: 0.22em;
+}
+body.theme-lookout:not(.mode-hc) .tab-nav button.active {
+    background: rgba(88,192,64,.11);
+    border-color: rgba(88,192,64,.62);
+    color: #88e060;
+}
+body.theme-lookout:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(88,192,64,.55);
+    padding-left: 8px;
+}
+body.theme-lookout:not(.mode-hc) section {
+    background: linear-gradient(160deg, #031203 0%, #010501 60%) !important;
+}
+body.theme-lookout:not(.mode-hc) .plab-trait { color: #88e060; }
+
+
+/* ── Tranquility Lane — 1950s American Nightmare ───────────────
+   "It's wonderful here. Everything is wonderful."
+   The only light theme. Pastel sky blue on warm cream-white.
+   Polka-dot wallpaper, picket fence lattice, cheerful dread.
+──────────────────────────────────────────────────────────────── */
+body.theme-tlane:not(.mode-hc) {
+    --pip-color:  #1870c8;
+    --pip-bg:     #e8f4ff;
+    --pip-bg-2:   #dceeff;
+    --pip-bg-3:   #d0e8ff;
+    --pip-border: #88bce0;
+    --glow-sm:    0 0 6px  rgba(24,112,200,.20);
+    --glow-md:    0 0 16px rgba(24,112,200,.14);
+    --glow-lg:    0 0 32px rgba(24,112,200,.08);
+    --tc-r: 24; --tc-g: 112; --tc-b: 200;
+    --accent-red: #d03030;
+    --accent-cream: #fff8e8;
+}
+body.theme-tlane:not(.mode-hc) {
+    background-color: #e8f4ff;
+    background-image:
+        /* picket fence lattice — vertical white boards */
+        repeating-linear-gradient(90deg, transparent, transparent 22px,
+            rgba(255,255,255,.55) 22px, rgba(255,255,255,.55) 24px),
+        /* polka-dot wallpaper */
+        radial-gradient(circle at 12px 12px, rgba(24,112,200,.06) 3px, transparent 3px),
+        radial-gradient(circle at 36px 36px, rgba(24,112,200,.04) 3px, transparent 3px),
+        /* warm cream vignette — suburban sunlight */
+        radial-gradient(ellipse at 50% 0%, rgba(255,240,200,.60) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(255,240,200,.30) 0%, transparent 55%);
+    background-size: auto, 48px 48px, 48px 48px, auto, auto;
+}
+body.theme-tlane:not(.mode-hc) header {
+    background: linear-gradient(180deg, #1870c8 0%, #2480d8 30%, #dceeff 100%);
+    border-bottom: 3px solid #1870c8;
+    border-top: 2px solid rgba(255,255,255,.80);
+    box-shadow: 0 2px 16px rgba(24,112,200,.22), inset 0 -1px 0 rgba(24,112,200,.20);
+}
+body.theme-tlane:not(.mode-hc) .os-title {
+    color: #ffffff;
+    text-shadow: 0 1px 0 rgba(24,112,200,.60), 0 0 12px rgba(24,112,200,.40);
+    letter-spacing: 0.20em;
+}
+body.theme-tlane:not(.mode-hc) .tab-nav button {
+    color: #1870c8;
+    border-color: rgba(24,112,200,.30);
+    background: rgba(255,255,255,.50);
+}
+body.theme-tlane:not(.mode-hc) .tab-nav button.active {
+    background: #1870c8;
+    border-color: #1870c8;
+    color: #ffffff;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(24,112,200,.30);
+}
+body.theme-tlane:not(.mode-hc) section {
+    background: rgba(255,255,255,.55) !important;
+    border-color: rgba(24,112,200,.25) !important;
+}
+body.theme-tlane:not(.mode-hc) h2 {
+    background: rgba(24,112,200,.08);
+    border-left: 3px solid #1870c8;
+    color: #1060a8;
+}
+body.theme-tlane:not(.mode-hc) .modal-box,
+body.theme-tlane:not(.mode-hc) .lvlup-box,
+body.theme-tlane:not(.mode-hc) .perk-picker-box,
+body.theme-tlane:not(.mode-hc) .perk-zoom-box {
+    background: #e8f4ff !important;
+    border-color: rgba(24,112,200,.40) !important;
+    box-shadow: 0 0 40px rgba(24,112,200,.16), 0 0 80px rgba(0,0,0,.20) !important;
+}
+body.theme-tlane:not(.mode-hc) .action-btn {
+    border-color: rgba(24,112,200,.45) !important;
+    color: #1870c8;
+    background: rgba(255,255,255,.60);
+}
+body.theme-tlane:not(.mode-hc) .action-btn:hover {
+    background: #1870c8 !important;
+    color: #ffffff !important;
+}
+body.theme-tlane:not(.mode-hc) .prog-row {
+    background: rgba(255,255,255,.45);
+    border-color: rgba(24,112,200,.14);
+    border-left-color: rgba(24,112,200,.22);
+    color: #0a3060;
+}
+body.theme-tlane:not(.mode-hc) .prog-row.has-perk {
+    background: rgba(255,255,255,.70) !important;
+    border-left-color: rgba(24,112,200,.65) !important;
+}
+body.theme-tlane:not(.mode-hc) .prog-name-input,
+body.theme-tlane:not(.mode-hc) .prog-notes-input,
+body.theme-tlane:not(.mode-hc) .gear-field-input,
+body.theme-tlane:not(.mode-hc) input[type="text"],
+body.theme-tlane:not(.mode-hc) input[type="number"],
+body.theme-tlane:not(.mode-hc) textarea {
+    background: rgba(255,255,255,.70);
+    color: #0a3060;
+    border-color: rgba(24,112,200,.25);
+}
+body.theme-tlane:not(.mode-hc) .ov-card {
+    background: rgba(255,255,255,.55);
+    border-left-color: rgba(24,112,200,.35);
+}
+body.theme-tlane:not(.mode-hc) .ov-sub {
+    color: #1870c8;
+    border-bottom-color: rgba(24,112,200,.20);
+}
+body.theme-tlane:not(.mode-hc) .ov-entry { color: #0a3060; }
+body.theme-tlane:not(.mode-hc) .plab-trait { color: #1060a8; }
+body.theme-tlane:not(.mode-hc) .plab-perk {
+    color: #1870c8;
+    border-color: #1870c8;
+    background: rgba(24,112,200,.06);
+}
+body.theme-tlane:not(.mode-hc) .pperk-card {
+    background: rgba(255,255,255,.45);
+    border-color: rgba(24,112,200,.22);
+}
+body.theme-tlane:not(.mode-hc) .pperk-card:hover {
+    background: rgba(255,255,255,.80);
+    border-color: rgba(24,112,200,.60);
+}
+body.theme-tlane:not(.mode-hc) .pperk-name { color: #1870c8; }
+body.theme-tlane:not(.mode-hc) .gear-card {
+    background: rgba(255,255,255,.45);
+    border-color: rgba(24,112,200,.18);
+}
+body.theme-tlane:not(.mode-hc) .scroll-v::-webkit-scrollbar-thumb { background: rgba(24,112,200,.35); }
+body.theme-tlane:not(.mode-hc) .scroll-v::-webkit-scrollbar-thumb:hover { background: #1870c8; }
+
+/* ═════════════════════════════════════════════════════════════════
+   CUSTOM HUD THEMES
+   Each theme sets --pip-color, --pip-bg/2/3, --pip-border,
+   --glow-sm/md/lg, --tc-r/g/b, and a unique background texture.
+═════════════════════════════════════════════════════════════════ */
+
+/* ────────────────────────────────────────────────────────────────
+   SHARED STRUCTURAL OVERRIDES
+   Applied to all 9 custom themes. Rewires every hard-coded green
+   reference to use --pip-color and --tc-r/g/b channel rebuilds.
+──────────────────────────────────────────────────────────────── */
+body.theme-vaulttec:not(.mode-hc),
+body.theme-bos:not(.mode-hc),
+body.theme-legion:not(.mode-hc),
+body.theme-ncr:not(.mode-hc),
+body.theme-house:not(.mode-hc),
+body.theme-zeta:not(.mode-hc),
+body.theme-sierramadre:not(.mode-hc),
+body.theme-pitt:not(.mode-hc),
+body.theme-owb:not(.mode-hc) {
+    & header {
+        box-shadow: var(--glow-md), inset 0 -1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+    }
+    & section {
+        background: linear-gradient(160deg, var(--pip-bg-3) 0%, var(--pip-bg) 60%);
+        box-shadow: inset 0 0 60px rgba(0,0,0,.22), 0 1px 0 rgba(var(--tc-r),var(--tc-g),var(--tc-b),.05);
+    }
+    & h2 { background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07); }
+    & .ov-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
+    }
+    & .ov-sub { border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15); }
+    & .tab-nav button.active {
+        box-shadow: 0 0 9px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+    }
+    & .modal-box, & .lvlup-box, & .perk-picker-box, & .perk-zoom-box {
+        background: var(--pip-bg-2) !important;
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35) !important;
+        box-shadow: var(--glow-lg), 0 0 80px rgba(0,0,0,.85) !important;
+    }
+    & .pperk-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.030);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .pperk-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .pperk-name { color: var(--pip-color); }
+    & .pperk-rank-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.35);
+        color: var(--pip-color);
+    }
+    & .ptrait-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.025);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.20);
+    }
+    & .ptrait-card:hover {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.09);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55);
+    }
+    & .ptrait-name, & .trait-card-name, & .trait-slot-name { color: var(--pip-color); }
+    & .ptrait-take-btn {
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38) !important;
+        color: var(--pip-color);
+    }
+    & .ptrait-elig-badge {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+        color: var(--pip-color);
+    }
+    & .trait-chip {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.28);
+        color: var(--pip-color);
+    }
+    & .lvl-tag.is-trait {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+        color: var(--pip-color);
+    }
+    & .prog-row {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.018);
+        border-color:      rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.15);
+    }
+    & .prog-row.has-perk {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.036) !important;
+        border-left-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55) !important;
+    }
+    & .plab-perk { color: var(--pip-color); border-color: var(--pip-color); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.04); }
+    & .plab-trait { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.55); background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.03); }
+    & #perk-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.10);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.50);
+        color: var(--pip-color);
+    }
+    & #trait-lvlup-banner {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.07);
+        border-bottom-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40);
+        color: var(--pip-color);
+    }
+    & .lvlup-btn-ready {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.08);
+        box-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.22);
+    }
+    & .action-btn { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.40) !important; color: var(--pip-color); }
+    & .action-btn:hover { background: var(--pip-color) !important; color: #000 !important; box-shadow: 0 0 10px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.25); }
+    & .gear-card {
+        background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.020);
+        border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.14);
+    }
+    & #perk-zoom-name { color: var(--pip-color); }
+    & .spec-rank-title {
+        color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.70);
+        text-shadow: 0 0 8px rgba(var(--tc-r),var(--tc-g),var(--tc-b),.38);
+    }
+    & .scroll-v::-webkit-scrollbar-thumb { background: var(--pip-border); }
+    & .scroll-v::-webkit-scrollbar-thumb:hover { background: var(--pip-color); }
+    & .archetype-card { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.14); }
+    & .archetype-badge { border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.22); color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),.65); }
+}
+
+/* ── 1. Vault-Tec ────────────────────────────────────────────────
+   Retro-corporate optimism. Golden yellow on Vault blue.
+   The only theme with a genuinely coloured background.
+   Hex safety-seal circles, 50s brochure geometry.
+──────────────────────────────────────────────────────────────── */
+body.theme-vaulttec:not(.mode-hc) {
+    --pip-color:  #ffd000;
+    --pip-bg:     #00224a;
+    --pip-bg-2:   #002a5a;
+    --pip-bg-3:   #003268;
+    --pip-border: #005090;
+    --glow-sm:    0 0 7px  rgba(255,208,0,.35);
+    --glow-md:    0 0 18px rgba(255,208,0,.25);
+    --glow-lg:    0 0 38px rgba(255,208,0,.15);
+    --tc-r: 255; --tc-g: 208; --tc-b: 0;
+}
+body.theme-vaulttec:not(.mode-hc) {
+    background-image:
+        radial-gradient(circle at 50% 50%, transparent 28%, rgba(0,80,144,.08) 28%,
+            rgba(0,80,144,.08) 30%, transparent 30%) center / 44px 44px,
+        repeating-linear-gradient(0deg, transparent, transparent 44px,
+            rgba(255,208,0,.012) 44px, rgba(255,208,0,.012) 45px),
+        radial-gradient(ellipse at 50% 0%, rgba(0,60,120,.80) 0%, #00224a 100%);
+}
+body.theme-vaulttec:not(.mode-hc) header {
+    background: linear-gradient(180deg, #0050a0 0%, #003878 40%, #00224a 100%);
+    border-bottom: 3px solid #ffd000;
+    border-top: 1px solid rgba(255,255,255,.12);
+    box-shadow: 0 0 28px rgba(255,208,0,.22), 0 3px 0 rgba(255,208,0,.40);
+}
+body.theme-vaulttec:not(.mode-hc) .os-title {
+    color: #ffd000;
+    text-shadow: 0 0 12px rgba(255,208,0,.55), 0 2px 0 rgba(0,0,0,.50);
+    letter-spacing: 0.22em;
+}
+body.theme-vaulttec:not(.mode-hc) .tab-nav button.active {
+    background: rgba(255,208,0,.18);
+    border-color: rgba(255,208,0,.70);
+    color: #ffe840;
+}
+body.theme-vaulttec:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(255,208,0,.65);
+    padding-left: 8px;
+}
+body.theme-vaulttec:not(.mode-hc) section {
+    background: linear-gradient(160deg, #003268 0%, #00224a 60%) !important;
+    border-color: rgba(0,80,144,.55) !important;
+}
+body.theme-vaulttec:not(.mode-hc) .plab-trait { color: #ffe055; }
+body.theme-vaulttec:not(.mode-hc) .action-btn:hover { color: #001a38 !important; }
+
+/* ── 2. Brotherhood of Steel ─────────────────────────────────────
+   Cold military hardware. Steel blue on deep navy-black.
+   Hexagonal power-armour plating, heavy borders, no warmth.
+──────────────────────────────────────────────────────────────── */
+body.theme-bos:not(.mode-hc) {
+    --pip-color:  #4090e0;
+    --pip-bg:     #010306;
+    --pip-bg-2:   #010610;
+    --pip-bg-3:   #020a1a;
+    --pip-border: #0a1e40;
+    --glow-sm:    0 0 7px  rgba(64,144,224,.35);
+    --glow-md:    0 0 18px rgba(64,144,224,.26);
+    --glow-lg:    0 0 38px rgba(64,144,224,.16);
+    --tc-r: 64; --tc-g: 144; --tc-b: 224;
+}
+body.theme-bos:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(30deg, transparent, transparent 22px,
+            rgba(64,144,224,.018) 22px, rgba(64,144,224,.018) 24px),
+        repeating-linear-gradient(-30deg, transparent, transparent 22px,
+            rgba(64,144,224,.018) 22px, rgba(64,144,224,.018) 24px),
+        repeating-linear-gradient(90deg, transparent, transparent 22px,
+            rgba(64,144,224,.008) 22px, rgba(64,144,224,.008) 23px),
+        radial-gradient(ellipse at 50% 0%, rgba(2,12,40,.85) 0%, #010306 80%);
+}
+body.theme-bos:not(.mode-hc) header {
+    background: linear-gradient(180deg, #04122a 0%, #010306 100%);
+    border-bottom: 3px solid rgba(64,144,224,.70);
+    border-top: 1px solid rgba(64,144,224,.16);
+    box-shadow: 0 0 30px rgba(64,144,224,.22), inset 0 -2px 0 rgba(64,144,224,.26);
+}
+body.theme-bos:not(.mode-hc) .os-title {
+    color: #4090e0;
+    text-shadow: 0 0 12px rgba(64,144,224,.60), 0 0 28px rgba(64,144,224,.25);
+    letter-spacing: 0.18em;
+}
+body.theme-bos:not(.mode-hc) .tab-nav button.active {
+    background: rgba(64,144,224,.14);
+    border-color: rgba(64,144,224,.70);
+    color: #80b8f8;
+}
+body.theme-bos:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(64,144,224,.60);
+    padding-left: 8px;
+}
+body.theme-bos:not(.mode-hc) .plab-trait { color: #70a8f0; }
+
+/* ── 3. Caesar's Legion ──────────────────────────────────────────
+   Ancient and brutal. Dried blood crimson on near-black maroon.
+   Stone chisel cross-hatch, Roman severity, no softness.
+──────────────────────────────────────────────────────────────── */
+body.theme-legion:not(.mode-hc) {
+    --pip-color:  #b02000;
+    --pip-bg:     #080000;
+    --pip-bg-2:   #100200;
+    --pip-bg-3:   #180300;
+    --pip-border: #480800;
+    --glow-sm:    0 0 6px  rgba(176,32,0,.32);
+    --glow-md:    0 0 16px rgba(176,32,0,.24);
+    --glow-lg:    0 0 32px rgba(176,32,0,.16);
+    --tc-r: 176; --tc-g: 32; --tc-b: 0;
+    --accent-brass: #9a6e14;
+}
+body.theme-legion:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(45deg, transparent, transparent 10px,
+            rgba(60,8,0,.06) 10px, rgba(60,8,0,.06) 11px),
+        repeating-linear-gradient(-45deg, transparent, transparent 10px,
+            rgba(0,0,0,.07) 10px, rgba(0,0,0,.07) 11px),
+        radial-gradient(ellipse at 50% 0%, rgba(80,8,0,.78) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(50,4,0,.40) 0%, transparent 60%);
+}
+body.theme-legion:not(.mode-hc) header {
+    background: linear-gradient(180deg, #280400 0%, #080000 100%);
+    border-bottom: 3px solid rgba(176,32,0,.72);
+    border-top: 1px solid rgba(154,110,20,.22);
+    box-shadow: 0 0 22px rgba(176,32,0,.22), inset 0 -2px 0 rgba(80,8,0,.50);
+}
+body.theme-legion:not(.mode-hc) .os-title {
+    color: #c83000;
+    text-shadow: 0 0 10px rgba(176,32,0,.55), 0 0 22px rgba(176,32,0,.22);
+    letter-spacing: 0.24em;
+}
+body.theme-legion:not(.mode-hc) .tab-nav button.active {
+    background: rgba(176,32,0,.14);
+    border-color: rgba(176,32,0,.65);
+    color: #e04020;
+}
+body.theme-legion:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(176,32,0,.58);
+    padding-left: 8px;
+}
+body.theme-legion:not(.mode-hc) .plab-trait { color: #c07818; }
+body.theme-legion:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-legion:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #b88010; border-color: rgba(184,128,16,.40); }
+body.theme-legion:not(.mode-hc) .action-btn:hover { color: #fff !important; }
+
+/* ── 4. New California Republic ──────────────────────────────────
+   Frontier law and desert heat. Ochre-gold on dark sand-brown.
+   Topographic survey lines, ranger weathered, dry and warm.
+──────────────────────────────────────────────────────────────── */
+body.theme-ncr:not(.mode-hc) {
+    --pip-color:  #c8a030;
+    --pip-bg:     #080600;
+    --pip-bg-2:   #100d00;
+    --pip-bg-3:   #181300;
+    --pip-border: #3c2e04;
+    --glow-sm:    0 0 6px  rgba(200,160,48,.28);
+    --glow-md:    0 0 16px rgba(200,160,48,.20);
+    --glow-lg:    0 0 32px rgba(200,160,48,.13);
+    --tc-r: 200; --tc-g: 160; --tc-b: 48;
+}
+body.theme-ncr:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 24px,
+            rgba(200,160,48,.016) 24px, rgba(200,160,48,.016) 25px),
+        repeating-linear-gradient(90deg, transparent, transparent 24px,
+            rgba(200,160,48,.016) 24px, rgba(200,160,48,.016) 25px),
+        repeating-linear-gradient(45deg, transparent, transparent 48px,
+            rgba(200,160,48,.007) 48px, rgba(200,160,48,.007) 49px),
+        radial-gradient(ellipse at 50% 0%, rgba(80,55,0,.72) 0%, rgba(36,24,0,.30) 55%, transparent 80%);
+}
+body.theme-ncr:not(.mode-hc) header {
+    background: linear-gradient(180deg, #362200 0%, #1a1000 40%, #080600 100%);
+    border-bottom: 2px solid rgba(200,160,48,.65);
+    border-top: 1px solid rgba(200,160,48,.18);
+    box-shadow: 0 0 20px rgba(200,160,48,.18), inset 0 -1px 0 rgba(200,160,48,.22);
+}
+body.theme-ncr:not(.mode-hc) .os-title {
+    color: #c8a030;
+    text-shadow: 0 0 10px rgba(200,160,48,.50), 0 0 22px rgba(200,160,48,.22);
+    letter-spacing: 0.22em;
+}
+body.theme-ncr:not(.mode-hc) .tab-nav button.active {
+    background: rgba(200,160,48,.12);
+    border-color: rgba(200,160,48,.65);
+    color: #ddb848;
+}
+body.theme-ncr:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(200,160,48,.55);
+    padding-left: 8px;
+}
+body.theme-ncr:not(.mode-hc) .plab-trait { color: #d8b840; }
+body.theme-ncr:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-ncr:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #c8a030; border-color: rgba(200,160,48,.40); }
+
+/* ── 5. Mr. House / New Vegas Strip ──────────────────────────────
+   Neon luxury and calculated power. Deep violet on near-black.
+   Skyscraper window grid, Strip at night, cold ambition.
+──────────────────────────────────────────────────────────────── */
+body.theme-house:not(.mode-hc) {
+    --pip-color:  #a020f0;
+    --pip-bg:     #020008;
+    --pip-bg-2:   #040014;
+    --pip-bg-3:   #07001e;
+    --pip-border: #240040;
+    --glow-sm:    0 0 8px  rgba(160,32,240,.38);
+    --glow-md:    0 0 22px rgba(160,32,240,.28);
+    --glow-lg:    0 0 48px rgba(160,32,240,.16);
+    --tc-r: 160; --tc-g: 32; --tc-b: 240;
+    --accent-gold: #e0c030;
+}
+body.theme-house:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 28px,
+            rgba(160,32,240,.020) 28px, rgba(160,32,240,.020) 30px),
+        repeating-linear-gradient(0deg, transparent, transparent 20px,
+            rgba(160,32,240,.014) 20px, rgba(160,32,240,.014) 21px),
+        repeating-linear-gradient(90deg, transparent, transparent 140px,
+            rgba(224,192,48,.010) 140px, rgba(224,192,48,.010) 141px),
+        radial-gradient(ellipse at 50% 0%, rgba(56,0,110,.78) 0%, transparent 65%),
+        radial-gradient(ellipse at 50% 100%, rgba(28,0,60,.35) 0%, transparent 60%);
+}
+body.theme-house:not(.mode-hc) header {
+    background: linear-gradient(180deg, #110028 0%, #020008 100%);
+    border-bottom: 2px solid rgba(160,32,240,.76);
+    box-shadow: 0 0 38px rgba(160,32,240,.30), 0 0 10px rgba(224,192,48,.08), inset 0 -1px 0 rgba(160,32,240,.28);
+}
+body.theme-house:not(.mode-hc) .os-title {
+    color: #a020f0;
+    text-shadow: 0 0 16px rgba(160,32,240,.65), 0 0 36px rgba(160,32,240,.30);
+    letter-spacing: 0.20em;
+}
+body.theme-house:not(.mode-hc) .tab-nav button.active {
+    background: linear-gradient(135deg, #6010a8 0%, #a020f0 100%);
+    color: #fff;
+    font-weight: bold;
+}
+body.theme-house:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(160,32,240,.60);
+    padding-left: 8px;
+}
+body.theme-house:not(.mode-hc) .plab-trait { color: #c060ff; }
+
+/* ── 6. Mothership Zeta ──────────────────────────────────────────
+   Alien abduction. Cold clinical off-white on very dark blue-grey.
+   Government-form ruled lines, institutional severity, sterile.
+──────────────────────────────────────────────────────────────── */
+body.theme-zeta:not(.mode-hc) {
+    --pip-color:  #c0e8f0;
+    --pip-bg:     #000508;
+    --pip-bg-2:   #000a10;
+    --pip-bg-3:   #000f18;
+    --pip-border: #0c2030;
+    --glow-sm:    0 0 5px  rgba(192,232,240,.20);
+    --glow-md:    0 0 12px rgba(192,232,240,.14);
+    --glow-lg:    0 0 26px rgba(192,232,240,.08);
+    --tc-r: 192; --tc-g: 232; --tc-b: 240;
+    --accent-alien: rgba(120,255,200,.08);
+}
+body.theme-zeta:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 22px,
+            rgba(192,232,240,.009) 22px, rgba(192,232,240,.009) 23px),
+        repeating-linear-gradient(90deg, transparent, transparent 88px,
+            rgba(192,232,240,.014) 88px, rgba(192,232,240,.014) 90px,
+            transparent 90px, transparent 352px,
+            rgba(192,232,240,.007) 352px, rgba(192,232,240,.007) 353px),
+        radial-gradient(ellipse at 50% 0%, rgba(0,24,44,.95) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 50%, rgba(0,80,100,.04) 0%, transparent 50%);
+}
+body.theme-zeta:not(.mode-hc) header {
+    background: linear-gradient(180deg, #040e18 0%, #000508 100%);
+    border-bottom: 1px solid rgba(192,232,240,.55);
+    border-top: 3px solid rgba(192,232,240,.30);
+    box-shadow: 0 0 16px rgba(192,232,240,.08), inset 0 -1px 0 rgba(192,232,240,.18);
+}
+body.theme-zeta:not(.mode-hc) .os-title {
+    color: #c0e8f0;
+    text-shadow: 0 0 8px rgba(192,232,240,.30);
+    letter-spacing: 0.32em;
+    font-variant: small-caps;
+}
+body.theme-zeta:not(.mode-hc) .tab-nav button.active {
+    background: rgba(192,232,240,.09);
+    border-color: rgba(192,232,240,.55);
+    color: #d8f4ff;
+}
+body.theme-zeta:not(.mode-hc) h2 {
+    border-left: 1px solid rgba(192,232,240,.50);
+    border-right: 1px solid rgba(192,232,240,.10);
+    padding-left: 8px;
+}
+body.theme-zeta:not(.mode-hc) .plab-trait { color: #a8d8e8; }
+
+/* ── 7. Sierra Madre ─────────────────────────────────────────────
+   Begin again. Let go. Tarnished gold on deep sepia-black.
+   Drifting Cloud haze, faded art-deco casino grandeur, decay.
+──────────────────────────────────────────────────────────────── */
+body.theme-sierramadre:not(.mode-hc) {
+    --pip-color:  #c89040;
+    --pip-bg:     #060400;
+    --pip-bg-2:   #0e0900;
+    --pip-bg-3:   #160e00;
+    --pip-border: #3c2a00;
+    --glow-sm:    0 0 9px  rgba(200,144,64,.28);
+    --glow-md:    0 0 22px rgba(200,144,64,.20);
+    --glow-lg:    0 0 46px rgba(200,144,64,.12);
+    --tc-r: 200; --tc-g: 144; --tc-b: 64;
+}
+body.theme-sierramadre:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(45deg, transparent, transparent 60px,
+            rgba(200,144,64,.009) 60px, rgba(200,144,64,.009) 62px),
+        repeating-linear-gradient(-45deg, transparent, transparent 60px,
+            rgba(200,144,64,.009) 60px, rgba(200,144,64,.009) 62px),
+        radial-gradient(ellipse at 22% 18%, rgba(160,100,30,.10) 0%, transparent 45%),
+        radial-gradient(ellipse at 78% 72%, rgba(140,88,24,.08) 0%, transparent 45%),
+        radial-gradient(ellipse at 52% 42%, rgba(180,120,40,.05) 0%, transparent 35%),
+        radial-gradient(ellipse at 50% 0%, rgba(72,44,0,.88) 0%, #060400 80%);
+}
+body.theme-sierramadre:not(.mode-hc) header {
+    background: linear-gradient(180deg, #382000 0%, #180e00 50%, #060400 100%);
+    border-bottom: 2px solid rgba(200,144,64,.58);
+    border-top: 1px solid rgba(200,144,64,.20);
+    box-shadow: 0 0 26px rgba(200,144,64,.16), inset 0 -1px 0 rgba(200,144,64,.14);
+}
+body.theme-sierramadre:not(.mode-hc) .os-title {
+    color: #c89040;
+    text-shadow: 0 0 12px rgba(200,144,64,.48), 0 0 28px rgba(200,144,64,.20);
+    letter-spacing: 0.30em;
+}
+body.theme-sierramadre:not(.mode-hc) .tab-nav button.active {
+    background: rgba(200,144,64,.10);
+    border-color: rgba(200,144,64,.62);
+    color: #deb050;
+}
+body.theme-sierramadre:not(.mode-hc) h2 {
+    border-left: 2px solid rgba(200,144,64,.50);
+    padding-left: 8px;
+}
+body.theme-sierramadre:not(.mode-hc) .plab-trait { color: #deb050; }
+
+/* ── 8. The Pitt ─────────────────────────────────────────────────
+   Industrial horror. Molten slag orange on soot-black.
+   Corrugated steel ridges, furnace heat bloom, oppressive dark.
+──────────────────────────────────────────────────────────────── */
+body.theme-pitt:not(.mode-hc) {
+    --pip-color:  #e05010;
+    --pip-bg:     #060200;
+    --pip-bg-2:   #0c0400;
+    --pip-bg-3:   #140600;
+    --pip-border: #421400;
+    --glow-sm:    0 0 8px  rgba(224,80,16,.38);
+    --glow-md:    0 0 20px rgba(224,80,16,.28);
+    --glow-lg:    0 0 44px rgba(224,80,16,.16);
+    --tc-r: 224; --tc-g: 80; --tc-b: 16;
+}
+body.theme-pitt:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px,
+            rgba(224,80,16,.010) 4px, rgba(224,80,16,.010) 5px),
+        repeating-linear-gradient(0deg, transparent, transparent 14px,
+            rgba(0,0,0,.09) 14px, rgba(0,0,0,.09) 16px),
+        repeating-linear-gradient(90deg, transparent, transparent 60px,
+            rgba(224,80,16,.016) 60px, rgba(224,80,16,.016) 62px),
+        radial-gradient(ellipse at 50% 110%, rgba(240,72,0,.32) 0%, rgba(160,32,0,.12) 30%, transparent 62%),
+        radial-gradient(ellipse at 50% 0%, rgba(24,8,0,.92) 0%, #060200 75%);
+}
+body.theme-pitt:not(.mode-hc) header {
+    background: linear-gradient(180deg, #280a00 0%, #0c0400 100%);
+    border-bottom: 3px solid rgba(224,80,16,.72);
+    border-top: 1px solid rgba(255,120,40,.14);
+    box-shadow: 0 0 30px rgba(224,80,16,.26), inset 0 -2px 0 rgba(224,80,16,.20);
+}
+body.theme-pitt:not(.mode-hc) .os-title {
+    color: #e05010;
+    text-shadow: 0 0 14px rgba(224,80,16,.65), 0 0 30px rgba(224,80,16,.26);
+    letter-spacing: 0.20em;
+}
+body.theme-pitt:not(.mode-hc) .tab-nav button.active {
+    background: rgba(224,80,16,.12);
+    border-color: rgba(224,80,16,.68);
+    color: #f07030;
+}
+body.theme-pitt:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(224,80,16,.58);
+    padding-left: 8px;
+}
+body.theme-pitt:not(.mode-hc) section {
+    background: linear-gradient(160deg, #140600 0%, #060200 60%) !important;
+}
+body.theme-pitt:not(.mode-hc) .plab-trait { color: #f08040; }
+body.theme-pitt:not(.mode-hc) .skill-delta-badge.sdelta-pos,
+body.theme-pitt:not(.mode-hc) .spec-delta-badge.sdelta-pos { color: #e05010; border-color: rgba(224,80,16,.40); }
+body.theme-pitt:not(.mode-hc) .action-btn:hover { color: #fff !important; }
+
+/* ── 9. Old World Blues ──────────────────────────────────────────
+   Big Mountain mad science. Electric teal on very dark blue-black.
+   Lab tile grid, tesla coil concentric rings, energetic and strange.
+──────────────────────────────────────────────────────────────── */
+body.theme-owb:not(.mode-hc) {
+    --pip-color:  #00d8b0;
+    --pip-bg:     #00060a;
+    --pip-bg-2:   #000e14;
+    --pip-bg-3:   #00161e;
+    --pip-border: #003840;
+    --glow-sm:    0 0 8px  rgba(0,216,176,.38);
+    --glow-md:    0 0 22px rgba(0,216,176,.27);
+    --glow-lg:    0 0 48px rgba(0,216,176,.16);
+    --tc-r: 0; --tc-g: 216; --tc-b: 176;
+}
+body.theme-owb:not(.mode-hc) {
+    background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 34px,
+            rgba(0,216,176,.018) 34px, rgba(0,216,176,.018) 36px),
+        repeating-linear-gradient(0deg, transparent, transparent 34px,
+            rgba(0,216,176,.018) 34px, rgba(0,216,176,.018) 35px),
+        radial-gradient(ellipse at 50% 50%, rgba(0,216,176,.04) 0%, transparent 32%),
+        radial-gradient(ellipse at 50% 50%, rgba(0,216,176,.025) 0%, transparent 54%),
+        radial-gradient(ellipse at 50% 0%, rgba(0,50,70,.88) 0%, #00060a 80%);
+}
+body.theme-owb:not(.mode-hc) header {
+    background: linear-gradient(180deg, #00262e 0%, #001018 50%, #00060a 100%);
+    border-bottom: 2px solid rgba(0,216,176,.75);
+    border-top: 1px solid rgba(0,216,176,.20);
+    box-shadow: 0 0 34px rgba(0,216,176,.26), inset 0 -1px 0 rgba(0,216,176,.28);
+}
+body.theme-owb:not(.mode-hc) .os-title {
+    color: #00d8b0;
+    text-shadow: 0 0 14px rgba(0,216,176,.70), 0 0 32px rgba(0,216,176,.32);
+    letter-spacing: 0.22em;
+}
+body.theme-owb:not(.mode-hc) .tab-nav button.active {
+    background: rgba(0,216,176,.14);
+    border-color: rgba(0,216,176,.70);
+    color: #40f0d0;
+}
+body.theme-owb:not(.mode-hc) h2 {
+    border-left: 3px solid rgba(0,216,176,.60);
+    padding-left: 8px;
+}
+body.theme-owb:not(.mode-hc) .plab-trait { color: #40f0d0; }
+
+/* ── BUILD KEY MODAL ─────────────────────────────── */
+.bk-tab { padding:8px 18px; border:none; border-bottom:2px solid transparent; background:transparent; color:rgba(255,208,96,0.4); cursor:pointer; font-family:var(--font-main); font-size:0.65rem; font-weight:bold; letter-spacing:1.5px; text-transform:uppercase; margin-bottom:-1px; transition:color 0.15s,border-color 0.15s; }
+.bk-tab:hover { color:rgba(255,208,96,0.75); }
+.bk-tab-active { color:#ffd060; border-bottom-color:#ffd060; }
+
+/* ══════════════════════════════════════════════════════════════════
+   SPECIAL PANEL — BASE TOGGLE & IMPROVED BONUS DISPLAY
+══════════════════════════════════════════════════════════════════ */
+
+/* Header row layout */
+.special-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* BASE toggle button */
+.spec-base-toggle-btn {
+    font-family: var(--font-main);
+    font-size: 0.52rem;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border: 1px solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.35);
+    background: transparent;
+    color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.45);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 2px;
+}
+.spec-base-toggle-btn:hover {
+    border-color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.7);
+    color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.85);
+    background: rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.08);
+}
+.spec-base-toggle-active {
+    border-color: var(--pip-color) !important;
+    color: #000 !important;
+    background: var(--pip-color) !important;
+}
+
+/* Base mode: dim the +/- controls to show they're locked to base view */
+.special-row.spec-base-mode .special-btn {
+    opacity: 0.4;
+}
+.special-row.spec-base-mode .spec-val {
+    color: rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.7);
+}
+
+/* Total effective badge (= N) */
+.spec-total-badge {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: var(--pip-color);
+    letter-spacing: 0.5px;
+    margin-left: 4px;
+    opacity: 0.85;
+}
+
+/* Clean collapsed total — shown instead of multiple source badges */
+.spec-total-clean {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: bold;
+    color: var(--pip-color);
+    opacity: 0.65;
+    margin-left: 5px;
+    letter-spacing: 0.5px;
+    cursor: help;
+    white-space: nowrap;
+    border: none !important;
+    background: transparent !important;
+}
+
+/* Keep special-controls tidy — no wrapping needed now */
+.special-compact-grid .special-controls {
+    flex-wrap: nowrap;
+    gap: 3px;
 }

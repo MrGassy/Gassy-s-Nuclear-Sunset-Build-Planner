@@ -10,6 +10,7 @@ let _lvlupSession = {}, _lvlupPointsLeft = 0;
 let _lvlupAttributeChoice = null; // Tracks current level-up attribute choice: 'hp', 'ap', or 'cw'
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
 let _itCancelled = false; // tracks if IT modal was cancelled
+let _showBaseSpecial = false; // toggle: show base-only SPECIAL (allocated points before IT/implants/traits/perks)
 let _hydrating = false; // true during hydrate() — suppresses choice modals (IT, Action Star, Tag!)
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
@@ -74,7 +75,9 @@ function pointsPerLevel() {
     }
     // Architect toggle: +floor(INT/2) when indoors
     const { skillPtsPerLevel } = getConditionalToggleDelta();
-    return base + (skillPtsPerLevel || 0);
+    // Ideologue trait: +1 skill point per level
+    const ideologueBonus = hasIdeologue() ? 1 : 0;
+    return base + (skillPtsPerLevel || 0) + ideologueBonus;
 }
 
 /* --- PERSISTENCE OBJECT --- */
@@ -2206,27 +2209,59 @@ function updateAll() {
     for (const k of allSkillKeys) {
         combSkillDelta[k] = (skillDelta[k]||0) + (perkSkillDelta[k]||0);
     }
+    // Build per-stat implant bonus lookup
+    const implantBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    IMPLANTS_DATA.forEach(i => { if (i.cat==='special' && i.stat && implantsTaken[i.name]) implantBonus[i.stat]++; });
+
+    // Build per-stat IT (Intense Training) bonus — IT increments special[k] directly, so we track it separately
+    const itBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row').forEach(r => {
+        const m = (r.querySelector('.prog-name-input')?.value||'').match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
+        if (m) itBonus[m[1].toUpperCase()]++;
+    });
+
     document.getElementById('special-list').innerHTML = sKeys.map(k => {
-        const td = specialDelta[k] || 0;
-        const pd = perkSpecialDelta[k] || 0;
-        const cd = ctDelta[k] || 0;
+        const td  = specialDelta[k] || 0;
+        const pd  = perkSpecialDelta[k] || 0;
+        const cd  = ctDelta[k] || 0;
+        const imp = implantBonus[k] || 0;
+        const it  = itBonus[k] || 0;
         const rank = getSpecialRank(k);
-        let deltaBadge = '';
-        if (td !== 0) deltaBadge += `<span class="spec-delta-badge ${td>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${td>0?'+':''}${td}<span class="delta-src-tag">T</span></span>`;
-        if (pd !== 0) deltaBadge += `<span class="spec-delta-badge ${pd>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pd>0?'+':''}${pd}<span class="delta-src-tag">P</span></span>`;
-        if (cd !== 0) deltaBadge += `<span class="spec-delta-badge ${cd>0?'sdelta-cond-pos':'sdelta-cond-neg'}" title="FROM ACTIVE CONDITIONAL TOGGLE">${cd>0?'+':''}${cd}<span class="delta-src-tag">◆</span></span>`;
-        const _ds = Math.max(1, special[k]);
-        return `<div class="special-row" data-key="${k}">
+
+        // special[k] already embeds IT increments (confirmIT) and implant increments (toggleImplant).
+        // baseVal  = pure allocated points only — subtract both to get the number the player typed in
+        const baseVal = special[k] - it - imp;
+        // effectiveTotal = special[k] (base+IT+implants) + external modifiers (trait/perk/conditional)
+        // NOTE: do NOT add imp again — it's already in special[k]
+        const effectiveTotal = special[k] + td + pd + cd;
+        // what the number shows in the UI
+        const dispVal = _showBaseSpecial ? baseVal : special[k];
+        // bar fills against the full effective total
+        const _ds = Math.max(1, Math.min(10, _showBaseSpecial ? baseVal : effectiveTotal));
+
+        // Show = badge only when external modifiers (trait / perk / conditional) are active.
+        // IT and implants are already baked into special[k] so they don't need a separate badge.
+        const hasBonus = !_showBaseSpecial && (td + pd + cd) !== 0;
+        const tooltipParts = [];
+        if (it  !== 0) tooltipParts.push(`+${it} IT`);
+        if (imp !== 0) tooltipParts.push(`+${imp} Impl`);
+        if (td  !== 0) tooltipParts.push(`${td>0?'+':''}${td} Trait`);
+        if (pd  !== 0) tooltipParts.push(`${pd>0?'+':''}${pd} Perk`);
+        if (cd  !== 0) tooltipParts.push(`${cd>0?'+':''}${cd} Cond`);
+        const bonusTooltip = tooltipParts.length
+            ? `BASE ${baseVal}: ` + tooltipParts.join(' / ') + ` = ${effectiveTotal}`
+            : rank;
+
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}" data-key="${k}">
             <span class="spec-abbr-lg spec-info-btn" title="Click for ${k} details — ${rank}" onclick="openSpecialInfoModal('${k}')">${k}</span>
             <div class="spec-track-wide" onclick="openSpecialInfoModal('${k}')" style="cursor:pointer;" title="${rank}">
                 <div class="spec-fill-wide${_ds===10?' spec-fill-full':_ds>=7?' spec-fill-warm':_ds>=4?' spec-fill-mid':' spec-fill-dim'}" style="width:${_ds*10}%; opacity:${(0.3 + Math.max(0,_ds-1)/9*0.7).toFixed(2)};"></div>
             </div>
             <div class="special-controls">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
-                <span class="spec-val special-val">${special[k]}</span>
+                <span class="spec-val special-val">${dispVal}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
-                <span class="spec-mod-badge" style="display:none;"></span>
-                ${deltaBadge}
+                ${hasBonus ? `<span class="spec-total-badge spec-total-clean" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
             </div>
             <div class="spec-rank-title">${rank}</div>
         </div>`;
@@ -2409,6 +2444,18 @@ function updateAll() {
 }
 
 function mod(k, v) { special[k] += v; updateAll(); reCheckAllPerkRows(); triggerAutosave(); }
+
+function toggleBaseSpecial() {
+    _showBaseSpecial = !_showBaseSpecial;
+    const btn = document.getElementById('spec-base-toggle');
+    if (btn) {
+        btn.classList.toggle('spec-base-toggle-active', _showBaseSpecial);
+        btn.title = _showBaseSpecial
+            ? 'Showing BASE allocated only — click to show full with all bonuses'
+            : 'Showing FULL SPECIAL with all bonuses — click to show base only';
+    }
+    updateAll();
+}
 
 function addTrait() {
     if(mode==='hc' && document.getElementById('trait-list').children.length>=5) return;
@@ -3132,6 +3179,9 @@ function hydrate(d) {
     renderRewardPerksList();
     renderInternalizedTraitsList();
     renderStartingTraitsList();
+    if (document.getElementById('tab-skilllog')?.style.display !== 'none') {
+        renderSkillLog();
+    }
 }
 
 /* ===== BUILD ARCHETYPES SYSTEM ===== */
@@ -3162,7 +3212,7 @@ function closeArchetypesModal() {
 
 let _selectedArchetypeId = null;
 
-const _archFilters = { origin: '', karma: '', diff: '', style: '' };
+const _archFilters = { karma: '', style: '' };
 
 function toggleArchChip(btn) {
     const filter = btn.dataset.filter;
@@ -3217,9 +3267,7 @@ function renderArchetypeGrid() {
     const SKILLS = ["BARTER","BIG GUNS","ENERGY WEAPONS","EXPLOSIVES","GUNS","LOCKPICK","MEDICINE","MELEE WEAPONS","REPAIR","SCIENCE","SNEAK","SPEECH","SURVIVAL","UNARMED"];
     const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
     const filtered = ARCHETYPES_DATA.filter(a => {
-        if (_archFilters.origin && a.origin !== _archFilters.origin) return false;
         if (_archFilters.karma  && a.buildKarma !== _archFilters.karma)  return false;
-        if (_archFilters.diff   && String(a.difficulty || 1) !== _archFilters.diff) return false;
         if (_archFilters.style) {
             const tagged = SKILLS.filter((_,i) => a.tags[i]);
             if (!tagged.includes(_archFilters.style)) return false;
@@ -3239,9 +3287,6 @@ function renderArchetypeGrid() {
     }
     grid.innerHTML = filtered.length ? filtered.map(a => {
         const isSel = _selectedArchetypeId === a.id;
-        const diff = a.difficulty || 1;
-        const stars = '★'.repeat(diff) + '☆'.repeat(5 - diff);
-        const diffColor = ['','#6adb6a','#c8c840','#e09020','#e05020','#cc2020'][diff];
         return `<div class="archetype-card${isSel ? ' archetype-selected' : ''}" onclick="selectArchetype('${a.id}')"
             style="border-color:${isSel ? a.color : 'rgba(255,255,255,0.1)'};">
             <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};">${a.icon}</div>
@@ -3249,10 +3294,7 @@ function renderArchetypeGrid() {
                 <div class="archetype-name">${a.name}</div>
                 <div class="archetype-tagline">${a.tagline}</div>
                 <div class="archetype-badges">
-                    <span class="archetype-badge" style="color:${a.color};border-color:${a.color}44;">${a.origin === 'CW' ? 'Capital' : 'Mojave'}</span>
-                    <span class="archetype-badge">${a.mode === 'hc' ? 'HC' : 'STD'}</span>
                     <span class="archetype-badge" style="text-transform:capitalize;">${a.buildKarma.replace('-',' ')}</span>
-                    <span class="archetype-badge" style="color:${diffColor};border-color:${diffColor}44;letter-spacing:1px;">${stars}</span>
                 </div>
             </div>
         </div>`;
@@ -3264,20 +3306,44 @@ function selectArchetype(id) {
     renderArchetypeGrid();
     const a = ARCHETYPES_DATA.find(x => x.id === id);
     if (!a) return;
+
+    const detail = document.getElementById('archetype-detail');
+    if (!detail) return;
+
+    // Key-based archetypes: decode the key to get full build data for preview
+    let bd = a; // fallback to legacy full-data archetype
+    if (a.key) {
+        const decoded = decodeBuildKey(a.key);
+        if (decoded) bd = decoded;
+    }
+
     const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
-    const taggedSkills = skillNames.filter((_,i) => a.tags[i]);
-    const perkLevels = [2,4,6,8,10,12,14,16,18,20,22,24,26,28,30];
+    const taggedSkills = skillNames.filter((_,i) => bd.tags && bd.tags[i]);
+
+    // Build perk level list dynamically from mode
+    const isHC = bd.mode === 'hc';
+    const perkLvls = [];
+    for (let i = 2; i <= (bd.charLevel || 30); i++) {
+        if (isHC ? (i % 3 === 0) : (i % 2 === 0)) perkLvls.push(i);
+    }
+
     const specHtml = ['STR','PER','END','CHA','INT','AGI','LCK'].map(k => {
-        const v = a.special[k];
+        const v = (bd.special && bd.special[k]) || 0;
         const bars = Array.from({length:10},(_,i)=>`<span class="aspec-pip${i<v?' aspec-pip-on':''}"></span>`).join('');
         return `<div class="aspec-row"><span class="aspec-key">${k}</span>${bars}<span class="aspec-num">${v}</span></div>`;
     }).join('');
-    const perksPreview = a.perks.slice(0,8).map((p,i) =>
-        p[0] ? `<div class="arch-perk-row"><span class="arch-perk-lvl">LVL ${perkLevels[i]}</span><span class="arch-perk-name">${p[0]}</span></div>` : ''
-    ).filter(Boolean).join('');
-    const remaining = a.perks.filter(p=>p[0]).length - 8;
-    const traitNames = a.startingTraits.map(t=>t.name).join(', ') || 'None';
-    const detail = document.getElementById('archetype-detail');
+
+    const allPerks = (bd.perks || []).filter(p => p && p[0]);
+    const perksPreview = allPerks.slice(0, 8).map((p, i) =>
+        `<div class="arch-perk-row"><span class="arch-perk-lvl">LVL ${perkLvls[i] || '?'}</span><span class="arch-perk-name">${p[0]}</span></div>`
+    ).join('');
+    const remaining = allPerks.length - 8;
+
+    const traitNames = (bd.startingTraits || []).map(t => t.name).join(', ') || 'None';
+
+    // Description: use archetype meta description first, then decoded notes, then nothing
+    const descText = a.description || (bd.notes ? bd.notes.substring(0, 280) : '');
+
     detail.style.display = 'block';
     detail.innerHTML = `
     <div class="archetype-detail-box" style="border-color:${a.color}44;">
@@ -3289,7 +3355,7 @@ function selectArchetype(id) {
                     <div style="font-size:0.65rem;opacity:0.6;margin-top:2px;">${a.tagline}</div>
                 </div>
             </div>
-            <p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;">${a.description}</p>
+            ${descText ? `<p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;">${descText}</p>` : ''}
         </div>
         <div class="arch-detail-cols">
             <div class="arch-detail-col">
@@ -3299,17 +3365,15 @@ function selectArchetype(id) {
                 <div style="font-size:0.72rem;color:var(--pip-color);letter-spacing:0.5px;">${taggedSkills.join(' · ') || 'None'}</div>
                 <div class="arch-section-label" style="margin-top:12px;">STARTING TRAITS</div>
                 <div style="font-size:0.72rem;color:#c8a0ff;letter-spacing:0.5px;">${traitNames}</div>
-                <div class="arch-section-label" style="margin-top:12px;">ORIGIN &amp; MODE</div>
-                <div style="font-size:0.72rem;opacity:0.75;">${a.origin === 'CW' ? 'CAPITAL WASTELAND' : 'MOJAVE WASTELAND'} &nbsp;·&nbsp; ${a.mode.toUpperCase()}</div>
             </div>
             <div class="arch-detail-col">
-                <div class="arch-section-label">SUGGESTED PERK PATH (LVL 2–${perkLevels[Math.min(7, a.perks.filter(p=>p[0]).length-1)]})</div>
+                <div class="arch-section-label">SUGGESTED PERK PATH (LVL 2–${perkLvls[Math.min(7, allPerks.length - 1)] || '?'})</div>
                 ${perksPreview}
                 ${remaining > 0 ? `<div style="font-size:0.6rem;opacity:0.4;margin-top:6px;letter-spacing:1px;">+ ${remaining} MORE PERKS LOADED INTO BUILD</div>` : ''}
             </div>
         </div>
         <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="action-btn" onclick="loadArchetype('${a.id}')"
+            <button class="action-btn" onclick="loadArchetypeKey('${a.id}')"
                 style="background:${a.color}22;border-color:${a.color};color:${a.color};font-size:0.72rem;padding:8px 20px;flex:1;letter-spacing:1px;">
                 ◈ LOAD THIS ARCHETYPE
             </button>
@@ -3393,6 +3457,346 @@ function loadArchetype(id) {
 }
 
 function purgeMemory() { if(confirm("INITIATE TOTAL ATOMIC ANNIHILATION?")) { try { localStorage.clear(); } catch(e) {} location.reload(); } }
+/* ═══════════════════════════════════════════════════════════════════════
+   BUILD KEY SYSTEM  —  NSB3 binary pack
+   Captures ALL build state. ~500–700 chars for a level 30 build.
+   NSB2 / NSB1 still decoded for backward compat.
+═══════════════════════════════════════════════════════════════════════ */
+
+const NSB3 = (() => {
+    class BW {
+        constructor() { this.bytes = []; this.cur = 0; this.bits = 0; }
+        write(val, n) {
+            val = val >>> 0;
+            if (n < 32) val = val & ((1 << n) - 1);
+            let rem = n;
+            while (rem > 0) {
+                const space = 8 - this.bits, take = Math.min(space, rem);
+                rem -= take;
+                this.cur = (this.cur << take) | ((val >>> rem) & ((1 << take) - 1));
+                this.bits += take;
+                if (this.bits === 8) { this.bytes.push(this.cur & 0xFF); this.cur = 0; this.bits = 0; }
+            }
+        }
+        flush() { if (this.bits > 0) { this.bytes.push((this.cur << (8 - this.bits)) & 0xFF); this.bits = 0; this.cur = 0; } }
+        toB64() {
+            this.flush();
+            let s = '';
+            for (const b of this.bytes) s += String.fromCharCode(b);
+            return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        }
+    }
+    class BR {
+        constructor(b64) {
+            const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/'));
+            this.bytes = Array.from(s, c => c.charCodeAt(0));
+            this.pos = 0; this.cur = 0; this.bits = 0;
+        }
+        read(n) {
+            let val = 0, rem = n;
+            while (rem > 0) {
+                if (this.bits === 0) { if (this.pos >= this.bytes.length) return 0; this.cur = this.bytes[this.pos++]; this.bits = 8; }
+                const take = Math.min(this.bits, rem), shift = this.bits - take;
+                val = (val << take) | ((this.cur >>> shift) & ((1 << take) - 1));
+                this.cur &= (1 << shift) - 1; this.bits -= take; rem -= take;
+            }
+            return val >>> 0;
+        }
+    }
+    const KARMA_LIST = ['very-good','good','neutral','evil','very-evil'];
+    const SKEYS      = ['STR','PER','END','CHA','INT','AGI','LCK'];
+    const SKILLS     = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+    const BONUS_LIST = ['hp','ap','cw'];
+    const CT_KEYS    = [
+        'Claustrophobia','Early Bird','Night Person','Solar Powered','War Child',
+        'Four Eyes','Blind Luck','Impartial Mediation','Confirmed Bachelor','Lady Killer',
+        'Graceful','Ideologue','Twisted',"Breakin' A Sweat",'Masochist','Desert Rose',
+        'Hoarder','Bankrupt','Magnate','Callous',"Assassin's Step",'Polar Personality',
+        'Architect','Alertness','Headless Courier','Irradiated Beauty','Thirsty',
+        'Fight Hungry','Walker Instinct','Boiadero','Wasteland Masquerade',
+        'My Own Master Now','Collective Consciousness'
+    ];
+    const getIdx  = (arr, n) => { if (!n) return 0; const i = arr.findIndex(x => x.name.trim() === (n||'').trim()); return i >= 0 ? i+1 : 0; };
+    const getName = (arr, i) => (i > 0 && i <= arr.length) ? arr[i-1].name : '';
+    const writeStr = (bw, str) => {
+        const s = (str||'').substring(0,1023).replace(/[^\x20-\x7E\n\r\t]/g,' ');
+        bw.write(s.length, 10);
+        for (let i = 0; i < s.length; i++) bw.write(s.charCodeAt(i) & 0x7F, 7);
+    };
+    const readStr = br => { const len = br.read(10); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
+    const writeShortStr = (bw, str) => {
+        const s = (str||'').substring(0,63).replace(/[^\x20-\x7E]/g,'?');
+        bw.write(s.length, 6);
+        for (let i = 0; i < s.length; i++) bw.write(s.charCodeAt(i) & 0x7F, 7);
+    };
+    const readShortStr = br => { const len = br.read(6); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
+
+    function encode(d) {
+        const bw = new BW();
+        const level = Math.max(1, Math.min(50, d.charLevel|0));
+        bw.write(d.mode==='hc'?1:0, 1);
+        bw.write(d.origin==='MW'?1:0, 1);
+        bw.write(Math.max(0, KARMA_LIST.indexOf(d.buildKarma||'neutral')), 3);
+        bw.write(Math.max(0, Math.min(4,(d.difficulty|0)-1)), 3);
+        bw.write(level-1, 6);
+        writeShortStr(bw, d.name);
+        writeStr(bw, d.notes);
+        SKEYS.forEach(k => bw.write(Math.max(0,Math.min(9,(d.special?.[k]|0)-1)), 4));
+        SKILLS.forEach((_,i) => bw.write(d.tags?.[i]?1:0, 1));
+        const ftsI = d.fourthTagSkill ? SKILLS.indexOf(d.fourthTagSkill)+1 : 0;
+        bw.write(Math.max(0,Math.min(14,ftsI)), 4);
+        bw.write(d.hasBeenHumbled?1:0, 1);
+        bw.write(Math.max(0,Math.min(50,d.humbledLevel|0)), 6);
+        SKEYS.forEach(k => bw.write((d.humbledReductions?.[k]||0)>0?1:0, 1));
+        for(let i=0;i<level-1;i++) bw.write(Math.max(0,BONUS_LIST.indexOf(d.levelUpBonuses?.[i]||'ap')), 2);
+        (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp => bw.write(d.implantsTaken?.[imp.name]?1:0, 1));
+        SKILLS.forEach(s => bw.write(Math.max(0,Math.min(100,d.skillPoints?.[s]|0)), 7));
+        SKILLS.forEach(s => bw.write(Math.max(0,Math.min(15,d.skillBooksFound?.[s]|0)), 4));
+        CT_KEYS.forEach(k => bw.write(d.conditionalToggles?.[k]?1:0, 1));
+        const st = (d.startingTraits||[]).filter(t=>t?.name).slice(0,5);
+        bw.write(st.length, 3);
+        st.forEach(t => bw.write(getIdx(TRAITS_DATA,t.name), 7));
+        const ts = (d.traits||[]).slice(0,20);
+        bw.write(ts.length, 5);
+        ts.forEach(n => bw.write(getIdx(TRAITS_DATA,n), 7));
+        // Annotation map for Action Star choices → compact code stored in notes
+        const _AS_TO_CODE = {
+            'ACTION STAR [+TOTAL AP]':     'as:ap',
+            'ACTION STAR [+AP REGEN]':     'as:rg',
+            'ACTION STAR [-WEAP AP COST]': 'as:ct'
+        };
+        // Strip IT / Action Star runtime annotations so getIdx can find the base perk.
+        // The stat / choice is preserved in the notes field with a safe prefix:
+        //   IT perks  → notes = "it:STR"  (or PER/END/etc.)
+        //   AS perks  → notes = "as:ap"   (or as:rg / as:ct)
+        function _encPerk(bw, p) {
+            let nm = (p?.[0]||'').trim();
+            let nt = p?.[1]||'';
+            // Intense Training (+1 STR)  →  base name + encoded stat
+            const itM = nm.match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
+            if (itM) { nm = 'Intense Training'; nt = 'it:' + itM[1].toUpperCase(); }
+            else {
+                // Action Star [+TOTAL AP] etc.  →  base name + compact choice code
+                const asCode = _AS_TO_CODE[nm.toUpperCase()];
+                if (asCode) { nm = 'Action Star'; nt = asCode; }
+            }
+            bw.write(getIdx(PERKS_DATA, nm), 8);
+            writeShortStr(bw, nt);
+        }
+        const perks = (d.perks||[]).slice(0,63);
+        bw.write(perks.length, 6);
+        perks.forEach(p => _encPerk(bw, p));
+        const extra = (d.extraPerks||[]).slice(0,31);
+        bw.write(extra.length, 5);
+        extra.forEach(p => _encPerk(bw, p));
+        const rpl = (d.rewardPerksList||[]).slice(0,31);
+        bw.write(rpl.length, 5);
+        rpl.forEach(rp => { bw.write(getIdx(REWARD_PERKS_DATA,rp?.name||''), 7); writeShortStr(bw, rp?.notes||''); });
+        const itl = (d.internalizedTraitsList||[]).slice(0,31);
+        bw.write(itl.length, 5);
+        itl.forEach(it => { bw.write(getIdx(INTERNALIZED_TRAITS_DATA,it?.name||''), 4); writeShortStr(bw, it?.notes||''); });
+        const sh = (d.skillHistory||[]).slice(0,50);
+        bw.write(sh.length, 6);
+        sh.forEach(e => {
+            bw.write(Math.max(0,Math.min(49,(e.level|0)-1)), 6);
+            bw.write(Math.max(0,Math.min(15,e.pointsTotal|0)), 4);
+            SKILLS.forEach(s => bw.write((e.tagged||[]).includes(s)?1:0, 1));
+            SKILLS.forEach(s => bw.write(Math.max(0,Math.min(15,e.allocation?.[s]|0)), 4));
+        });
+        return 'NSB3-' + bw.toB64();
+    }
+
+    function decode(key) {
+        try {
+            const br = new BR(key.replace(/^NSB3-/,''));
+            const mode       = br.read(1)?'hc':'std';
+            const origin     = br.read(1)?'MW':'CW';
+            const buildKarma = KARMA_LIST[br.read(3)]||'neutral';
+            const difficulty = br.read(3)+1;
+            const level      = br.read(6)+1;
+            const charName   = readShortStr(br);
+            const notes      = readStr(br);
+            const special = {}; SKEYS.forEach(k=>{ special[k]=br.read(4)+1; });
+            const tags = SKILLS.map(()=>br.read(1)===1);
+            const ftsI = br.read(4);
+            const fourthTagSkill = ftsI>0?(SKILLS[ftsI-1]||null):null;
+            const hasBeenHumbled = br.read(1)===1;
+            const humbledLevel   = br.read(6);
+            const humbledReductions = {}; SKEYS.forEach(k=>{ if(br.read(1)) humbledReductions[k]=1; });
+            const levelUpBonuses = []; for(let i=0;i<level-1;i++) levelUpBonuses.push(BONUS_LIST[br.read(2)]||'ap');
+            const implantsTaken = {};
+            (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp=>{ if(br.read(1)) implantsTaken[imp.name]=true; });
+            const skillPoints={}; SKILLS.forEach(s=>{ skillPoints[s]=br.read(7); });
+            const skillBooksFound={}; SKILLS.forEach(s=>{ skillBooksFound[s]=br.read(4); });
+            const conditionalToggles={}; CT_KEYS.forEach(k=>{ if(br.read(1)) conditionalToggles[k]=true; });
+            const stCount=br.read(3); const startingTraits=[];
+            for(let i=0;i<stCount;i++){ const n=getName(TRAITS_DATA,br.read(7)); if(n) startingTraits.push({name:n}); }
+            const traitCount=br.read(5); const traits=[];
+            for(let i=0;i<traitCount;i++) traits.push(getName(TRAITS_DATA,br.read(7)));
+            // Restore IT / Action Star annotations that were compacted during encode.
+            const _AS_FROM_CODE = {
+                'as:ap': 'ACTION STAR [+TOTAL AP]',
+                'as:rg': 'ACTION STAR [+AP REGEN]',
+                'as:ct': 'ACTION STAR [-WEAP AP COST]'
+            };
+            const _IT_STATS = new Set(['STR','PER','END','CHA','INT','AGI','LCK']);
+            function _decPerk(name, notes) {
+                if (name === 'Intense Training' && (notes||'').startsWith('it:')) {
+                    const stat = notes.slice(3).toUpperCase();
+                    if (_IT_STATS.has(stat)) return ['Intense Training (+1 ' + stat + ')', ''];
+                }
+                if (_AS_FROM_CODE[notes]) return [_AS_FROM_CODE[notes], ''];
+                return [name, notes];
+            }
+            const perkCount=br.read(6); const perks=[];
+            for(let i=0;i<perkCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); perks.push([n,nt]); }
+            const extraCount=br.read(5); const extraPerks=[];
+            for(let i=0;i<extraCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); extraPerks.push([n,nt]); }
+            const rplCount=br.read(5); const rewardPerksList=[];
+            for(let i=0;i<rplCount;i++){ const n=getName(REWARD_PERKS_DATA,br.read(7)); const notes=readShortStr(br); if(n) rewardPerksList.push({name:n,notes}); }
+            const itlCount=br.read(5); const internalizedTraitsList=[];
+            for(let i=0;i<itlCount;i++){ const n=getName(INTERNALIZED_TRAITS_DATA,br.read(4)); const notes=readShortStr(br); if(n) internalizedTraitsList.push({name:n,notes}); }
+            const shCount=br.read(6); const skillHistory=[];
+            for(let i=0;i<shCount;i++){
+                const entryLevel=br.read(6)+1, pointsTotal=br.read(4);
+                const tagBits=SKILLS.map(()=>br.read(1)===1);
+                const tagged=SKILLS.filter((_,j)=>tagBits[j]);
+                const allocation={},gains={};
+                SKILLS.forEach((s,j)=>{ const a=br.read(4); allocation[s]=a; gains[s]=tagBits[j]?a*2:a; });
+                skillHistory.push({level:entryLevel,pointsTotal,tagged,allocation,gains});
+            }
+            return { name:charName, notes, mode, origin, buildKarma, difficulty, charLevel:level,
+                special, tags, fourthTagSkill, hasBeenHumbled, humbledLevel, humbledReductions,
+                levelUpBonuses, implantsTaken, skillPoints, skillBooksFound, conditionalToggles,
+                startingTraits, traits, perks, extraPerks, rewardPerksList, internalizedTraitsList,
+                perkWishlist:[], currentBuildName:charName||'Loaded Build', skillHistory,
+                regionalStorage:{CW:{quests:[],colls:[]},MW:{quests:[],colls:[]}},
+                weapons:[],armor:[],quests:[],colls:[],uniWpns:[],uniArmor:[] };
+        } catch(e) { console.error('NSB3 decode error:',e); return null; }
+    }
+    return { encode, decode };
+})();
+
+function collectBuildData() {
+    const d = collectData();
+    return { name:d.name, notes:d.notes, mode:d.mode, origin:d.origin, buildKarma:d.buildKarma,
+        charLevel:d.charLevel, difficulty:d.difficulty||1, special:d.special, tags:d.tags,
+        traits:d.traits, startingTraits:d.startingTraits, perks:d.perks, extraPerks:d.extraPerks,
+        implantsTaken:d.implantsTaken, skillPoints:d.skillPoints, levelUpBonuses:d.levelUpBonuses,
+        fourthTagSkill:d.fourthTagSkill, conditionalToggles:d.conditionalToggles,
+        skillHistory:d.skillHistory, skillBooksFound:d.skillBooksFound,
+        rewardPerksList:d.rewardPerksList, internalizedTraitsList:d.internalizedTraitsList,
+        humbledLevel:d.humbledLevel, humbledReductions:d.humbledReductions,
+        hasBeenHumbled:d.hasBeenHumbled, regionalStorage:d.regionalStorage };
+}
+
+function encodeBuildKey() {
+    try { return NSB3.encode(collectBuildData()); }
+    catch(e) {
+        console.error('NSB3 failed, falling back:', e);
+        try { if(typeof LZString!=='undefined') return 'NSB2-'+LZString.compressToEncodedURIComponent(JSON.stringify(collectBuildData())); } catch(e2){}
+        return null;
+    }
+}
+
+function decodeBuildKey(key) {
+    try {
+        const k = key.trim();
+        if (k.startsWith('NSB3-')) return NSB3.decode(k);
+        if (k.startsWith('NSB2-')) {
+            if (typeof LZString==='undefined') throw new Error('LZString not loaded');
+            const json = LZString.decompressFromEncodedURIComponent(k.slice(5));
+            if (!json) throw new Error('decompression null');
+            return JSON.parse(json);
+        }
+        if (k.startsWith('NSB1-')) return JSON.parse(decodeURIComponent(escape(atob(k.slice(5)))));
+        return JSON.parse(decodeURIComponent(escape(atob(k))));
+    } catch(e) { console.error('Build key decode error:',e); return null; }
+}
+
+function openBuildKeyModal() {
+    const m = document.getElementById('build-key-modal');
+    if (!m) return;
+    m.style.display = 'flex';
+    showBuildKeyTab('gen');
+    document.getElementById('bk-gen-out').innerHTML = '';
+}
+function closeBuildKeyModal() { const m=document.getElementById('build-key-modal'); if(m) m.style.display='none'; }
+function showBuildKeyTab(tab) {
+    ['gen','load'].forEach(t=>{
+        const tabEl=document.getElementById('bk-tab-'+t), paneEl=document.getElementById('bk-pane-'+t);
+        if(tabEl) tabEl.classList.toggle('bk-tab-active',t===tab);
+        if(paneEl) paneEl.style.display=(t===tab)?'block':'none';
+    });
+}
+
+function generateAndShowKey() {
+    const out = document.getElementById('bk-gen-out');
+    out.innerHTML = '<div style="font-size:0.65rem;opacity:0.6;">ENCODING...</div>';
+    setTimeout(() => {
+        const key = encodeBuildKey();
+        if (!key) { out.innerHTML='<div style="color:#ff5555;font-size:0.68rem;">ENCODE FAILED</div>'; return; }
+        const name=(document.getElementById('char-name')?.value||'UNNAMED').toUpperCase();
+        const chars=key.length, kb=(chars/1024).toFixed(1);
+        out.innerHTML='';
+        const hdr=document.createElement('div');
+        hdr.style.cssText='font-size:0.55rem;color:rgba(40,255,40,0.5);letter-spacing:2px;margin-bottom:8px;';
+        hdr.textContent='BUILD KEY — '+name+' · LVL '+charLevel+' · '+chars+' CHARS ('+kb+' KB)';
+        out.appendChild(hdr);
+        const box=document.createElement('div');
+        box.style.cssText='font-size:0.52rem;word-break:break-all;line-height:1.9;background:#000;border:1px solid rgba(40,255,40,0.25);padding:10px;margin-bottom:10px;color:#28ff28;max-height:150px;overflow-y:auto;font-family:monospace;';
+        box.textContent=key; out.appendChild(box);
+        const row=document.createElement('div'); row.style.cssText='display:flex;gap:12px;align-items:center;';
+        const btn=document.createElement('button');
+        btn.className='action-btn'; btn.style.cssText='width:auto;margin:0;padding:6px 18px;font-size:0.65rem;border-color:#ffd060;color:#ffd060;';
+        btn.textContent='◈ COPY KEY';
+        const ok=document.createElement('span'); ok.style.cssText='display:none;font-size:0.6rem;color:#28ff28;'; ok.textContent='✓ COPIED TO CLIPBOARD';
+        btn.onclick=function(){
+            navigator.clipboard.writeText(box.textContent).then(()=>{ ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2500); })
+            .catch(()=>{ const ta=document.createElement('textarea'); ta.value=box.textContent; ta.style.cssText='position:fixed;opacity:0;'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); ok.style.display='inline'; setTimeout(()=>ok.style.display='none',2500); });
+        };
+        row.appendChild(btn); row.appendChild(ok); out.appendChild(row);
+    }, 20);
+}
+
+function loadBuildFromKey() {
+    const raw=document.getElementById('bk-key-input')?.value?.trim();
+    const errEl=document.getElementById('bk-load-err');
+    if(!raw){errEl.textContent='NO KEY ENTERED';errEl.style.display='block';return;}
+    const data=decodeBuildKey(raw);
+    if(!data){errEl.textContent='INVALID KEY — COULD NOT DECODE';errEl.style.display='block';return;}
+    const safe=sanitizeImport(data);
+    if(!safe){errEl.textContent='KEY DECODED BUT FAILED VALIDATION';errEl.style.display='block';return;}
+    errEl.style.display='none';
+    closeBuildKeyModal();
+    hydrate(safe);
+    showPerkToast('BUILD LOADED FROM KEY');
+    triggerAutosave();
+}
+
+function addArchetypeKey(keyStr, meta) { ARCHETYPES_DATA.push(Object.assign({},meta,{key:keyStr})); }
+
+function loadArchetypeKey(id) {
+    const a = ARCHETYPES_DATA.find(x=>x.id===id);
+    if (!a) return;
+    if (a.key) {
+        if (!confirm('LOAD ARCHETYPE: "'+a.name.toUpperCase()+'"?\n\nThis will overwrite your current build.')) return;
+        const data=decodeBuildKey(a.key);
+        if (!data){alert('ARCHETYPE KEY DECODE FAILED');return;}
+        const safe=sanitizeImport(data);
+        if (!safe){alert('ARCHETYPE DATA VALIDATION FAILED');return;}
+        closeArchetypesModal(); _selectedArchetypeId=null;
+        hydrate(safe); nsAudio.diceRoll();
+        showPerkToast('ARCHETYPE LOADED: '+a.name.toUpperCase());
+        triggerAutosave();
+        const btn=document.getElementById('tab-btn-prog');
+        if(btn){ btn.style.boxShadow='0 0 12px var(--pip-color)'; btn.style.background='var(--pip-color)'; btn.style.color='black'; setTimeout(()=>{ if(!btn.classList.contains('active')){btn.style.boxShadow='';btn.style.background='';btn.style.color='';} },1200); }
+        return;
+    }
+    loadArchetype(id);
+}
+
+
 
 /* ===== BUILD MANAGEMENT SYSTEM ===== */
 

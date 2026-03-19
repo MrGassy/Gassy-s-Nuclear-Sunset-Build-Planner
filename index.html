@@ -35,14 +35,7 @@
                 <input type="text" id="arch-perk-search" class="pip-search" placeholder="SEARCH BUILDS BY PERK NAME..." oninput="renderArchPerkSearch()" style="margin-top:6px;">
                 <div id="arch-perk-results" style="display:none; margin-top:8px; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); font-size:0.7rem; letter-spacing:0.5px;"></div>
                 <div class="arch-filter-grid">
-                    <div class="arch-filter-row">
-                        <span class="arch-filter-label">ORIGIN</span>
-                        <div class="arch-chip-group">
-                            <button class="arch-chip active" data-filter="origin" data-val="" onclick="toggleArchChip(this)">ALL</button>
-                            <button class="arch-chip" data-filter="origin" data-val="CW" onclick="toggleArchChip(this)">CAPITAL</button>
-                            <button class="arch-chip" data-filter="origin" data-val="MW" onclick="toggleArchChip(this)">MOJAVE</button>
-                        </div>
-                    </div>
+
                     <div class="arch-filter-row">
                         <span class="arch-filter-label">KARMA</span>
                         <div class="arch-chip-group">
@@ -54,17 +47,7 @@
                             <button class="arch-chip" data-filter="karma" data-val="very-evil" onclick="toggleArchChip(this)">V. EVIL</button>
                         </div>
                     </div>
-                    <div class="arch-filter-row">
-                        <span class="arch-filter-label">DIFFICULTY</span>
-                        <div class="arch-chip-group">
-                            <button class="arch-chip active" data-filter="diff" data-val="" onclick="toggleArchChip(this)">ALL</button>
-                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="1" onclick="toggleArchChip(this)">★☆☆☆☆</button>
-                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="2" onclick="toggleArchChip(this)">★★☆☆☆</button>
-                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="3" onclick="toggleArchChip(this)">★★★☆☆</button>
-                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="4" onclick="toggleArchChip(this)">★★★★☆</button>
-                            <button class="arch-chip arch-chip-stars" data-filter="diff" data-val="5" onclick="toggleArchChip(this)">★★★★★</button>
-                        </div>
-                    </div>
+
                     <div class="arch-filter-row">
                         <span class="arch-filter-label">STYLE</span>
                         <div class="arch-chip-group">
@@ -375,6 +358,35 @@
     </div>
 </div>
 
+<!-- BUILD KEY MODAL -->
+<div id="build-key-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:580px; width:95vw; max-height:85vh; overflow-y:auto;">
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+      <div style="font-size:1rem; font-weight:bold; color:#ffd060; letter-spacing:0.1em;">🔑 BUILD KEY</div>
+      <button onclick="closeBuildKeyModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;font-family:inherit;">✕</button>
+    </div>
+    <div style="display:flex; border-bottom:1px solid rgba(255,208,96,0.2); margin-bottom:14px;">
+      <button id="bk-tab-gen" class="bk-tab bk-tab-active" onclick="showBuildKeyTab('gen')">◈ GENERATE</button>
+      <button id="bk-tab-load" class="bk-tab" onclick="showBuildKeyTab('load')">◈ LOAD FROM KEY</button>
+    </div>
+    <div id="bk-pane-gen">
+      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
+        Binary encodes your complete build (NSB3) — all perks, notes, internalized traits, reward perks, conditional toggles and skill history. Approx 500–700 chars for a level 30 build.
+      </div>
+      <button class="action-btn" onclick="generateAndShowKey()" style="border-color:#ffd060;color:#ffd060;margin-bottom:12px;">⚡ GENERATE KEY FROM CURRENT BUILD</button>
+      <div id="bk-gen-out"></div>
+    </div>
+    <div id="bk-pane-load" style="display:none;">
+      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
+        Paste an NSB3-... key (or older NSB2/NSB1) to load a build. This overwrites your current build — save or export first if needed.
+      </div>
+      <textarea id="bk-key-input" placeholder="PASTE NSB3-... KEY HERE..." style="width:100%;height:90px;background:#000;border:1px solid rgba(255,208,96,0.25);color:#ffd060;padding:10px;font-family:inherit;font-size:0.6rem;resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
+      <div id="bk-load-err" style="display:none;color:#ff5555;font-size:0.65rem;margin-bottom:10px;padding:6px 10px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.05);"></div>
+      <button class="action-btn" onclick="loadBuildFromKey()" style="border-color:#ffd060;color:#ffd060;">◈ LOAD BUILD FROM KEY</button>
+    </div>
+  </div>
+</div>
+
 <!-- WISHLIST MODAL -->
 <div id="wishlist-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-box" style="max-width:650px; width:95vw; max-height:85vh;">
@@ -466,7 +478,12 @@
             </div>
             <div class="special-header-row">
                 <span class="section-label">S.P.E.C.I.A.L.</span>
-                <span class="pts-badge">PTS <span id="pts-left">0</span></span>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button id="spec-base-toggle" class="spec-base-toggle-btn" onclick="toggleBaseSpecial()" title="Toggle between full SPECIAL (with all bonuses) and base-only (allocated points before any IT / implants / traits / perks)">
+                        BASE
+                    </button>
+                    <span class="pts-badge">PTS <span id="pts-left">0</span></span>
+                </div>
             </div>
             <div id="special-list" class="special-compact-grid"></div>
             <div class="commend-wrap">
@@ -515,6 +532,9 @@
                 </button>
                 <button class="feature-btn" onclick="openWishlist()" title="VIEW YOUR WISHLISTED PERKS">
                     ★ WISHLIST <span id="wishlist-count" class="wishlist-count-badge">0</span>
+                </button>
+                <button class="feature-btn" onclick="openBuildKeyModal()" title="GENERATE OR LOAD A COMPACT BUILD KEY" style="border-color:rgba(255,208,96,0.4);color:#ffd060;">
+                    🔑 BUILD KEY
                 </button>
             </div>
 
@@ -713,49 +733,41 @@
                     <span class="hud-theme-swatch" style="background:#28ff28;"></span>
                     <span class="hud-theme-name">NUCLEAR SUNSET</span>
                 </button>
-                <button class="hud-theme-tile" data-theme="bos" onclick="setCustomTheme('bos'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#60a8f0;"></span>
-                    <span class="hud-theme-name">BROTHERHOOD</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="enclave" onclick="setCustomTheme('enclave'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#c8d8ec;"></span>
-                    <span class="hud-theme-name">THE ENCLAVE</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="vault21" onclick="setCustomTheme('vault21'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#ff2880;"></span>
-                    <span class="hud-theme-name">VAULT 21</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="legion" onclick="setCustomTheme('legion'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#cc2800;"></span>
-                    <span class="hud-theme-name">THE LEGION</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="ncr" onclick="setCustomTheme('ncr'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#c8a840;"></span>
-                    <span class="hud-theme-name">N.C.R.</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="house" onclick="setCustomTheme('house'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#c060ff;"></span>
-                    <span class="hud-theme-name">MR. HOUSE</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="shi" onclick="setCustomTheme('shi'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#38c8a8;"></span>
-                    <span class="hud-theme-name">THE SHI</span>
-                </button>
                 <button class="hud-theme-tile" data-theme="vaulttec" onclick="setCustomTheme('vaulttec'); closeThemePanel();">
                     <span class="hud-theme-swatch" style="background:#ffd000;"></span>
                     <span class="hud-theme-name">VAULT-TEC</span>
                 </button>
-                <button class="hud-theme-tile" data-theme="dos" onclick="setCustomTheme('dos'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#ffffff;"></span>
-                    <span class="hud-theme-name">DOS TERMINAL</span>
+                <button class="hud-theme-tile" data-theme="bos" onclick="setCustomTheme('bos'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#4090e0;"></span>
+                    <span class="hud-theme-name">BROTHERHOOD</span>
                 </button>
-                <button class="hud-theme-tile" data-theme="nukacola" onclick="setCustomTheme('nukacola'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#ff3030;"></span>
-                    <span class="hud-theme-name">NUKA-COLA</span>
+                <button class="hud-theme-tile" data-theme="legion" onclick="setCustomTheme('legion'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#b02000;"></span>
+                    <span class="hud-theme-name">THE LEGION</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="ncr" onclick="setCustomTheme('ncr'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#c8a030;"></span>
+                    <span class="hud-theme-name">N.C.R.</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="house" onclick="setCustomTheme('house'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#a020f0;"></span>
+                    <span class="hud-theme-name">MR. HOUSE</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="zeta" onclick="setCustomTheme('zeta'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#c0e8f0;"></span>
+                    <span class="hud-theme-name">MOTHERSHIP ZETA</span>
                 </button>
                 <button class="hud-theme-tile" data-theme="sierramadre" onclick="setCustomTheme('sierramadre'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#ff6040;"></span>
+                    <span class="hud-theme-swatch" style="background:#c89040;"></span>
                     <span class="hud-theme-name">SIERRA MADRE</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="pitt" onclick="setCustomTheme('pitt'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#e05010;"></span>
+                    <span class="hud-theme-name">THE PITT</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="owb" onclick="setCustomTheme('owb'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#00d8b0;"></span>
+                    <span class="hud-theme-name">OLD WORLD BLUES</span>
                 </button>
             </div>
         </div>
@@ -787,6 +799,7 @@
     </section>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 <script src="data.js"></script>
 <script src="scripts.js"></script>
 
