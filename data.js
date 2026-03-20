@@ -71,6 +71,8 @@ const TRAIT_BONUSES = {
     "Shhh!":                     { skills:{"SPEECH":-7,"BARTER":-7,"SNEAK":+10} },
     "Silver Tongue, Lead Pocket":{ skills:{"BARTER":+20} },
     "Phillistine":               { skills:{"ENERGY WEAPONS":-10,"SCIENCE":-10,"MEDICINE":-10} },
+    "Typing Tutor":              { skills:{"SCIENCE":-10} },
+    "Child At Heart":            { skills:{"SPEECH":-5} },
 };
 
 /* --- TRAIT_CONDITIONAL_NAMES --- */
@@ -79,7 +81,8 @@ const TRAIT_CONDITIONAL_NAMES = new Set([
     "Four Eyes","Hoarder","Blind Luck","Impartial Mediation","Confirmed Bachelor",
     "Lady Killer","Graceful","Ideologue","Twisted","Assassin's Step",
     "Breakin' A Sweat","Masochist","Desert Rose","Polar Personality",
-    "Bankrupt","Magnate","Callous","Architect"
+    "Bankrupt","Magnate","Callous","Architect",
+    "Ascetic","Vain","Patriot"
 ]);
 
 /* --- SPECIAL_RANKS --- */
@@ -104,7 +107,358 @@ const PERK_SKILL_BONUSES = {
 };
 
 /* --- REWARD_PERKS_DATA --- */
-const REWARD_PERKS_DATA = [{"name": "(Autumn Leaves) Benevolent", "how": "", "desc": "Therapy Result! You seldomly cling to negative thoughts, these just hold you down. Somehow, your optimism made you more resistant to limb damage (-15%)."}, {"name": "(Autumn Leaves) Boiling Shot", "how": "", "desc": "You discovered a way to boil your enemies into their armor. You inflict 30 % more damage with energy weapons if your opponent's DT exceeds 10."}, {"name": "(Autumn Leaves) Bomb Jack", "how": "", "desc": "Every time you use an explosive weapon, it has 10% chance of knocking your opponent down."}, {"name": "(Autumn Leaves) Cats Paw", "how": "", "desc": "Cats Eyes were intended to be much deadlier. There's a trick when ingesting them that gives you better hand-eye coordination, as well as 4 % more critical chance."}, {"name": "(Autumn Leaves) Club Diplomacy", "how": "", "desc": "You got a way with silencing vocal people. You inflict 25% more damage with blunt weapon to people with 5 Intelligence or more."}, {"name": "(Autumn Leaves) Crusader", "how": "", "desc": "Therapy Result! You'll have none of that moral grey area B.S. You inflict 10 % more damage to evil people and creatures."}, {"name": "(Autumn Leaves) Every Little Counts", "how": "", "desc": "One Handed Guns now inflicts 2 more damage. Every little counts, right?"}, {"name": "(Autumn Leaves) Featherweight", "how": "", "desc": "You don't feel the need to gorge yourself with food anymore. You're faster (+10% Running Speed/ Attacks cost 15% less AP) when you're struck with minor starvation."}, {"name": "(Autumn Leaves) Focused", "how": "", "desc": "Even under duress, you don't let your fear take the best of you. Your concentration is faultless : you switch weapons 10 % faster, reload 10 % faster and have 10 % less weapon spread."}, {"name": "(Autumn Leaves) Integrity", "how": "", "desc": "Therapy Result! There is something as self-respect, and you know that pretty well. Your sense of self-preservation grants you a natural +3 DT."}, {"name": "(Autumn Leaves) Kinetic Shot", "how": "", "desc": "You've tinkered enough with Plasma Weapons to be able to make them explode on impact 5% of the time, sending your opponent prone in the process."}, {"name": "(Autumn Leaves) Medical History", "how": "", "desc": "Your expertly-trained eyes detect all of your victims medical history. Including those painful decades-old badly-healed fractures. (+10 % Damage to limbs while in Bullet Time)"}, {"name": "(Autumn Leaves) Mercy Killing", "how": "", "desc": "\"One handed-guns in Bullet Time only : by some kind of karmic backfire, you now inflict three times more damage to the head of badly wounded foes. (With less than 25% health left.)"}, {"name": "(Autumn Leaves) No Deserters", "how": "", "desc": "No one gets away! You inflict three times more damage with throwing weapons to fleeing enemies."}, {"name": "(Autumn Leaves) No Rhyme Or Reason", "how": "", "desc": "Therapy Result! You don't give much credit to that Causality B.S. : things happen or they don't. You mainly rely on Luck, and it shows. You gain 2% more chance to do critical hits."}, {"name": "(Autumn Leaves) Patient", "how": "", "desc": "You are capable of great patience and insight. You pick up details and life lessons that other normally would not, which translates into a gain of 3 % more experience points."}, {"name": "(Autumn Leaves) Pawn To Queen", "how": "", "desc": "Therapy Result! You value knowledge and you are always actively seeking new ways to improve yourself, you gain one additional skill point per level."}, {"name": "(Autumn Leaves) Pegleg Industry", "how": "", "desc": "You like to teach people not to run onto your lawn. You inflict 15 % more leg damage to your targets in Bullet Time."}, {"name": "(Autumn Leaves) Psycho Warfare", "how": "", "desc": "You get so creative with your battle cries, insults and imprecations that they deeply disturbs your opponents and impact their general fighting efficiency : they inflict 5 % less damage."}, {"name": "(Autumn Leaves) Resentful", "how": "", "desc": "Therapy Result! Blood loss makes you quite grumpy. When your health goes below 50% you inflict 10% more damage."}, {"name": "(Autumn Leaves) Second Skin", "how": "", "desc": "A little guilty pleasure of yours is collecting small armor pieces of your fallen enemies and patch it to yours. After a while, it amounts to + 5 DT if you're wearing medium or heavy armor."}, {"name": "(Autumn Leaves) Slaughter", "how": "", "desc": "When they're half-bled out, people tends to get sloppy with their defense. Your bladed weapons inflict lethal damage (+300%) when your opponent's health is below 15%."}, {"name": "(Autumn Leaves) They Shoot Horses", "how": "", "desc": "With rifles only : you inflict 15% more damage to your enemies for each crippled leg they're wobbling on."}, {"name": "(Autumn Leaves) Uncompromising", "how": "", "desc": "Therapy Result! You're impervious to other people's shenanigans, Ennemies have 50 % less chance at inflicting you critical hits."}, {"name": "(Autumn Leaves) Vicious Hunger", "how": "", "desc": "You learned to capitalize on your hunger, it now makes you vicious, ruthless and - let's admit it - rather cranky. You inflict 25% more damage when you're struck with Advanced Starvation."}, {"name": "(Autumn Leaves) Weak Spot", "how": "", "desc": "When armed with any kind of good old fashioned non-automatic bladed weapon, you know where to hack to ignore 25 % of your enemy's Damage Treshold."}, {"name": "(Autumn Leaves) Weaponlexia", "how": "", "desc": "You love your weapons and your weapons love you! With this perk, they decay 20 % slower."}, {"name": "(Autumn Leaves) Whack-A-Mole", "how": "", "desc": "There's something deeply irritating about those people hiding behind walls, popping their head to fire some bullets at you. When you strike people armed with ranged weapons, you get a 20 % damage bonus to your blunt weapon attacks."}, {"name": "(Autumn Leaves) Wide Open", "how": "", "desc": "Their jaw is exposed! For each of your enemy's wounded arms, you inflict them 20% more damage with unarmed weapon."}, {"name": "Big Brained", "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. Afterward, if it was installed, the Sink Auto-Doc can optionally be used to restore the brain and swap out Brainless for the perk and vice versa.", "desc": "Your brain is back in your body, but some of the advanced technologies remain: Your head can be crippled again, but you are still 35% more resistant to addiction, and you gain +1 Intelligence and +10% XP."}, {"name": "Brainless", "how": "This perk is rewarded automatically along with Heartless and Spineless while talking to Klein and the Think Tank during Welcome to the Big Empty, when the conversation comes to the topic of the Courier's brain, heart, and spine being removed and replaced with Big MT technology.", "desc": "Your brain has been replaced with advanced technologies: Your head can no longer be crippled, and your addiction chance is removed, but your radiation intake while drinking is doubled, and you have -1 Perception."}, {"name": "Cardiac Arrest", "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. The Sink Auto-Doc can optionally be used to restore the heart and swap out Heartless for the perk, and vice versa.", "desc": "Your heart is back in your body, but some advanced technologies remain: You still suffer -15 radiation resistance, but your health and AP have increased by 25, and your damage resistance has increased by 5%."}, {"name": "Covert Ops", "how": "Collect the 10 intel suitcases during the Anchorage Reclamation simulation. Once the simulation is complete, the perk will appear on the Pip-Boy. Also a message will appear on screen when Constantine Chase acknowledges you going above and beyond the line of duty.", "desc": "You've learned the art of espionage from recovered intel, your pickpocket chance is increased by 15%"}, {"name": "Cranial Contusion", "how": "Granted for siding with Calvert.", "desc": "You've cauterized crazy Calvert! Your critical chance is increased by 5% when targeting the head in Bullet Time."}, {"name": "Day Tripper", "how": "Obtain and use 25 addictive chems.", "desc": "You've done enough chems to know how to hang on to the effects just a while longer. Each point in Endurance grants you +3% chem duration."}, {"name": "Dine and Dash", "how": "Consume the corpses of 25 human and non-feral ghoul enemies using the Cannibal perk.", "desc": "With the Dine and Dash perk, when you're in Sneak mode, you gain the option to take corpse parts for eating at a later time."}, {"name": "DNAgent", "how": "This perk is rewarded by completing the Dog Run challenge (consisting of three sub-challenges: Dog Gone, Who let the..., and Snake Skins) which is concurrent to completing X-8 Data Retrieval Test in the X-8 research center. The Snake Skins challenge will require a visit to the X-13 research facility to acquire the key to the X-8 kennels in order to unlock the option to release night stalkers into the X-8 testing area.", "desc": "Studying schematics on the abominations created at the Big MT has granted you a damage bonus (+10%) against Abominations."}, {"name": "DNAvenger", "how": "This perk is rewarded by completing ranks of the Caza-Death Dealer kill challenge. No xEdit changes made to this perk.", "desc": "Studying the abominations created at the Big MT has granted you a damage bonus (+10% per rank up to three ranks) against Cazadores."}, {"name": "Dream Crusher", "how": "Ruin Moira's dream of a Survival Guide.", "desc": "Something about your presence dampens others' desires to exceed. Your enemy's chance of getting critical hits on you is multiplied by x0.9 for each point your Charisma is below 10."}, {"name": "Fast Times", "how": "Obtain and use 20 instances of the chem Turbo.", "desc": "You've slowed things down enough to gain additional time when using Turbo."}, {"name": "Free Radical", "how": "Use RadAway to remove inflicted rads 20 times.", "desc": "You gain enhanced effects from RadAway."}, {"name": "Friendly Help", "how": "This perk is rewarded upon completing either the Miss Fortunate Son (or Daughter) challenge or the He Moves in Mysterious Ways challenge (receive 15 appearances when using Bullet Time from either Miss Fortune or the Mysterious Stranger via their respective perks).", "desc": "Your V.A.T.S. protectors will help you more often as your Luck increases."}, {"name": "Full Frontal", "how": "Per Low Level Point Lookout: \"A new autopsy opportunity has been provided, which allows Medicine 30 players to use a set of most of the surgical supplies to gain a perk granting bonus damage dealt to the head of swampfolk, and reduced limb damage when fighting them, along with some XP.\"", "desc": "You've gained +5% damage when targeting swampfolk heads in Bullet Time, and recieve -10% limb damage in combat with them!"}, {"name": "Ghoul Ecology", "how": "Gained by reading Plik's journal inside the Coastal Grotto.", "desc": "You have learned to exploit the specific weaknesses of Ghouls, and gain a +5 damage bonus when attacking one."}, {"name": "Gray Matters", "how": "Obtained by picking your brain back up after confronting Tobar.", "desc": "Protect what's important.  With the Gray Matters perk you'll receive 25% less damage when hit in the head."}, {"name": "Hack N' Slash", "how": "Obtained by completing these challenges: Up Close, Up Closer, I Can Do It One Handed, and Two Hands are Better than One", "desc": "You hack just a little faster."}, {"name": "Hematophage", "how": "Perk obtained from Vance during the Blood Ties quest.", "desc": "You've gained a taste... for human blood! When you're in Sneak mode, you gain the option to drink blood from a corpse to regain Health and restore dehydration and sleep deprivation equal to the sum of your Endurance and Agility. But every time you drink blood, you will you lose a small amount of Karma and suffer radiation damage. (Also significantly buffs the amount of HP that a blood pack heals.)"}, {"name": "Hunter's Toughness", "how": "New Vegas Bounties", "desc": "You've distinguished yourself as the premiere bounty hunter in the region, and as a result you've acquired a boost to your damage threshold."}, {"name": "Igne Natura Renovatur Integra", "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target both NCR and Legion territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosions.", "desc": "200 years after the Great War, two lone nuclear missiles were launched. Not aimed at another country, but at their own land, targeting the last vestiges of civilization, a wicked punishment for their audacity to grow and thrive in this desolate wasteland. You deal +20% damage and +10% critical damage when attacking any members of the NCR or Legion while your karma is Evil or Very Evil."}, {"name": "Khan Trick", "how": "This perk is rewarded by rescuing Anders, completing Diane's drug runs to Don Hostetler and Motor-Runner, and teaching Jack at least three new drug recipes during Aba Daba Honeymoon in Red Rock Canyon.", "desc": "By relying on the dirty unarmed fighting tricks of the Great Khans, you can throw dust into the eyes of your enemies, temporarily stunning them. Perform a Power Attack while moving left or right to execute the Khan Trick."}, {"name": "Legion Assault", "how": "This perk is rewarded by talking to Lucius in Caesar's tent at The Fort with an Unarmed skill of 50, though the option for him to train the player character and obtain the perk is only available with an Accepted or higher reputation with Caesar's Legion.", "desc": "Caesar's elite cadre of bodyguards, the legendary praetorians, use an aggressive Legion Assault to brutalize enemies. Perform a Power Attack while running forward to execute the Legion Assault."}, {"name": "Meat of Champions", "how": "This perk is rewarded by taking the Cannibal perk and using it to consume the corpses of Caesar, Mr. House, The King, and President Kimball.", "desc": "The essence of champions flows through your veins. When you cannibalize corpses, you temporarily gain Caesar's intelligence, Mr. House's luck, The King's charisma, and President Kimball's strength."}, {"name": "Mile in Their Shoes", "how": "Marked as unplayable and Hidden in xEdit by S6S Base Game Perks Redux. Unsure if obtainable?", "desc": "You have come to understand Nightstalkers. Consuming Nightstalker Squeezin's will now grant +1 Agiity, +25 Poison Resistance, +5 Sneak in addition to the normal benefits."}, {"name": "Mirelurk Ecology", "how": "Interact with a book in a basement in Point Lookout with Ghouls in a cell with a Mirelurk King", "desc": "After hours of studying, you've finally learned to exploit a Mirelurk's weaknesses and gain a +5 damage bonus while attacking one."}, {"name": "Mutant Massacrer", "how": "Challenge perk obtained by killing Super Mutants.", "desc": "You've gained a damage bonus against Super Mutants."}, {"name": "Non Ducor, Duco", "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to abort the launch of the Divide nuclear missiles, failing that quest and starting The End. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.", "desc": "Though neither the NCR or the Legion is a perfect solution for the Mojave, neither is worth damaging at the cost of repeating humanity's greatest sin. You've gain +1 Intelligence, Charisma, and Luck while your karma is Good or Very Good."}, {"name": "Oderint Dum Metuant", "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target NCR territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.", "desc": "You've set the toothless NCR ablaze with that most unholy of powers, nuclear fusion. While facing members of the NCR, you penetrate 8 DT, and deal 15% more damage with guns and flame-based weapons while your karma is Evil or Very Evil."}, {"name": "Pepsinae Purge", "how": "", "desc": "Thanks to the research compiled in the Greenblood Cave, you've gained +25% crit. damage and crit. chance against cazadores!"}, {"name": "Pitt Fighter", "how": "Win all of the fights in The Hole, which is part of the quest Unsafe Working Conditions.", "desc": "The vicious fights in the Hole have left you stronger. Both your damage and radiation resistance have been increased by +3%."}, {"name": "Power Armor Training", "how": "Acquired from either Paladin Gunny after completing The Waters of LIfe in Fallout 3, or by progressing the Mojave Brotherhood's quest line.", "desc": "You have received the specialized training needed to move in any form of Power Armor."}, {"name": "Punga Power!", "how": "Obtained after finishing Walking with Spirits.", "desc": "Behold the power of the Punga! The restorative effects of Punga fruit now have a greater effect on you."}, {"name": "Ranger Takedown", "how": "This perk is rewarded when talking to Ranger Andy in Novac and inquiring about his leg injuries, requiring either passing a Speech skill check or completing his unmarked quest by visiting Ranger Station Charlie and discovering what happened to its residents.", "desc": "When caught without their weapons, NCR's rangers rely on the Ranger Takedown to quickly incapacitate opponents. Perform a Power Attack while moving backwards to execute a Ranger Takedown."}, {"name": "Reinforced Spine", "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. If one enters the Sink from the balcony instead and if it was installed, the Sink Auto-Doc can optionally be used to restore the spine and swap out Spineless for the perk and vice versa.", "desc": "Your spine is back in your body, but some advanced technologies remain: Your torso can be crippled again, but you've gained +1 Endurance and +2 DT."}, {"name": "Scribe Counter", "how": "This perk is gained by recruiting Veronica as a companion and then completing her unmarked quest by placing either White Glove Society attire or formal wear into her inventory. She will then offer to teach the player the technique.", "desc": "Scribes in the Brotherhood of Steel are often not well-trained in the combat use of the high-tech gear employed by Paladins. They rely on unarmed defensive moves like the Scribe Counter to keep enemies at bay. Perform a standard attack out of a block hit reaction to execute a Scribe Counter."}, {"name": "Sic Semper Tyrannis", "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target Legion territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.", "desc": "You've set the tyrannical Legion ablaze with that most unholy of powers, nuclear fusion. While facing members of the Legion, you penetrate 8 DT, and deal 15% more damage with melee and flame-based weapons while your karma is Evil or Very Evil."}, {"name": "Sierra Madre Martini", "how": "This perk is rewarded by talking to Dean Domino after recruiting him during Find Collar 14: Dean Domino and choosing the dialogue option to discuss the topic of his secret stashes; at least one of them must have been found and opened already to unlock this option.", "desc": "You've learned to mix a viscous, foggy, red cocktail at any campfire, using Cloud Residue, Scotch, and an empty Whiskey, which reduces your max health and damages your chest, but grants cloud health and rad damage protection for 75 seconds."}, {"name": "Staunch Defender", "how": "Earned upon completion of The Local Flavor quest.", "desc": "With the Staunch Defender Perk, you gain +5 DT while standing still in combat."}, {"name": "Stoicism", "how": "Zion Trails Bad Company quest reward.", "desc": "The constant turmoil of the wasteland has taught you well. You've gained +3 to Survival."}, {"name": "Xenotech Expert", "how": "(Mothership Zeta) To get this perk, the player character must find a \"shooting range\" in the weapons lab (a room with an alien atomizer and an alien disintegrator next to a switch). The ranges are approximately in the center of the map north-to-south, and on the eastern side. Activating the switch closest to the door summons brahmin, while activating the far switch teleports enemies abducted by the aliens to a second range", "desc": "Your familiarity with alien technology gives you better control over their weapons, increasing their damage output by 10%."}];
+const REWARD_PERKS_DATA = [
+  {
+    "name": "Benevolent",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! You seldomly cling to negative thoughts, these just hold you down. Somehow, your optimism made you more resistant to limb damage (-15%)."
+  },
+  {
+    "name": "Boiling Shot",
+    "how": "AUTUMN LEAVES",
+    "desc": "You discovered a way to boil your enemies into their armor. You inflict 30 % more damage with energy weapons if your opponent's DT exceeds 10."
+  },
+  {
+    "name": "Bomb Jack",
+    "how": "AUTUMN LEAVES",
+    "desc": "Every time you use an explosive weapon, it has 10% chance of knocking your opponent down."
+  },
+  {
+    "name": "Cats Paw",
+    "how": "AUTUMN LEAVES",
+    "desc": "Cats Eyes were intended to be much deadlier. There's a trick when ingesting them that gives you better hand-eye coordination, as well as 4 % more critical chance."
+  },
+  {
+    "name": "Club Diplomacy",
+    "how": "AUTUMN LEAVES",
+    "desc": "You got a way with silencing vocal people. You inflict 25% more damage with blunt weapon to people with 5 Intelligence or more."
+  },
+  {
+    "name": "Crusader",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! You'll have none of that moral grey area B.S. You inflict 10 % more damage to evil people and creatures."
+  },
+  {
+    "name": "Every Little Counts",
+    "how": "AUTUMN LEAVES",
+    "desc": "One Handed Guns now inflicts 2 more damage. Every little counts, right?"
+  },
+  {
+    "name": "Featherweight",
+    "how": "AUTUMN LEAVES",
+    "desc": "You don't feel the need to gorge yourself with food anymore. You're faster (+10% Running Speed/ Attacks cost 15% less AP) when you're struck with minor starvation."
+  },
+  {
+    "name": "Focused",
+    "how": "AUTUMN LEAVES",
+    "desc": "Even under duress, you don't let your fear take the best of you. Your concentration is faultless : you switch weapons 10 % faster, reload 10 % faster and have 10 % less weapon spread."
+  },
+  {
+    "name": "Integrity",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! There is something as self-respect, and you know that pretty well. Your sense of self-preservation grants you a natural +3 DT."
+  },
+  {
+    "name": "Kinetic Shot",
+    "how": "AUTUMN LEAVES",
+    "desc": "You've tinkered enough with Plasma Weapons to be able to make them explode on impact 5% of the time, sending your opponent prone in the process."
+  },
+  {
+    "name": "Medical History",
+    "how": "AUTUMN LEAVES",
+    "desc": "Your expertly-trained eyes detect all of your victims medical history. Including those painful decades-old badly-healed fractures. (+10 % Damage to limbs while in Bullet Time)"
+  },
+  {
+    "name": "Mercy Killing",
+    "how": "AUTUMN LEAVES",
+    "desc": "\"One handed-guns in Bullet Time only : by some kind of karmic backfire, you now inflict three times more damage to the head of badly wounded foes. (With less than 25% health left.)"
+  },
+  {
+    "name": "No Deserters",
+    "how": "AUTUMN LEAVES",
+    "desc": "No one gets away! You inflict three times more damage with throwing weapons to fleeing enemies."
+  },
+  {
+    "name": "No Rhyme Or Reason",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! You don't give much credit to that Causality B.S. : things happen or they don't. You mainly rely on Luck, and it shows. You gain 2% more chance to do critical hits."
+  },
+  {
+    "name": "Patient",
+    "how": "AUTUMN LEAVES",
+    "desc": "You are capable of great patience and insight. You pick up details and life lessons that other normally would not, which translates into a gain of 3 % more experience points."
+  },
+  {
+    "name": "Pawn To Queen",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! You value knowledge and you are always actively seeking new ways to improve yourself, you gain one additional skill point per level."
+  },
+  {
+    "name": "Pegleg Industry",
+    "how": "AUTUMN LEAVES",
+    "desc": "You like to teach people not to run onto your lawn. You inflict 15 % more leg damage to your targets in Bullet Time."
+  },
+  {
+    "name": "Psycho Warfare",
+    "how": "AUTUMN LEAVES",
+    "desc": "You get so creative with your battle cries, insults and imprecations that they deeply disturbs your opponents and impact their general fighting efficiency : they inflict 5 % less damage."
+  },
+  {
+    "name": "Resentful",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! Blood loss makes you quite grumpy. When your health goes below 50% you inflict 10% more damage."
+  },
+  {
+    "name": "Second Skin",
+    "how": "AUTUMN LEAVES",
+    "desc": "A little guilty pleasure of yours is collecting small armor pieces of your fallen enemies and patch it to yours. After a while, it amounts to + 5 DT if you're wearing medium or heavy armor."
+  },
+  {
+    "name": "Slaughter",
+    "how": "AUTUMN LEAVES",
+    "desc": "When they're half-bled out, people tends to get sloppy with their defense. Your bladed weapons inflict lethal damage (+300%) when your opponent's health is below 15%."
+  },
+  {
+    "name": "They Shoot Horses",
+    "how": "AUTUMN LEAVES",
+    "desc": "With rifles only : you inflict 15% more damage to your enemies for each crippled leg they're wobbling on."
+  },
+  {
+    "name": "Uncompromising",
+    "how": "AUTUMN LEAVES",
+    "desc": "Therapy Result! You're impervious to other people's shenanigans, Ennemies have 50 % less chance at inflicting you critical hits."
+  },
+  {
+    "name": "Vicious Hunger",
+    "how": "AUTUMN LEAVES",
+    "desc": "You learned to capitalize on your hunger, it now makes you vicious, ruthless and - let's admit it - rather cranky. You inflict 25% more damage when you're struck with Advanced Starvation."
+  },
+  {
+    "name": "Weak Spot",
+    "how": "AUTUMN LEAVES",
+    "desc": "When armed with any kind of good old fashioned non-automatic bladed weapon, you know where to hack to ignore 25 % of your enemy's Damage Treshold."
+  },
+  {
+    "name": "Weaponlexia",
+    "how": "AUTUMN LEAVES",
+    "desc": "You love your weapons and your weapons love you! With this perk, they decay 20 % slower."
+  },
+  {
+    "name": "Whack-A-Mole",
+    "how": "AUTUMN LEAVES",
+    "desc": "There's something deeply irritating about those people hiding behind walls, popping their head to fire some bullets at you. When you strike people armed with ranged weapons, you get a 20 % damage bonus to your blunt weapon attacks."
+  },
+  {
+    "name": "Wide Open",
+    "how": "AUTUMN LEAVES",
+    "desc": "Their jaw is exposed! For each of your enemy's wounded arms, you inflict them 20% more damage with unarmed weapon."
+  },
+  {
+    "name": "Big Brained",
+    "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. Afterward, if it was installed, the Sink Auto-Doc can optionally be used to restore the brain and swap out Brainless for the perk and vice versa.",
+    "desc": "Your brain is back in your body, but some of the advanced technologies remain: Your head can be crippled again, but you are still 35% more resistant to addiction, and you gain +1 Intelligence and +10% XP."
+  },
+  {
+    "name": "Brainless",
+    "how": "This perk is rewarded automatically along with Heartless and Spineless while talking to Klein and the Think Tank during Welcome to the Big Empty, when the conversation comes to the topic of the Courier's brain, heart, and spine being removed and replaced with Big MT technology.",
+    "desc": "Your brain has been replaced with advanced technologies: Your head can no longer be crippled, and your addiction chance is removed, but your radiation intake while drinking is doubled, and you have -1 Perception."
+  },
+  {
+    "name": "Cardiac Arrest",
+    "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. The Sink Auto-Doc can optionally be used to restore the heart and swap out Heartless for the perk, and vice versa.",
+    "desc": "Your heart is back in your body, but some advanced technologies remain: You still suffer -15 radiation resistance, but your health and AP have increased by 25, and your damage resistance has increased by 5%."
+  },
+  {
+    "name": "Covert Ops",
+    "how": "Collect the 10 intel suitcases during the Anchorage Reclamation simulation. Once the simulation is complete, the perk will appear on the Pip-Boy. Also a message will appear on screen when Constantine Chase acknowledges you going above and beyond the line of duty.",
+    "desc": "You've learned the art of espionage from recovered intel, your pickpocket chance is increased by 15%"
+  },
+  {
+    "name": "Cranial Contusion",
+    "how": "Granted for siding with Calvert.",
+    "desc": "You've cauterized crazy Calvert! Your critical chance is increased by 5% when targeting the head in Bullet Time."
+  },
+  {
+    "name": "Day Tripper",
+    "how": "Obtain and use 25 addictive chems.",
+    "desc": "You've done enough chems to know how to hang on to the effects just a while longer. Each point in Endurance grants you +3% chem duration."
+  },
+  {
+    "name": "Dine and Dash",
+    "how": "Consume the corpses of 25 human and non-feral ghoul enemies using the Cannibal perk.",
+    "desc": "With the Dine and Dash perk, when you're in Sneak mode, you gain the option to take corpse parts for eating at a later time."
+  },
+  {
+    "name": "DNAgent",
+    "how": "This perk is rewarded by completing the Dog Run challenge (consisting of three sub-challenges: Dog Gone, Who let the..., and Snake Skins) which is concurrent to completing X-8 Data Retrieval Test in the X-8 research center. The Snake Skins challenge will require a visit to the X-13 research facility to acquire the key to the X-8 kennels in order to unlock the option to release night stalkers into the X-8 testing area.",
+    "desc": "Studying schematics on the abominations created at the Big MT has granted you a damage bonus (+10%) against Abominations."
+  },
+  {
+    "name": "DNAvenger",
+    "how": "This perk is rewarded by completing ranks of the Caza-Death Dealer kill challenge. No xEdit changes made to this perk.",
+    "desc": "Studying the abominations created at the Big MT has granted you a damage bonus (+10% per rank up to three ranks) against Cazadores."
+  },
+  {
+    "name": "Dream Crusher",
+    "how": "Ruin Moira's dream of a Survival Guide.",
+    "desc": "Something about your presence dampens others' desires to exceed. Your enemy's chance of getting critical hits on you is multiplied by x0.9 for each point your Charisma is below 10."
+  },
+  {
+    "name": "Fast Times",
+    "how": "Obtain and use 20 instances of the chem Turbo.",
+    "desc": "You've slowed things down enough to gain additional time when using Turbo."
+  },
+  {
+    "name": "Free Radical",
+    "how": "Use RadAway to remove inflicted rads 20 times.",
+    "desc": "You gain enhanced effects from RadAway."
+  },
+  {
+    "name": "Friendly Help",
+    "how": "This perk is rewarded upon completing either the Miss Fortunate Son (or Daughter) challenge or the He Moves in Mysterious Ways challenge (receive 15 appearances when using Bullet Time from either Miss Fortune or the Mysterious Stranger via their respective perks).",
+    "desc": "Your V.A.T.S. protectors will help you more often as your Luck increases."
+  },
+  {
+    "name": "Full Frontal",
+    "how": "Per Low Level Point Lookout: \"A new autopsy opportunity has been provided, which allows Medicine 30 players to use a set of most of the surgical supplies to gain a perk granting bonus damage dealt to the head of swampfolk, and reduced limb damage when fighting them, along with some XP.\"",
+    "desc": "You've gained +5% damage when targeting swampfolk heads in Bullet Time, and recieve -10% limb damage in combat with them!"
+  },
+  {
+    "name": "Ghoul Ecology",
+    "how": "Gained by reading Plik's journal inside the Coastal Grotto.",
+    "desc": "You have learned to exploit the specific weaknesses of Ghouls, and gain a +5 damage bonus when attacking one."
+  },
+  {
+    "name": "Gray Matters",
+    "how": "Obtained by picking your brain back up after confronting Tobar.",
+    "desc": "Protect what's important.  With the Gray Matters perk you'll receive 25% less damage when hit in the head."
+  },
+  {
+    "name": "Hack N' Slash",
+    "how": "Obtained by completing these challenges: Up Close, Up Closer, I Can Do It One Handed, and Two Hands are Better than One",
+    "desc": "You hack just a little faster."
+  },
+  {
+    "name": "Hematophage",
+    "how": "Perk obtained from Vance during the Blood Ties quest.",
+    "desc": "You've gained a taste... for human blood! When you're in Sneak mode, you gain the option to drink blood from a corpse to regain Health and restore dehydration and sleep deprivation equal to the sum of your Endurance and Agility. But every time you drink blood, you will you lose a small amount of Karma and suffer radiation damage. (Also significantly buffs the amount of HP that a blood pack heals.)"
+  },
+  {
+    "name": "Hunter's Toughness",
+    "how": "New Vegas Bounties",
+    "desc": "You've distinguished yourself as the premiere bounty hunter in the region, and as a result you've acquired a boost to your damage threshold."
+  },
+  {
+    "name": "Igne Natura Renovatur Integra",
+    "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target both NCR and Legion territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosions.",
+    "desc": "200 years after the Great War, two lone nuclear missiles were launched. Not aimed at another country, but at their own land, targeting the last vestiges of civilization, a wicked punishment for their audacity to grow and thrive in this desolate wasteland. You deal +20% damage and +10% critical damage when attacking any members of the NCR or Legion while your karma is Evil or Very Evil."
+  },
+  {
+    "name": "Khan Trick",
+    "how": "This perk is rewarded by rescuing Anders, completing Diane's drug runs to Don Hostetler and Motor-Runner, and teaching Jack at least three new drug recipes during Aba Daba Honeymoon in Red Rock Canyon.",
+    "desc": "By relying on the dirty unarmed fighting tricks of the Great Khans, you can throw dust into the eyes of your enemies, temporarily stunning them. Perform a Power Attack while moving left or right to execute the Khan Trick."
+  },
+  {
+    "name": "Legion Assault",
+    "how": "This perk is rewarded by talking to Lucius in Caesar's tent at The Fort with an Unarmed skill of 50, though the option for him to train the player character and obtain the perk is only available with an Accepted or higher reputation with Caesar's Legion.",
+    "desc": "Caesar's elite cadre of bodyguards, the legendary praetorians, use an aggressive Legion Assault to brutalize enemies. Perform a Power Attack while running forward to execute the Legion Assault."
+  },
+  {
+    "name": "Meat of Champions",
+    "how": "This perk is rewarded by taking the Cannibal perk and using it to consume the corpses of Caesar, Mr. House, The King, and President Kimball.",
+    "desc": "The essence of champions flows through your veins. When you cannibalize corpses, you temporarily gain Caesar's intelligence, Mr. House's luck, The King's charisma, and President Kimball's strength."
+  },
+  {
+    "name": "Mile in Their Shoes",
+    "how": "Marked as unplayable and Hidden in xEdit by S6S Base Game Perks Redux. Unsure if obtainable?",
+    "desc": "You have come to understand Nightstalkers. Consuming Nightstalker Squeezin's will now grant +1 Agiity, +25 Poison Resistance, +5 Sneak in addition to the normal benefits."
+  },
+  {
+    "name": "Mirelurk Ecology",
+    "how": "Interact with a book in a basement in Point Lookout with Ghouls in a cell with a Mirelurk King",
+    "desc": "After hours of studying, you've finally learned to exploit a Mirelurk's weaknesses and gain a +5 damage bonus while attacking one."
+  },
+  {
+    "name": "Mutant Massacrer",
+    "how": "Challenge perk obtained by killing Super Mutants.",
+    "desc": "You've gained a damage bonus against Super Mutants."
+  },
+  {
+    "name": "Non Ducor, Duco",
+    "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to abort the launch of the Divide nuclear missiles, failing that quest and starting The End. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.",
+    "desc": "Though neither the NCR or the Legion is a perfect solution for the Mojave, neither is worth damaging at the cost of repeating humanity's greatest sin. You've gain +1 Intelligence, Charisma, and Luck while your karma is Good or Very Good."
+  },
+  {
+    "name": "Oderint Dum Metuant",
+    "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target NCR territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.",
+    "desc": "You've set the toothless NCR ablaze with that most unholy of powers, nuclear fusion. While facing members of the NCR, you penetrate 8 DT, and deal 15% more damage with guns and flame-based weapons while your karma is Evil or Very Evil."
+  },
+  {
+    "name": "Pepsinae Purge",
+    "how": "",
+    "desc": "Thanks to the research compiled in the Greenblood Cave, you've gained +25% crit. damage and crit. chance against cazadores!"
+  },
+  {
+    "name": "Pitt Fighter",
+    "how": "Win all of the fights in The Hole, which is part of the quest Unsafe Working Conditions.",
+    "desc": "The vicious fights in the Hole have left you stronger. Both your damage and radiation resistance have been increased by +3%."
+  },
+  {
+    "name": "Power Armor Training",
+    "how": "Acquired from either Paladin Gunny after completing The Waters of LIfe in Fallout 3, or by progressing the Mojave Brotherhood's quest line.",
+    "desc": "You have received the specialized training needed to move in any form of Power Armor."
+  },
+  {
+    "name": "Punga Power!",
+    "how": "Obtained after finishing Walking with Spirits.",
+    "desc": "Behold the power of the Punga! The restorative effects of Punga fruit now have a greater effect on you."
+  },
+  {
+    "name": "Ranger Takedown",
+    "how": "This perk is rewarded when talking to Ranger Andy in Novac and inquiring about his leg injuries, requiring either passing a Speech skill check or completing his unmarked quest by visiting Ranger Station Charlie and discovering what happened to its residents.",
+    "desc": "When caught without their weapons, NCR's rangers rely on the Ranger Takedown to quickly incapacitate opponents. Perform a Power Attack while moving backwards to execute a Ranger Takedown."
+  },
+  {
+    "name": "Reinforced Spine",
+    "how": "This perk can be acquired by successfully convincing the Courier's brain to return to its body or return to the Sink and then going to the Think Tank to confront the Think Tank during Old World Blues. If one enters the Sink from the balcony instead and if it was installed, the Sink Auto-Doc can optionally be used to restore the spine and swap out Spineless for the perk and vice versa.",
+    "desc": "Your spine is back in your body, but some advanced technologies remain: Your torso can be crippled again, but you've gained +1 Endurance and +2 DT."
+  },
+  {
+    "name": "Scribe Counter",
+    "how": "This perk is gained by recruiting Veronica as a companion and then completing her unmarked quest by placing either White Glove Society attire or formal wear into her inventory. She will then offer to teach the player the technique.",
+    "desc": "Scribes in the Brotherhood of Steel are often not well-trained in the combat use of the high-tech gear employed by Paladins. They rely on unarmed defensive moves like the Scribe Counter to keep enemies at bay. Perform a standard attack out of a block hit reaction to execute a Scribe Counter."
+  },
+  {
+    "name": "Sic Semper Tyrannis",
+    "how": "During The Apocalypse, after defeating the swarm of marked men in Ulysses' Temple, one must use the launch control panel to set the Divide nuclear missiles to target Legion territory. The perk is not gained until after leaving the Temple, going through the ending, and then returning to the Mojave Wasteland near the canyon wreckage and witnessing the far-off explosion.",
+    "desc": "You've set the tyrannical Legion ablaze with that most unholy of powers, nuclear fusion. While facing members of the Legion, you penetrate 8 DT, and deal 15% more damage with melee and flame-based weapons while your karma is Evil or Very Evil."
+  },
+  {
+    "name": "Sierra Madre Martini",
+    "how": "This perk is rewarded by talking to Dean Domino after recruiting him during Find Collar 14: Dean Domino and choosing the dialogue option to discuss the topic of his secret stashes; at least one of them must have been found and opened already to unlock this option.",
+    "desc": "You've learned to mix a viscous, foggy, red cocktail at any campfire, using Cloud Residue, Scotch, and an empty Whiskey, which reduces your max health and damages your chest, but grants cloud health and rad damage protection for 75 seconds."
+  },
+  {
+    "name": "Staunch Defender",
+    "how": "Earned upon completion of The Local Flavor quest.",
+    "desc": "With the Staunch Defender Perk, you gain +5 DT while standing still in combat."
+  },
+  {
+    "name": "Stoicism",
+    "how": "Zion Trails Bad Company quest reward.",
+    "desc": "The constant turmoil of the wasteland has taught you well. You've gained +3 to Survival."
+  },
+  {
+    "name": "Xenotech Expert",
+    "how": "(Mothership Zeta) To get this perk, the player character must find a \"shooting range\" in the weapons lab (a room with an alien atomizer and an alien disintegrator next to a switch). The ranges are approximately in the center of the map north-to-south, and on the eastern side. Activating the switch closest to the door summons brahmin, while activating the far switch teleports enemies abducted by the aliens to a second range",
+    "desc": "Your familiarity with alien technology gives you better control over their weapons, increasing their damage output by 10%."
+  }
+];
+
+/* --- REWARD_PERK_CONDITIONAL_NAMES --- */
+const REWARD_PERK_CONDITIONAL_NAMES = new Set([
+    "Non Ducor, Duco"   /* +1 INT/CHA/LCK while Good or Very Good karma */
+]);
 
 /* --- INTERNALIZED_TRAITS_DATA --- */
 const INTERNALIZED_TRAITS_DATA = [{"name": "Addictive Personality", "req": "Complete the Day Tripper challenge.", "desc": "You just can't get enough of the hard stuff, that grimy stuff, that junk that hits your veins and makes your heart scream! You have 3x the normal addiction chance. However, living on the edge has taught you a thing or two. (Select a new Perk)"}, {"name": "Bottomless Stomach", "req": "Complete the Wasteland (Desert) Survivalist challenge.", "desc": "Where does the food go? Nobody knows, not even you! Your hunger rate is doubled, but your increased metabolism has allowed you to develop other strengths. (Select a new Perk)"}, {"name": "Congenital Heart Defect", "req": "Complete the Tough Guy challenge.", "desc": "You suffer from a heart condition that causes you to take constant health and chest damage during the entire duration of Buffout, Slasher, Psycho, Turbo, Rebound, Steady, Super Stimpaks, Hydra, or Party Time Mentats. However, suffering from this adversity has taught you a thing or two. (Select a new Perk)"}, {"name": "Danger Close", "req": "Hit yourself with an explosion more times than the sum of your Endurance and Luck stats. (Mines placed in the world also count towards this.)", "desc": "Quit hitting yourself! All those lesions and lacerations lacing your body leave you lamenting your lack of valetudinarianism. But surviving your own explosions has taught you something nobody else knows. (Select a new Perk)"}, {"name": "Homesick", "req": "Enter the Mojave from the Capital Wasteland. Upon returning to DC the first time, this flaw is removed and you will be able to select a new perk.", "desc": "You've come a long way, and experienced some serious head trauma. Your heart longs for the familiar comforts and dangers of the Capital Wasteland. Your addiction chance and limb damage are increased by 25% anytime you're not in the Capital Wasteland or its surrounding territories. (Select a new Perk)"}, {"name": "Human Sieve", "req": "Complete the ...And Not a Drop To Drink challenge.", "desc": "Water runs through you like a river into the sea. Your thirst rate has been doubled, but your thirst has led you to a new conclusion. (Select a new Perk)"}, {"name": "Nightkinship", "req": "Use 10 Stealth Boys to be prompted with this thought.", "desc": "\"As the stealth field runs along each nook and cranny of your body, a strange tumbling sensation starts in the back of your psyche. You're not going to lose your mind, but it feels as though something might be... different. Something may be in a place it doesn't belong."}, {"name": "Obstinate", "req": "Complete the Know When the Fold 'Em challenge.", "desc": "You're too stubborn to give any ground in a negotiation, or even try to see from the other person's perspective. Each time you fail a speech check for the first time, you lose XP equal to the sum of your permanent Barter and Speech stats, multiplied by your level, but your Barter and Speech will both be permanently increased by 1."}, {"name": "Paranoid", "req": "INT 3+, Complete the At A Loss For Words challenge.", "desc": "You're so obsessed with what's going on behind the scenes that it often hinders your critical thought about what's right in front of you. You've lost -2 Intelligence. Yet all that paranoia has sharpened your instincts in ways others can't see. (Select a new Perk)"}, {"name": "Sunglasses At Night", "req": "Spend 30 real-time minutes wearing sunglasses inside or at night.", "desc": "\"As you peer through the darkened lenses of your shades, you're beginning to see a reflection of the visions in your own eyes. While those squares might think your specs are bogus, you know your cheaters are choice. If you continue to wear your sunglasses in the dark, you'll be made in the shade. (-1 PER and INT while wearing sunglasses indoors or at night until developed).                                                                                                                                     After you've worn sunglasses inside or at night for a real-time hour:"}, {"name": "Tragic Survivor", "req": "Have two companions die while in your service. Instances where companions turn on you and you must kill them don't count, this only increments if they're an active companion when they die.", "desc": "One by one, those that walk by your side seem to fall. Try as you might, you have failed to save two souls who shared your stride; if more are drawn to you and take up arms in your name, surely they shall fall as well. (-2 Luck and -1 Charisma while you have any companion.) However, their sacrifice has shown you a new truth of life in the wastes. (Select a new Perk)"}, {"name": "Why Do They Hunger?", "req": "Kill 35 Feral Ghouls.", "desc": "\"Ever since you've heard about ghouls, one question has been wracking your brain: Why do they hunger?"}];
@@ -517,6 +871,9 @@ const CONDITIONAL_TOGGLE_BONUSES = {
     "Assassin's Step":      { skills:  { SNEAK:+10 } },
     "Polar Personality":    { skills:  { SPEECH:+4, BARTER:+4, MEDICINE:+4 } },
     "Architect":            { skillPtsPerLevel: true },  /* +floor(INT/2) skill pts/level when indoors */
+    "Ascetic":              { special: { STR:+2, END:+2 } },          /* +2 STR/END while in combat */
+    "Vain":                 { special: { CHA:+1, LCK:+1 } },          /* +1 CHA/LCK above 90% HP */
+    "Patriot":              { special: { CHA:+1 } },                   /* +1 CHA while INT < 5 */
     /* === PERKS === */
     "Alertness":            { special: { PER:+2 } },
     "Headless Courier":     { special: { PER:+2 } },
@@ -527,6 +884,7 @@ const CONDITIONAL_TOGGLE_BONUSES = {
     "Boiadero":             { special: { CHA:+1 } },
     "Wasteland Masquerade": { special: { CHA:+1, INT:+1 } },
     "My Own Master Now":    { special: { END:+1 } },
+    "Non Ducor, Duco":       { special: { INT:+1, CHA:+1, LCK:+1 } },   /* +1 INT/CHA/LCK while Good/Very Good karma */
     "Collective Consciousness": { skills: { SPEECH:+4 } },
 };
 

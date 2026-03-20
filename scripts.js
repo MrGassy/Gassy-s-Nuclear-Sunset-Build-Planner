@@ -153,17 +153,16 @@ function getSpecialRank(k) {
 /* [PERK_SKILL_BONUSES — moved to data.js] */
 
 function getActivePerkBonuses() {
-    // Collect all perk names currently in the build
+    // Collect all perk names currently in the build (prog-list, extra-perk-list, AND reward perks)
     const allPerkEls = document.querySelectorAll(
         '#prog-list .prog-name-input, #extra-perk-list .prog-name-input'
     );
     const perkSpecialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     const perkSkillDelta = {};
-    for (const el of allPerkEls) {
-        const name = (el.value || '').trim();
-        if (!name) continue;
+    const applyBonus = (name) => {
+        if (!name) return;
         const bonus = PERK_SKILL_BONUSES[name];
-        if (!bonus) continue;
+        if (!bonus) return;
         if (bonus.special) {
             for (const [k,v] of Object.entries(bonus.special)) {
                 if (perkSpecialDelta[k] !== undefined) perkSpecialDelta[k] += v;
@@ -174,6 +173,11 @@ function getActivePerkBonuses() {
                 perkSkillDelta[k] = (perkSkillDelta[k]||0) + v;
             }
         }
+    };
+    for (const el of allPerkEls) applyBonus((el.value || '').trim());
+    // Also apply unconditional bonuses from reward perks
+    if (typeof rewardPerksList !== 'undefined') {
+        for (const rp of rewardPerksList) applyBonus(rp.name);
     }
     return { perkSpecialDelta, perkSkillDelta };
 }
@@ -533,6 +537,10 @@ const COND_TOGGLE_LABELS = {
     "Polar Personality": "EVEN LEVEL",
     "Four Eyes":         "WEARING GLASSES",
     "Architect":         "INDOORS",
+    "Ascetic":           "IN COMBAT",
+    "Vain":              "> 90% HP",
+    "Patriot":           "INT ≤ 4",
+    "Non Ducor, Duco":   "GOOD KARMA",
 };
 
 /* ===== TRAIT ROW BUILDER ===== */
@@ -989,15 +997,34 @@ function openStartingTraitModal() {
 function renderRewardPerksList() {
     const container = document.getElementById('reward-perks-list');
     if (!container) return;
-    container.innerHTML = rewardPerksList.map((rp, idx) => `
-        <div class="prog-row">
+    container.innerHTML = rewardPerksList.map((rp, idx) => {
+        const isCond = typeof REWARD_PERK_CONDITIONAL_NAMES !== 'undefined' && REWARD_PERK_CONDITIONAL_NAMES.has(rp.name);
+        const isActive = isCond && isConditionalActive(rp.name);
+        const ctxLabel = isCond ? (COND_TOGGLE_LABELS[rp.name] || 'ACTIVE') : '';
+        const safeName = rp.name.replace(/'/g, "\\'");
+
+        const toggleHtml = isCond ? `
+            <span class="cond-toggle-wrap" title="Toggle: ${ctxLabel} (display only)">
+                <label class="cond-toggle-lbl">
+                    <input type="checkbox" class="cond-toggle-input" ${isActive ? 'checked' : ''}
+                        onchange="setConditionalToggle('${safeName}', this.checked)">
+                    <span class="cond-toggle-track"><span class="cond-toggle-thumb"></span></span>
+                </label>
+                <span class="cond-toggle-hint">⚡</span>
+                <span class="cond-toggle-ctx-label">${ctxLabel}</span>
+            </span>` : '';
+
+        return `
+        <div class="prog-row${isActive ? ' cond-active' : ''}">
             <div class="prog-card-header">
-                <span class="lvl-tag" style="background: rgba(255,180,50,0.15); color:#ffd080; border-color:rgba(255,180,50,0.3);">REWARD</span>
-                <span style="flex:1; padding: 0 8px; font-size:0.8rem; color:#ffd080;">${rp.name}</span>
-                <button onclick="removeRewardPerk(${idx})" style="color:rgba(255,80,80,0.8);background:none;border:1px solid rgba(255,0,0,0.3);font-size:0.6rem;padding:2px 7px;cursor:pointer;">✕</button>
+                <span class="lvl-tag" style="background:rgba(255,180,50,0.15);color:#ffd080;border-color:rgba(255,180,50,0.3);">REWARD</span>
+                <span style="flex:1;padding:0 8px;font-size:0.8rem;color:#ffd080;white-space:normal;word-break:break-word;">${rp.name}</span>
+                ${toggleHtml}
+                <button onclick="removeRewardPerk(${idx})" style="color:rgba(255,80,80,0.8);background:none;border:1px solid rgba(255,0,0,0.3);font-size:0.6rem;padding:2px 7px;cursor:pointer;flex-shrink:0;">✕</button>
             </div>
             <input type="text" class="prog-notes-input" placeholder="NOTES..." value="${rp.notes||''}" oninput="rewardPerksList[${idx}].notes=this.value; triggerAutosave();">
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
 function openRewardPerkSearch() {
@@ -1014,16 +1041,27 @@ function renderRewardPerkGrid(search) {
     const container = document.getElementById('reward-perk-modal-grid');
     const q = (search || '').toLowerCase();
     const filtered = REWARD_PERKS_DATA.filter(p =>
-        !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q)
+        !q || p.name.toLowerCase().includes(q) || p.desc.toLowerCase().includes(q) || (p.how||'').toLowerCase().includes(q)
     );
     container.innerHTML = filtered.map(p => {
-        const desc = p.desc.length > 200 ? p.desc.slice(0,200)+'...' : p.desc;
-        return `<div class="trait-card" onclick="addRewardPerk('${p.name.replace(/'/g,"\\'")}')">
-            <div class="trait-card-header"><span class="trait-card-name">${p.name}</span></div>
-            <div class="trait-req" style="color:#aaa;">${p.how.slice(0,100)}${p.how.length>100?'...':''}</div>
-            <div class="trait-card-desc">${desc}</div>
+        const isAutumn = p.how === 'AUTUMN LEAVES';
+        const sourceBadge = p.how
+            ? `<span class="reward-source-badge ${isAutumn ? 'reward-source-autumn' : 'reward-source-quest'}">${isAutumn ? '🍂 AUTUMN LEAVES' : p.how}</span>`
+            : '';
+        const isCond = typeof REWARD_PERK_CONDITIONAL_NAMES !== 'undefined' && REWARD_PERK_CONDITIONAL_NAMES.has(p.name);
+        const condBadge = isCond
+            ? `<span class="reward-cond-badge">⚡ CONDITIONAL</span>`
+            : '';
+        return `<div class="reward-perk-card" onclick="addRewardPerk('${p.name.replace(/'/g,"\\'")}')">
+            <div class="reward-perk-card-header">
+                <span class="reward-perk-name">${p.name}</span>
+                ${condBadge}
+            </div>
+            ${sourceBadge ? `<div style="margin-bottom:6px;">${sourceBadge}</div>` : ''}
+            <div class="reward-perk-desc">${p.desc}</div>
+            <button class="reward-perk-add-btn">+ ADD TO BUILD</button>
         </div>`;
-    }).join('');
+    }).join('') || '<div style="text-align:center;opacity:0.4;padding:24px;font-size:0.7rem;">NO REWARD PERKS FOUND</div>';
 }
 
 function addRewardPerk(name) {
@@ -2252,18 +2290,32 @@ function updateAll() {
             ? `BASE ${baseVal}: ` + tooltipParts.join(' / ') + ` = ${effectiveTotal}`
             : rank;
 
-        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}" data-key="${k}">
-            <span class="spec-abbr-lg spec-info-btn" title="Click for ${k} details — ${rank}" onclick="openSpecialInfoModal('${k}')">${k}</span>
-            <div class="spec-track-wide" onclick="openSpecialInfoModal('${k}')" style="cursor:pointer;" title="${rank}">
-                <div class="spec-fill-wide${_ds===10?' spec-fill-full':_ds>=7?' spec-fill-warm':_ds>=4?' spec-fill-mid':' spec-fill-dim'}" style="width:${_ds*10}%; opacity:${(0.3 + Math.max(0,_ds-1)/9*0.7).toFixed(2)};"></div>
+        // Compact single delta badge
+        const totalDelta = (it||0) + (imp||0) + (td||0) + (pd||0) + (cd||0);
+        let deltaBadge = '';
+        if (!_showBaseSpecial && totalDelta !== 0) {
+            const sign = totalDelta > 0 ? '+' : '';
+            const cls = totalDelta > 0 ? 'sdelta-pos' : 'sdelta-neg';
+            deltaBadge = `<span class="spec-delta-badge ${cls}" title="${bonusTooltip}">${sign}${totalDelta}</span>`;
+        }
+
+        // Glow tier based on effective display value (1–10)
+        const glowTier = _ds >= 10 ? 'spec-glow-max' : _ds >= 8 ? 'spec-glow-high' : _ds >= 6 ? 'spec-glow-mid' : _ds >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
+
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''} ${glowTier}" data-key="${k}">
+            <div class="spec-card-top">
+                <span class="spec-abbr-lg spec-info-btn" title="${bonusTooltip}" onclick="openSpecialInfoModal('${k}')">${k}</span>
+                ${deltaBadge}
             </div>
-            <div class="special-controls">
+            <div class="spec-card-mid">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
                 <span class="spec-val special-val">${dispVal}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
-                ${hasBonus ? `<span class="spec-total-badge spec-total-clean" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
+                ${hasBonus ? `<span class="spec-eq-badge" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
             </div>
-            <div class="spec-rank-title">${rank}</div>
+            <div class="spec-card-bot">
+                <span class="spec-rank-title">${rank}</span>
+            </div>
         </div>`;
     }).join('');
 
@@ -2412,7 +2464,7 @@ function updateAll() {
             const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
             return `<div class="skill-row${tagClass}" title="${breakdown}">
                 <span class="skill-row-name">${tagIcon}${s}</span>
-                <div class="skill-row-bar"><div class="skill-row-fill" style="width:${val}%"></div></div>
+                <div class="skill-row-bar ${isTagged || isFourthTag ? '' : val >= 100 ? 'bar-tier-max' : val >= 70 ? 'bar-tier-high' : val >= 50 ? 'bar-tier-mid' : val >= 30 ? 'bar-tier-low' : 'bar-tier-dim'}"><div class="skill-row-fill" style="width:${val}%"></div></div>
                 <span class="skill-row-val">${val}</span>${deltaBadges}
             </div>`;
         }).join('');
