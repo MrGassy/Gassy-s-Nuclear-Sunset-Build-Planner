@@ -8,6 +8,9 @@
 </head>
 <body class="theme-cw" oninput="triggerAutosave()">
 
+<!-- Skip to main content link for accessibility -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
 <!-- INTENSE TRAINING MODAL -->
 <div class="modal-overlay" id="it-modal">
     <div class="modal-box">
@@ -467,7 +470,7 @@
         <!-- Banners sit BELOW header bar, inside main-panel -->
     </header>
 
-    <section class="left-panel">
+    <section class="left-panel" id="main-content" role="main" aria-label="Character Build Panel">
         <div class="scroll-v">
             <div class="left-identity-block">
                 <div class="left-label">SUBJECT</div>
@@ -477,18 +480,28 @@
                 <div id="karma-face" class="karma-face"></div>
             </div>
             <div class="special-header-row">
-                <span class="section-label">S.P.E.C.I.A.L.</span>
-                <div style="display:flex;align-items:center;gap:6px;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <button class="section-collapse-btn" onclick="toggleSectionCollapse('special')" title="Collapse/Expand section">
+                        <span id="collapse-icon-special">▼</span>
+                    </button>
+                    <span class="section-label">S.P.E.C.I.A.L.</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <button id="spec-detail-toggle" class="spec-detail-toggle-btn" onclick="toggleDetailedSpecial()" title="Toggle between simplified view (total bonuses) and detailed view (breakdown by source)">
+                        DETAILED
+                    </button>
                     <button id="spec-base-toggle" class="spec-base-toggle-btn" onclick="toggleBaseSpecial()" title="Toggle between full SPECIAL (with all bonuses) and base-only (allocated points before any IT / implants / traits / perks)">
                         BASE
                     </button>
                     <span class="pts-badge">PTS <span id="pts-left">0</span></span>
                 </div>
             </div>
-            <div id="special-list" class="special-compact-grid"></div>
-            <div class="commend-wrap">
-                <div class="commend-header">COMMENDATIONS</div>
-                <div id="badge-panel"><div class="badge-empty">— NONE YET —</div></div>
+            <div id="collapsible-special" class="collapsible-content">
+                <div id="special-list" class="special-compact-grid"></div>
+                <div class="commend-wrap">
+                    <div class="commend-header">COMMENDATIONS</div>
+                    <div id="badge-panel"><div class="badge-empty">— NONE YET —</div></div>
+                </div>
             </div>
         </div>
     </section>
@@ -710,6 +723,7 @@
                 <div class="skilllog-title">📊 SKILL ALLOCATION LOG</div>
                 <div class="skilllog-sub">PER-LEVEL BREAKDOWN — HEAT BARS SHOW INVESTMENT EACH LEVEL-UP</div>
             </div>
+            
             <div id="skilllog-empty" class="skilllog-empty">NO LEVEL-UP DATA RECORDED YET — LEVEL UP TO BEGIN TRACKING</div>
             <div id="skilllog-table-wrap"></div>
         </div>
@@ -720,11 +734,9 @@
     <section class="right-panel">
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:0;">
-            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportJSON()">💾 SAVE_JSON</button>
-            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="document.getElementById('import-file').click()">📂 LOAD_JSON</button>
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="copyShareLink()">🔗 SHARE BUILD</button>
             <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
-            <button id="hud-theme-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="toggleThemePanel()">🎨 HUD THEME</button>
-            <input type="file" id="import-file" style="display:none" onchange="importJSON(event)">
+            <button id="hud-theme-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem; grid-column:1/-1;" onclick="toggleThemePanel()">🎨 HUD THEME</button>
         </div>
         <!-- HUD THEME PANEL -->
         <div id="hud-theme-panel" class="hud-theme-panel" style="display:none;">
@@ -802,6 +814,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
 <script src="data.js"></script>
 <script src="scripts.js"></script>
+
+<!-- Toast Notification Container -->
+<div id="toast-container" class="toast-container"></div>
 
 </body>
 </html>

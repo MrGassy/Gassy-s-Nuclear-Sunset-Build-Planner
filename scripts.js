@@ -11,7 +11,10 @@ let _lvlupAttributeChoice = null; // Tracks current level-up attribute choice: '
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
 let _itCancelled = false; // tracks if IT modal was cancelled
 let _showBaseSpecial = false; // toggle: show base-only SPECIAL (allocated points before IT/implants/traits/perks)
+let _showDetailedSpecial = false; // toggle: show detailed breakdown of SPECIAL bonuses by source
 let _hydrating = false; // true during hydrate() — suppresses choice modals (IT, Action Star, Tag!)
+let _specialModDebounce = null; // debounce timer for SPECIAL +/- button clicks
+let _toastQueue = []; // queue for managing multiple toasts
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
 const sKeys = ["STR", "PER", "END", "CHA", "INT", "AGI", "LCK"];
@@ -32,10 +35,11 @@ function bookBonus(s) {
 /* [SKILL_REQ_MAP — moved to data.js] */
 
 // GECK formula: Skill = 2 + (GoverningSpecial * 2) + Ceil(Luck * 0.5)
+// FIX: Use effectiveSpecial to include trait/perk SPECIAL bonuses
 function skillBase(s) {
     const stat = SKILL_GOVERNING[s];
-    const primary = special[stat] || 1;
-    const lck = special.LCK || 1;
+    const primary = effectiveSpecial(stat) || 1;
+    const lck = effectiveSpecial('LCK') || 1;
     return 2 + (primary * 2) + Math.ceil(lck * 0.5);
 }
 function getTaggedSkills() {
@@ -356,7 +360,11 @@ function openTraitModal(slotId) {
     }
     document.getElementById('trait-modal').style.display = 'flex';
     const srch = document.getElementById('trait-modal-search');
-    if (srch) srch.value = '';
+    if (srch) {
+        srch.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srch.focus(), 50);
+    }
     _traitPickerSort = 'az';
     const azBtn = document.getElementById('tpick-sort-az');
     const reqBtn = document.getElementById('tpick-sort-req');
@@ -416,7 +424,12 @@ function renderTraitGrid(search) {
     // Exclude traits that are already taken — they can't be taken again
     let filtered = TRAITS_DATA.filter(t => {
         if (chosenUp.includes(t.name.toUpperCase())) return false;
-        if (q && !t.name.toLowerCase().includes(q) && !t.desc.toLowerCase().includes(q)) return false;
+        if (q) {
+            // Use fuzzy search for better matching
+            const nameMatch = fuzzyMatch(t.name, q);
+            const descMatch = t.desc.toLowerCase().includes(q);
+            if (!nameMatch && !descMatch) return false;
+        }
         return true;
     });
 
@@ -772,7 +785,12 @@ function confirmActionStarChoice(choice) {
 /* ===== IMPLANT PICKER MODAL ===== */
 function openImplantModal() {
     document.getElementById('implant-modal').style.display = 'flex';
-    document.getElementById('implant-modal-search').value = '';
+    const srch = document.getElementById('implant-modal-search');
+    if (srch) {
+        srch.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srch.focus(), 50);
+    }
     renderImplantModalGrid('');
 }
 
@@ -989,7 +1007,12 @@ function openStartingTraitModal() {
     }
     _traitSlotId = '__starting__';
     document.getElementById('trait-modal').style.display = 'flex';
-    document.getElementById('trait-modal-search').value = '';
+    const srch = document.getElementById('trait-modal-search');
+    if (srch) {
+        srch.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srch.focus(), 50);
+    }
     renderTraitGrid('');
 }
 
@@ -1029,7 +1052,12 @@ function renderRewardPerksList() {
 
 function openRewardPerkSearch() {
     document.getElementById('reward-perk-modal').style.display = 'flex';
-    document.getElementById('reward-perk-search').value = '';
+    const srch = document.getElementById('reward-perk-search');
+    if (srch) {
+        srch.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srch.focus(), 50);
+    }
     renderRewardPerkGrid('');
 }
 
@@ -1094,7 +1122,12 @@ function renderInternalizedTraitsList() {
 
 function openInternalizedModal() {
     document.getElementById('internalized-modal').style.display = 'flex';
-    document.getElementById('internalized-search').value = '';
+    const srch = document.getElementById('internalized-search');
+    if (srch) {
+        srch.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srch.focus(), 50);
+    }
     renderInternalizedGrid('');
 }
 
@@ -2277,9 +2310,12 @@ function updateAll() {
         // bar fills against the full effective total
         const _ds = Math.max(1, Math.min(10, _showBaseSpecial ? baseVal : effectiveTotal));
 
-        // Show = badge only when external modifiers (trait / perk / conditional) are active.
-        // IT and implants are already baked into special[k] so they don't need a separate badge.
-        const hasBonus = !_showBaseSpecial && (td + pd + cd) !== 0;
+        // Show = badge when external modifiers (trait / perk / conditional) are active.
+        // In detailed mode, also show it if ANY modifier exists (including IT/implants) for full transparency
+        const hasExternalBonus = !_showBaseSpecial && (td + pd + cd) !== 0;
+        const hasAnyModifier = (it || imp || td || pd || cd) !== 0;
+        const hasBonus = !_showBaseSpecial && (_showDetailedSpecial ? hasAnyModifier : hasExternalBonus);
+        
         const tooltipParts = [];
         if (it  !== 0) tooltipParts.push(`+${it} IT`);
         if (imp !== 0) tooltipParts.push(`+${imp} Impl`);
@@ -2289,20 +2325,41 @@ function updateAll() {
         const bonusTooltip = tooltipParts.length
             ? `BASE ${baseVal}: ` + tooltipParts.join(' / ') + ` = ${effectiveTotal}`
             : rank;
-
-        // Compact single delta badge
+        
+        // Compact single delta badge (simplified mode)
         const totalDelta = (it||0) + (imp||0) + (td||0) + (pd||0) + (cd||0);
         let deltaBadge = '';
-        if (!_showBaseSpecial && totalDelta !== 0) {
+        if (!_showBaseSpecial && totalDelta !== 0 && !_showDetailedSpecial) {
             const sign = totalDelta > 0 ? '+' : '';
             const cls = totalDelta > 0 ? 'sdelta-pos' : 'sdelta-neg';
             deltaBadge = `<span class="spec-delta-badge ${cls}" title="${bonusTooltip}">${sign}${totalDelta}</span>`;
         }
+        
+        // Detailed breakdown badges (detailed mode)
+        // Shows ALL individual modifiers, even if they cancel out to zero
+        let detailedBadges = '';
+        if (!_showBaseSpecial && _showDetailedSpecial) {
+            const badges = [];
+            if (it !== 0) badges.push(`<span class="spec-source-badge spec-badge-it" title="Intense Training">IT ${it>0?'+':''}${it}</span>`);
+            if (imp !== 0) badges.push(`<span class="spec-source-badge spec-badge-impl" title="Implant">I ${imp>0?'+':''}${imp}</span>`);
+            if (td !== 0) badges.push(`<span class="spec-source-badge spec-badge-trait" title="Trait">T ${td>0?'+':''}${td}</span>`);
+            if (pd !== 0) badges.push(`<span class="spec-source-badge spec-badge-perk" title="Perk">P ${pd>0?'+':''}${pd}</span>`);
+            if (cd !== 0) badges.push(`<span class="spec-source-badge spec-badge-cond" title="Conditional">C ${cd>0?'+':''}${cd}</span>`);
+            // Always show the container in detailed mode for consistent layout
+            detailedBadges = `<div class="spec-detailed-sources">${badges.length > 0 ? badges.join('') : '<span class="spec-no-mods">NO MODIFIERS</span>'}</div>`;
+        }
+
 
         // Glow tier based on effective display value (1–10)
         const glowTier = _ds >= 10 ? 'spec-glow-max' : _ds >= 8 ? 'spec-glow-high' : _ds >= 6 ? 'spec-glow-mid' : _ds >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
+        
+        // Bar fill percentage (1-10 scale = 10% per point)
+        const barPercent = Math.max(0, Math.min(100, _ds * 10));
+        
+        // Bar tier classes similar to skill system
+        const barTier = _ds >= 10 ? 'spec-bar-max' : _ds >= 8 ? 'spec-bar-high' : _ds >= 6 ? 'spec-bar-mid' : _ds >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
 
-        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''} ${glowTier}" data-key="${k}">
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}${_showDetailedSpecial?' spec-detailed-mode':''} ${glowTier}" data-key="${k}">
             <div class="spec-card-top">
                 <span class="spec-abbr-lg spec-info-btn" title="${bonusTooltip}" onclick="openSpecialInfoModal('${k}')">${k}</span>
                 ${deltaBadge}
@@ -2312,6 +2369,12 @@ function updateAll() {
                 <span class="spec-val special-val">${dispVal}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
                 ${hasBonus ? `<span class="spec-eq-badge" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
+            </div>
+            ${detailedBadges}
+            <div class="spec-bar-container">
+                <div class="spec-bar-bg">
+                    <div class="spec-bar-fill ${barTier}" style="width: ${barPercent}%"></div>
+                </div>
             </div>
             <div class="spec-card-bot">
                 <span class="spec-rank-title">${rank}</span>
@@ -2495,7 +2558,34 @@ function updateAll() {
     renderLevelUpBonuses();
 }
 
-function mod(k, v) { special[k] += v; updateAll(); reCheckAllPerkRows(); triggerAutosave(); }
+function mod(k, v) { 
+    special[k] += v; 
+    
+    // Immediate visual feedback - just update SPECIAL display (lightweight, fast)
+    refreshSPECIALDisplay();
+    
+    // Debounce expensive operations (full UI re-render, perk checks, autosave)
+    clearTimeout(_specialModDebounce);
+    _specialModDebounce = setTimeout(() => {
+        updateAll(); 
+        reCheckAllPerkRows();
+        
+        // Autosave without duplicate updateAll call
+        pushUndoState();
+        clearTimeout(_autosaveDebounce);
+        _autosaveDebounce = setTimeout(() => {
+            try {
+                const data = collectData();
+                localStorage.setItem('Nuclear_Sunset_Permanent_Vault', JSON.stringify(data));
+                document.getElementById('sync-status').innerText = "V_MEMORY_SYNCED_" + new Date().toLocaleTimeString();
+            } catch(e) {
+                console.warn('Autosave failed (storage unavailable):', e);
+                const s = document.getElementById('sync-status');
+                if (s) s.innerText = 'V_MEMORY_SYNC_FAILED';
+            }
+        }, 100);
+    }, 50); // Small delay for responsiveness while batching rapid clicks
+}
 
 function toggleBaseSpecial() {
     _showBaseSpecial = !_showBaseSpecial;
@@ -2505,6 +2595,18 @@ function toggleBaseSpecial() {
         btn.title = _showBaseSpecial
             ? 'Showing BASE allocated only — click to show full with all bonuses'
             : 'Showing FULL SPECIAL with all bonuses — click to show base only';
+    }
+    updateAll();
+}
+
+function toggleDetailedSpecial() {
+    _showDetailedSpecial = !_showDetailedSpecial;
+    const btn = document.getElementById('spec-detail-toggle');
+    if (btn) {
+        btn.classList.toggle('spec-detail-toggle-active', _showDetailedSpecial);
+        btn.title = _showDetailedSpecial
+            ? 'Showing DETAILED breakdown — click for simplified view'
+            : 'Showing SIMPLIFIED view — click for detailed breakdown';
     }
     updateAll();
 }
@@ -2755,6 +2857,18 @@ function refreshSPECIALDisplay() {
         }
         const rankEl = row.querySelector('.spec-rank-title');
         if (rankEl) rankEl.textContent = getSpecialRank(key);
+        
+        // Update bar fill and tier class
+        const barFill = row.querySelector('.spec-bar-fill');
+        if (barFill) {
+            const displayValue = Math.max(1, Math.min(10, modVal));
+            const barPercent = Math.max(0, Math.min(100, displayValue * 10));
+            barFill.style.width = barPercent + '%';
+            
+            // Update bar tier class
+            const barTier = displayValue >= 10 ? 'spec-bar-max' : displayValue >= 8 ? 'spec-bar-high' : displayValue >= 6 ? 'spec-bar-mid' : displayValue >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
+            barFill.className = 'spec-bar-fill ' + barTier;
+        }
     });
 }
 
@@ -3119,10 +3233,14 @@ function importJSON(e) {
         try {
             const raw = JSON.parse(ev.target.result);
             const safe = sanitizeImport(raw);
-            if (!safe) { alert('IMPORT ERROR: INVALID FILE FORMAT'); return; }
+            if (!safe) { 
+                showToast('Import failed: Invalid file format', 'error');
+                return;
+            }
             hydrate(safe);
+            showToast('Build loaded successfully!', 'success');
         } catch(err) {
-            alert('IMPORT ERROR: COULD NOT PARSE JSON FILE');
+            showToast('Import failed: Could not parse JSON file', 'error');
         }
     };
     reader.readAsText(e.target.files[0]);
@@ -3244,7 +3362,11 @@ function openArchetypesModal() {
     // Reset filters on open
     Object.keys(_archFilters).forEach(k => _archFilters[k] = '');
     const search = document.getElementById('arch-search');
-    if (search) search.value = '';
+    if (search) {
+        search.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => search.focus(), 50);
+    }
     const perkSearch = document.getElementById('arch-perk-search');
     if (perkSearch) perkSearch.value = '';
     const perkResults = document.getElementById('arch-perk-results');
@@ -4165,7 +4287,11 @@ function openTraitPerkPickerModal(traitName) {
     const titleEl = document.getElementById('perk-picker-title');
     if (titleEl) titleEl.innerHTML = `◈ TRAIT BONUS &mdash; <span style="color:#c8ffd4;">${traitName}</span>: SELECT A FREE PERK`;
     const srchEl = document.getElementById('perk-picker-search');
-    if (srchEl) srchEl.value = '';
+    if (srchEl) {
+        srchEl.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srchEl.focus(), 50);
+    }
     // Reset sort
     _perkPickerSort = 'az';
     const azP = document.getElementById('ppick-sort-az');
@@ -4196,7 +4322,11 @@ function openPerkPickerModal(lvl) {
     const titleEl = document.getElementById('perk-picker-title');
     if (titleEl) titleEl.textContent = `LEVEL ${lvl} — SELECT YOUR PERK`;
     const srchEl = document.getElementById('perk-picker-search');
-    if (srchEl) srchEl.value = '';
+    if (srchEl) {
+        srchEl.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => srchEl.focus(), 50);
+    }
     // Reset sort to A-Z on each open
     _perkPickerSort = 'az';
     const azP = document.getElementById('ppick-sort-az');
@@ -4299,11 +4429,11 @@ function renderPerkPickerGrid() {
         const available = PERKS_DATA.filter(p => !isFullyTaken(p));
         const eligible = available
             .filter(p => meetsRequirements(p))
-            .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
+            .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
         const ineligible = available
             .filter(p => !meetsRequirements(p))
-            .filter(p => !search || p.name.toLowerCase().includes(search) || p.desc.toLowerCase().includes(search))
+            .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
 
         _perkPickerList = [...eligible, ...ineligible];
@@ -5263,26 +5393,480 @@ window.onload = () => {
     document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
     renderUniques();
     renderUniqueArmor();
-    const saved = localStorage.getItem('Nuclear_Sunset_Permanent_Vault');
-    if (saved) {
-        try {
-            const raw = JSON.parse(saved);
-            const safe = sanitizeImport(raw);
-            if (safe) hydrate(safe);
-            else { setMode('std', true); setOrigin('CW', true); renderImplants(); }
-        } catch(e) {
-            setMode('std', true); setOrigin('CW', true); renderImplants();
+    
+    // Check for shared build in URL first (takes priority over localStorage)
+    const loadedFromURL = loadBuildFromURL();
+    
+    if (!loadedFromURL) {
+        // No URL build, try localStorage
+        const saved = localStorage.getItem('Nuclear_Sunset_Permanent_Vault');
+        if (saved) {
+            try {
+                const raw = JSON.parse(saved);
+                const safe = sanitizeImport(raw);
+                if (safe) hydrate(safe);
+                else { setMode('std', true); setOrigin('CW', true); renderImplants(); }
+            } catch(e) {
+                setMode('std', true); setOrigin('CW', true); renderImplants();
+            }
+        } else {
+            setMode('std', true);
+            setOrigin('CW', true);
+            renderImplants();
         }
-    } else {
-        setMode('std', true);
-        setOrigin('CW', true);
-        renderImplants();
     }
+    
     applyStoredTheme();
     nsAudio.init();
     renderBooksTab();
     loadSavedBuildsList(); // Load saved builds list
+    loadCollapsedSections(); // Load collapsed section states
 };
+
+/* ═══════════════════════════════════════════════
+   TOAST NOTIFICATION SYSTEM
+═══════════════════════════════════════════════ */
+let _lastToastMessage = '';
+let _lastToastTime = 0;
+
+function showToast(message, type = 'info', duration = 3000) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    // Prevent duplicate toasts within 500ms
+    const now = Date.now();
+    if (message === _lastToastMessage && (now - _lastToastTime) < 500) {
+        return;
+    }
+    _lastToastMessage = message;
+    _lastToastTime = now;
+    
+    // Limit to max 5 toasts
+    const existingToasts = container.querySelectorAll('.toast:not(.toast-exit)');
+    if (existingToasts.length >= 5) {
+        // Remove oldest toast
+        const oldest = existingToasts[0];
+        if (oldest) {
+            dismissToast(oldest);
+        }
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    const icons = {
+        success: '✓',
+        error: '✕',
+        warning: '⚠',
+        info: 'ℹ'
+    };
+    
+    toast.innerHTML = `
+        <span class="toast-icon">${icons[type] || icons.info}</span>
+        <span class="toast-message">${message}</span>
+    `;
+    
+    // Click to dismiss
+    toast.style.cursor = 'pointer';
+    toast.addEventListener('click', () => {
+        dismissToast(toast);
+    });
+    
+    // Add close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'toast-close';
+    closeBtn.innerHTML = '×';
+    closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dismissToast(toast);
+    });
+    toast.appendChild(closeBtn);
+    
+    container.appendChild(toast);
+    
+    // Sound feedback only for success/error
+    if (type === 'success' || type === 'error') {
+        nsAudio.play('click');
+    }
+    
+    // Store timeout ID so we can clear it if manually dismissed
+    const timeoutId = setTimeout(() => {
+        dismissToast(toast);
+    }, duration);
+    
+    // Store timeout ID on the element
+    toast._timeoutId = timeoutId;
+}
+
+function dismissToast(toast) {
+    if (!toast || toast.classList.contains('toast-exit')) return;
+    
+    // Clear auto-dismiss timeout if it exists
+    if (toast._timeoutId) {
+        clearTimeout(toast._timeoutId);
+        delete toast._timeoutId;
+    }
+    
+    toast.classList.add('toast-exit');
+    
+    // Remove from DOM after animation
+    setTimeout(() => {
+        if (toast && toast.parentNode) {
+            toast.parentNode.removeChild(toast);
+        }
+    }, 300);
+}
+
+/* ═══════════════════════════════════════════════
+   COLLAPSIBLE SECTIONS
+═══════════════════════════════════════════════ */
+let _collapsedSections = new Set();
+
+function toggleSectionCollapse(sectionId) {
+    const content = document.getElementById(`collapsible-${sectionId}`);
+    const icon = document.getElementById(`collapse-icon-${sectionId}`);
+    const btn = icon?.closest('.section-collapse-btn');
+    
+    if (!content) return;
+    
+    const isCollapsed = _collapsedSections.has(sectionId);
+    
+    if (isCollapsed) {
+        // Expand
+        content.classList.remove('collapsed');
+        if (btn) btn.classList.remove('collapsed');
+        if (icon) icon.textContent = '▼';
+        _collapsedSections.delete(sectionId);
+    } else {
+        // Collapse
+        content.classList.add('collapsed');
+        if (btn) btn.classList.add('collapsed');
+        if (icon) icon.textContent = '▶';
+        _collapsedSections.add(sectionId);
+    }
+    
+    // Save state to localStorage
+    try {
+        localStorage.setItem('collapsed_sections', JSON.stringify(Array.from(_collapsedSections)));
+    } catch(e) {
+        console.warn('Failed to save collapsed state');
+    }
+}
+
+function loadCollapsedSections() {
+    try {
+        const saved = localStorage.getItem('collapsed_sections');
+        if (saved) {
+            _collapsedSections = new Set(JSON.parse(saved));
+            
+            // Apply collapsed state on load
+            _collapsedSections.forEach(sectionId => {
+                const content = document.getElementById(`collapsible-${sectionId}`);
+                const icon = document.getElementById(`collapse-icon-${sectionId}`);
+                const btn = icon?.closest('.section-collapse-btn');
+                
+                if (content) content.classList.add('collapsed');
+                if (btn) btn.classList.add('collapsed');
+                if (icon) icon.textContent = '▶';
+            });
+        }
+    } catch(e) {
+        console.warn('Failed to load collapsed state');
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   KEYBOARD SHORTCUTS SYSTEM
+═══════════════════════════════════════════════ */
+document.addEventListener('keydown', function(e) {
+    // Don't trigger shortcuts when typing in input fields
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+        // Allow ESC to blur/close even from inputs
+        if (e.key === 'Escape') {
+            e.target.blur();
+            closeAnyOpenModal();
+            return;
+        }
+        return;
+    }
+    
+    // ESC - Close any open modal
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        closeAnyOpenModal();
+        return;
+    }
+    
+    // Ctrl/Cmd + S - Quick save (copy share link)
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        copyShareLink();
+        return;
+    }
+    
+    // Ctrl/Cmd + Z - Undo
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
+        e.preventDefault();
+        if (_undoStack.length >= 2) {
+            undoLastAction();
+            showToast('Undid last action', 'info');
+        }
+        return;
+    }
+    
+    // ? - Show keyboard shortcuts help (future implementation)
+    if (e.key === '?' && !e.shiftKey) {
+        // Could show a help modal in the future
+        showToast('Shortcuts: ESC=Close, Ctrl+S=Save, Ctrl+Z=Undo', 'info', 5000);
+        return;
+    }
+});
+
+function closeAnyOpenModal() {
+    // Close all possible modals
+    const modals = [
+        'trait-modal',
+        'implant-modal',
+        'archetypes-modal',
+        'lvlup-modal',
+        'perk-picker-modal',
+        'reward-perk-modal',
+        'internalized-modal',
+        'it-modal',
+        'perk-zoom-modal',
+        'trait-detail-modal',
+        'special-info-modal',
+        'humbled-modal',
+        'builds-manager-modal',
+        'build-key-modal',
+        'tag-modal'
+    ];
+    
+    modals.forEach(id => {
+        const modal = document.getElementById(id);
+        if (modal && modal.style.display !== 'none') {
+            modal.style.display = 'none';
+            // Call specific close handlers if they exist
+            const closeFn = window[`close${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}`];
+            if (typeof closeFn === 'function') {
+                // Don't call directly, just hide - handlers may have side effects
+            }
+        }
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   BUILD SHARING VIA URL
+═══════════════════════════════════════════════ */
+function encodeBuildToURL() {
+    try {
+        const data = collectData();
+        const json = JSON.stringify(data);
+        const compressed = LZString.compressToEncodedURIComponent(json);
+        const url = `${window.location.origin}${window.location.pathname}?build=${compressed}`;
+        return url;
+    } catch(e) {
+        console.error('Failed to encode build:', e);
+        return null;
+    }
+}
+
+function copyShareLink() {
+    const url = encodeBuildToURL();
+    if (!url) {
+        showToast('Failed to generate share link', 'error');
+        return;
+    }
+    
+    // Try modern clipboard API first
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url)
+            .then(() => {
+                showToast('Share link copied to clipboard!', 'success');
+            })
+            .catch((err) => {
+                // Modern API failed, try fallback
+                console.log('Clipboard API failed, using fallback:', err);
+                fallbackCopyToClipboard(url);
+            });
+    } else {
+        // No modern API available, use fallback
+        fallbackCopyToClipboard(url);
+    }
+}
+
+function fallbackCopyToClipboard(text) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.left = '-9999px';
+    document.body.appendChild(textarea);
+    
+    try {
+        textarea.select();
+        textarea.setSelectionRange(0, textarea.value.length); // For mobile
+        const successful = document.execCommand('copy');
+        
+        if (successful) {
+            showToast('Share link copied to clipboard!', 'success');
+        } else {
+            showToast('Failed to copy link - please copy manually', 'error');
+            console.error('execCommand copy returned false');
+        }
+    } catch(e) {
+        showToast('Failed to copy link - please copy manually', 'error');
+        console.error('Copy failed:', e);
+    } finally {
+        document.body.removeChild(textarea);
+    }
+}
+
+function loadBuildFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const buildParam = params.get('build');
+    
+    if (!buildParam) return false;
+    
+    try {
+        const json = LZString.decompressFromEncodedURIComponent(buildParam);
+        if (!json) {
+            showToast('Invalid share link', 'error');
+            return false;
+        }
+        
+        const data = JSON.parse(json);
+        const safe = sanitizeImport(data);
+        
+        if (!safe) {
+            showToast('Invalid build data in link', 'error');
+            return false;
+        }
+        
+        hydrate(safe);
+        showToast('Build loaded from share link!', 'success');
+        
+        // Clean URL without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        return true;
+    } catch(e) {
+        console.error('Failed to load build from URL:', e);
+        showToast('Failed to load build from link', 'error');
+        return false;
+    }
+}
+
+/* ═══════════════════════════════════════════════
+   CONFIRMATION DIALOG SYSTEM
+═══════════════════════════════════════════════ */
+function showConfirmDialog(options) {
+    return new Promise((resolve) => {
+        const {
+            title = 'Confirm Action',
+            message = 'Are you sure?',
+            confirmText = 'Confirm',
+            cancelText = 'Cancel',
+            isDanger = false
+        } = options;
+        
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-dialog-overlay';
+        
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        
+        const icon = isDanger ? '⚠' : 'ℹ';
+        
+        dialog.innerHTML = `
+            <div class="confirm-dialog-title">
+                <span>${icon}</span>
+                <span>${title}</span>
+            </div>
+            <div class="confirm-dialog-message">${message}</div>
+            <div class="confirm-dialog-actions">
+                <button class="confirm-btn confirm-btn-cancel" data-action="cancel">${cancelText}</button>
+                <button class="confirm-btn ${isDanger ? 'confirm-btn-danger' : 'confirm-btn-primary'}" data-action="confirm">${confirmText}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+        const cleanup = (result) => {
+            overlay.remove();
+            dialog.remove();
+            resolve(result);
+        };
+        
+        // Handle button clicks
+        dialog.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const action = btn.getAttribute('data-action');
+                cleanup(action === 'confirm');
+            });
+        });
+        
+        // Handle overlay click to cancel
+        overlay.addEventListener('click', () => cleanup(false));
+        
+        // Handle ESC key
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                cleanup(false);
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
+        
+        // Focus confirm button
+        setTimeout(() => {
+            const confirmBtn = dialog.querySelector('[data-action="confirm"]');
+            if (confirmBtn) confirmBtn.focus();
+        }, 100);
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   ENHANCED SEARCH WITH FUZZY MATCHING
+═══════════════════════════════════════════════ */
+function fuzzyMatch(text, search) {
+    const textLower = text.toLowerCase();
+    const searchLower = search.toLowerCase();
+    
+    // Exact match or substring match gets highest priority
+    if (textLower.includes(searchLower)) return true;
+    
+    // Fuzzy match: all characters in search appear in order in text
+    let searchIndex = 0;
+    for (let i = 0; i < textLower.length && searchIndex < searchLower.length; i++) {
+        if (textLower[i] === searchLower[searchIndex]) {
+            searchIndex++;
+        }
+    }
+    return searchIndex === searchLower.length;
+}
+
+function searchByEffect(items, query, getEffectText) {
+    // Search in effect descriptions, requirements, and names
+    const q = query.toLowerCase();
+    return items.filter(item => {
+        const name = item.name?.toLowerCase() || '';
+        const desc = item.desc?.toLowerCase() || '';
+        const req = item.req?.toLowerCase() || '';
+        const effect = getEffectText ? getEffectText(item)?.toLowerCase() : '';
+        
+        return fuzzyMatch(name, q) || 
+               desc.includes(q) || 
+               req.includes(q) || 
+               effect.includes(q);
+    });
+}
+
+
+
 
 
 
