@@ -350,13 +350,19 @@
 <div id="build-manager-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-box" style="max-width:700px; width:95vw; max-height:85vh;">
         <div class="modal-title" style="color:#60d0ff;">💾 BUILD MANAGER</div>
-        <div style="font-size:0.75em; color:var(--pip-color); margin:8px 0 12px;">
+        <div style="font-size:0.75em; color:var(--pip-color); margin:8px 0 4px;">
             Save, load, and manage multiple character builds
         </div>
+        <div style="font-size:0.7em; color:rgba(96,208,255,0.6); margin-bottom:12px;">
+            <span id="builds-count-display">0 saved builds</span> • Saved builds persist even when you reset/nuke
+        </div>
         <div id="builds-list" style="max-height:400px; overflow-y:auto; margin-bottom:12px;"></div>
-        <div style="display:flex; gap:10px; justify-content:space-between; padding-top:10px; border-top:1px solid rgba(100,255,100,0.15);">
+        <div style="display:flex; gap:10px; justify-content:space-between; padding-top:10px; border-top:1px solid rgba(100,255,100,0.15); flex-wrap:wrap;">
             <button class="action-btn" onclick="saveCurrentBuild()" style="border-color:#60d0ff; color:#60d0ff;">💾 SAVE CURRENT BUILD</button>
-            <button class="action-btn" onclick="closeBuildManager()">CLOSE</button>
+            <div style="display:flex; gap:10px;">
+                <button class="action-btn" onclick="clearAllSavedBuilds()" style="border-color:rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); font-size:0.7rem;">🗑️ CLEAR ALL</button>
+                <button class="action-btn" onclick="closeBuildManager()">CLOSE</button>
+            </div>
         </div>
     </div>
 </div>
@@ -464,7 +470,7 @@
                 <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE</button></div>
                 <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
                 <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled>↩ UNDO</button>
-                <button onclick="purgeMemory()" class="nuke-btn" title="PURGE ALL MEMORY">☢</button>
+                <button onclick="purgeMemory()" class="nuke-btn" title="RESET CURRENT BUILD (Saved builds in Build Manager will be preserved)">☢</button>
             </div>
         </div>
         <!-- Banners sit BELOW header bar, inside main-panel -->
@@ -753,6 +759,10 @@
                     <span class="hud-theme-swatch" style="background:#4090e0;"></span>
                     <span class="hud-theme-name">BROTHERHOOD</span>
                 </button>
+                <button class="hud-theme-tile" data-theme="enclave" onclick="setCustomTheme('enclave'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#d8e8f8;"></span>
+                    <span class="hud-theme-name">ENCLAVE</span>
+                </button>
                 <button class="hud-theme-tile" data-theme="legion" onclick="setCustomTheme('legion'); closeThemePanel();">
                     <span class="hud-theme-swatch" style="background:#b02000;"></span>
                     <span class="hud-theme-name">THE LEGION</span>
@@ -764,6 +774,10 @@
                 <button class="hud-theme-tile" data-theme="house" onclick="setCustomTheme('house'); closeThemePanel();">
                     <span class="hud-theme-swatch" style="background:#a020f0;"></span>
                     <span class="hud-theme-name">MR. HOUSE</span>
+                </button>
+                <button class="hud-theme-tile" data-theme="nukacola" onclick="setCustomTheme('nukacola'); closeThemePanel();">
+                    <span class="hud-theme-swatch" style="background:#ff3030;"></span>
+                    <span class="hud-theme-name">NUKA-COLA</span>
                 </button>
                 <button class="hud-theme-tile" data-theme="zeta" onclick="setCustomTheme('zeta'); closeThemePanel();">
                     <span class="hud-theme-swatch" style="background:#c0e8f0;"></span>

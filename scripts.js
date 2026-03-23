@@ -26,6 +26,17 @@ const skills = ["BARTER", "BIG GUNS", "ENERGY WEAPONS", "EXPLOSIVES", "GUNS", "L
 function hasIdeologue() {
     return getChosenTraitNames && getChosenTraitNames().some(n => n.toLowerCase() === 'ideologue');
 }
+function hasPawnToQueen() {
+    // Check regular perks and extra perks
+    const counts = getTakenPerkCounts();
+    if (counts.has('PAWN TO QUEEN')) return true;
+    
+    // Also check reward perks list
+    if (typeof rewardPerksList !== 'undefined') {
+        return rewardPerksList.some(rp => rp.name && rp.name.toUpperCase() === 'PAWN TO QUEEN');
+    }
+    return false;
+}
 function bookBonus(s) {
     const count = skillBooksFound[s] || 0;
     if (!count) return 0;
@@ -81,7 +92,9 @@ function pointsPerLevel() {
     const { skillPtsPerLevel } = getConditionalToggleDelta();
     // Ideologue trait: +1 skill point per level
     const ideologueBonus = hasIdeologue() ? 1 : 0;
-    return base + (skillPtsPerLevel || 0) + ideologueBonus;
+    // Pawn To Queen perk: +1 skill point per level
+    const pawnToQueenBonus = hasPawnToQueen() ? 1 : 0;
+    return base + (skillPtsPerLevel || 0) + ideologueBonus + pawnToQueenBonus;
 }
 
 /* --- PERSISTENCE OBJECT --- */
@@ -830,8 +843,8 @@ function renderImplantModalGrid(search) {
                     ${taken ? '<span style="font-size:0.6rem;color:#80ff80;margin-left:auto;">INSTALLED</span>' : ''}
                     ${atLimit ? '<span style="font-size:0.6rem;color:#ff8080;margin-left:auto;">LIMIT REACHED</span>' : ''}
                 </div>
-                <div class="trait-card-desc">${imp.desc.slice(0,180)}${imp.desc.length>180?'...':''}</div>
-                <div class="trait-req" style="color:#888;margin-top:4px;font-size:0.58rem;">${imp.how.slice(0,120)}${imp.how.length>120?'...':''}</div>
+                <div class="trait-card-desc">${imp.desc}</div>
+                <div class="trait-req" style="color:#888;margin-top:4px;font-size:0.58rem;">${imp.how}</div>
             </div>`;
         });
         html += '</div>';
@@ -1142,11 +1155,10 @@ function renderInternalizedGrid(search) {
         !q || t.name.toLowerCase().includes(q) || t.desc.toLowerCase().includes(q)
     );
     container.innerHTML = filtered.map(t => {
-        const desc = t.desc.length > 200 ? t.desc.slice(0,200)+'...' : t.desc;
         return `<div class="trait-card" onclick="addInternalizedTrait('${t.name.replace(/'/g,"\\'")}')">
             <div class="trait-card-header"><span class="trait-card-name">${t.name}</span></div>
             <div class="trait-req">${t.req}</div>
-            <div class="trait-card-desc">${desc}</div>
+            <div class="trait-card-desc">${t.desc}</div>
         </div>`;
     }).join('');
 }
@@ -1286,10 +1298,18 @@ function showTab(t) {
     document.querySelectorAll('.mobile-nav-btn').forEach(b => {
         b.classList.toggle('mobile-nav-active', b.dataset.tab === t);
     });
-    if (t === 'perks') renderAllPerks();
-    if (t === 'skilllog') renderSkillLog();
-    if (t === 'prog') renderImplants();
-    if (t === 'books') renderBooksTab();
+    
+    // Defer heavy renders to next frame for smooth tab switching
+    if (t === 'perks') {
+        requestAnimationFrame(() => renderAllPerks());
+    } else if (t === 'skilllog') {
+        requestAnimationFrame(() => renderSkillLog());
+    } else if (t === 'prog') {
+        requestAnimationFrame(() => renderImplants());
+    } else if (t === 'books') {
+        requestAnimationFrame(() => renderBooksTab());
+    }
+    
     nsAudio.click();
 }
 
@@ -1809,13 +1829,16 @@ function confirmLevelUp() {
     
     const tagged = getTaggedSkills();
     const gains = {};
+    const traitBonuses = getActiveTraitBonuses ? getActiveTraitBonuses().skillDelta : {};
     skills.forEach(s => {
         const pts = _lvlupSession[s] || 0;
         const gain = tagged.has(s) ? pts * 2 : pts; // tagged: 1 spent = 2 gained
         gains[s] = gain;
         skillPoints[s] = (skillPoints[s] || 0) + gain;
         // Hard cap: total skill must not exceed 100
-        const maxPts = 100 - skillBase(s);
+        // Account for trait modifiers: negative traits allow more allocated points
+        const traitDelta = traitBonuses[s] || 0;
+        const maxPts = 100 - skillBase(s) - traitDelta;
         if (skillPoints[s] > maxPts) skillPoints[s] = Math.max(0, maxPts);
     });
     // Record this level's allocation for the Skill Log
@@ -3630,7 +3653,44 @@ function loadArchetype(id) {
     }
 }
 
-function purgeMemory() { if(confirm("INITIATE TOTAL ATOMIC ANNIHILATION?")) { try { localStorage.clear(); } catch(e) {} location.reload(); } }
+async function purgeMemory() {
+    const confirmed = await showConfirmDialog({
+        title: '⚛ TOTAL ATOMIC ANNIHILATION',
+        message: 'This will reset your current build to defaults. Your saved builds in Build Manager will be preserved. Continue?',
+        confirmText: 'ANNIHILATE',
+        cancelText: 'Cancel',
+        isDanger: true
+    });
+    
+    if (!confirmed) return;
+    
+    try {
+        // Preserve saved builds and collapsed sections before nuking
+        const savedBuildsBackup = localStorage.getItem('NS_SavedBuilds');
+        const collapsedSectionsBackup = localStorage.getItem('collapsed_sections');
+        const themeBackup = localStorage.getItem('ns_custom_theme');
+        
+        // Clear everything
+        localStorage.clear();
+        
+        // Restore preserved data
+        if (savedBuildsBackup) {
+            localStorage.setItem('NS_SavedBuilds', savedBuildsBackup);
+        }
+        if (collapsedSectionsBackup) {
+            localStorage.setItem('collapsed_sections', collapsedSectionsBackup);
+        }
+        if (themeBackup) {
+            localStorage.setItem('ns_custom_theme', themeBackup);
+        }
+        
+        // Reload immediately without toast (toast would disappear anyway)
+        location.reload();
+    } catch(e) {
+        console.error('Purge failed:', e);
+        showToast('Reset failed - check console for details', 'error');
+    }
+}
 /* ═══════════════════════════════════════════════════════════════════════
    BUILD KEY SYSTEM  —  NSB3 binary pack
    Captures ALL build state. ~500–700 chars for a level 30 build.
@@ -4076,10 +4136,45 @@ function closeBuildManager() {
     if (modal) modal.style.display = 'none';
 }
 
+// Clear all saved builds
+async function clearAllSavedBuilds() {
+    if (savedBuilds.length === 0) {
+        showToast('No saved builds to clear', 'info');
+        return;
+    }
+    
+    const confirmed = await showConfirmDialog({
+        title: 'Clear All Saved Builds',
+        message: `This will permanently delete all ${savedBuilds.length} saved build${savedBuilds.length !== 1 ? 's' : ''}. This cannot be undone. Continue?`,
+        confirmText: 'Delete All',
+        cancelText: 'Cancel',
+        isDanger: true
+    });
+    
+    if (!confirmed) return;
+    
+    savedBuilds = [];
+    try {
+        localStorage.setItem('NS_SavedBuilds', JSON.stringify(savedBuilds));
+        showToast('All saved builds cleared', 'success');
+        renderBuildsManager();
+    } catch(e) {
+        showToast('Failed to clear builds', 'error');
+    }
+}
+
 // Render builds list
 function renderBuildsManager() {
     const list = document.getElementById('builds-list');
+    const countDisplay = document.getElementById('builds-count-display');
+    
     if (!list) return;
+    
+    // Update count display
+    if (countDisplay) {
+        const count = savedBuilds.length;
+        countDisplay.textContent = `${count} saved build${count !== 1 ? 's' : ''}`;
+    }
     
     if (savedBuilds.length === 0) {
         list.innerHTML = '<div style="text-align:center; opacity:0.4; padding:24px;">NO SAVED BUILDS YET</div>';
@@ -5389,40 +5484,6 @@ const nsAudio = (() => {
     };
 })();
 
-window.onload = () => {
-    document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
-    renderUniques();
-    renderUniqueArmor();
-    
-    // Check for shared build in URL first (takes priority over localStorage)
-    const loadedFromURL = loadBuildFromURL();
-    
-    if (!loadedFromURL) {
-        // No URL build, try localStorage
-        const saved = localStorage.getItem('Nuclear_Sunset_Permanent_Vault');
-        if (saved) {
-            try {
-                const raw = JSON.parse(saved);
-                const safe = sanitizeImport(raw);
-                if (safe) hydrate(safe);
-                else { setMode('std', true); setOrigin('CW', true); renderImplants(); }
-            } catch(e) {
-                setMode('std', true); setOrigin('CW', true); renderImplants();
-            }
-        } else {
-            setMode('std', true);
-            setOrigin('CW', true);
-            renderImplants();
-        }
-    }
-    
-    applyStoredTheme();
-    nsAudio.init();
-    renderBooksTab();
-    loadSavedBuildsList(); // Load saved builds list
-    loadCollapsedSections(); // Load collapsed section states
-};
-
 /* ═══════════════════════════════════════════════
    TOAST NOTIFICATION SYSTEM
 ═══════════════════════════════════════════════ */
@@ -5431,7 +5492,10 @@ let _lastToastTime = 0;
 
 function showToast(message, type = 'info', duration = 3000) {
     const container = document.getElementById('toast-container');
-    if (!container) return;
+    if (!container) {
+        console.warn('Toast container not found');
+        return;
+    }
     
     // Prevent duplicate toasts within 500ms
     const now = Date.now();
@@ -5486,22 +5550,38 @@ function showToast(message, type = 'info', duration = 3000) {
     
     // Sound feedback only for success/error
     if (type === 'success' || type === 'error') {
-        nsAudio.play('click');
+        try {
+            nsAudio.play('click');
+        } catch(e) {
+            // Ignore audio errors
+        }
     }
     
-    // Store timeout ID so we can clear it if manually dismissed
+    // Auto-dismiss after duration
     const timeoutId = setTimeout(() => {
-        dismissToast(toast);
+        try {
+            dismissToast(toast);
+        } catch(e) {
+            console.error('Toast auto-dismiss failed:', e);
+            if (toast && toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }
     }, duration);
     
-    // Store timeout ID on the element
     toast._timeoutId = timeoutId;
 }
 
 function dismissToast(toast) {
-    if (!toast || toast.classList.contains('toast-exit')) return;
+    if (!toast) {
+        console.warn('dismissToast called with null/undefined toast');
+        return;
+    }
     
-    // Clear auto-dismiss timeout if it exists
+    if (toast.classList.contains('toast-exit')) {
+        return;
+    }
+    
     if (toast._timeoutId) {
         clearTimeout(toast._timeoutId);
         delete toast._timeoutId;
@@ -5509,13 +5589,104 @@ function dismissToast(toast) {
     
     toast.classList.add('toast-exit');
     
-    // Remove from DOM after animation
     setTimeout(() => {
-        if (toast && toast.parentNode) {
-            toast.parentNode.removeChild(toast);
+        try {
+            if (toast && toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        } catch(e) {
+            console.error('Toast removal failed:', e);
         }
     }, 300);
 }
+
+function clearAllToasts() {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+    
+    const allToasts = container.querySelectorAll('.toast');
+    allToasts.forEach(toast => {
+        dismissToast(toast);
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   URL BUILD LOADING
+═══════════════════════════════════════════════ */
+function loadBuildFromURL() {
+    const params = new URLSearchParams(window.location.search);
+    const buildParam = params.get('build');
+    
+    if (!buildParam) return false;
+    
+    try {
+        const json = LZString.decompressFromEncodedURIComponent(buildParam);
+        if (!json) {
+            showToast('Invalid share link', 'error');
+            return false;
+        }
+        
+        const data = JSON.parse(json);
+        const safe = sanitizeImport(data);
+        
+        if (!safe) {
+            showToast('Invalid build data in link', 'error');
+            return false;
+        }
+        
+        hydrate(safe);
+        showToast('Build loaded from share link!', 'success');
+        
+        // Clean URL without reloading
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        return true;
+    } catch(e) {
+        console.error('Failed to load build from URL:', e);
+        showToast('Failed to load build from link', 'error');
+        return false;
+    }
+}
+
+window.onload = () => {
+    document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
+    renderUniques();
+    renderUniqueArmor();
+    
+    // Check for shared build in URL first (takes priority over localStorage)
+    const loadedFromURL = loadBuildFromURL();
+    
+    if (!loadedFromURL) {
+        // No URL build, try localStorage
+        const saved = localStorage.getItem('Nuclear_Sunset_Permanent_Vault');
+        if (saved) {
+            try {
+                const raw = JSON.parse(saved);
+                const safe = sanitizeImport(raw);
+                if (safe) hydrate(safe);
+                else { setMode('std', true); setOrigin('CW', true); renderImplants(); }
+            } catch(e) {
+                setMode('std', true); setOrigin('CW', true); renderImplants();
+            }
+        } else {
+            setMode('std', true);
+            setOrigin('CW', true);
+            renderImplants();
+        }
+    }
+    
+    applyStoredTheme();
+    nsAudio.init();
+    renderBooksTab();
+    loadSavedBuildsList(); // Load saved builds list
+    loadCollapsedSections(); // Load collapsed section states
+    
+    // Clear any stale toasts from previous session
+    const toastContainer = document.getElementById('toast-container');
+    if (toastContainer) {
+        toastContainer.innerHTML = '';
+    }
+};
 
 /* ═══════════════════════════════════════════════
    COLLAPSIBLE SECTIONS
@@ -5617,8 +5788,13 @@ document.addEventListener('keydown', function(e) {
     // ? - Show keyboard shortcuts help (future implementation)
     if (e.key === '?' && !e.shiftKey) {
         // Could show a help modal in the future
-        showToast('Shortcuts: ESC=Close, Ctrl+S=Save, Ctrl+Z=Undo', 'info', 5000);
+        showToast('Shortcuts: ESC=Close, Ctrl+S=Share, Ctrl+Z=Undo', 'info', 5000);
         return;
+    }
+    
+    // Escape key also clears all toasts if no modals are open
+    if (e.key === 'Escape' && !document.querySelector('.modal-overlay[style*="display: flex"]')) {
+        clearAllToasts();
     }
 });
 
@@ -5722,40 +5898,6 @@ function fallbackCopyToClipboard(text) {
     }
 }
 
-function loadBuildFromURL() {
-    const params = new URLSearchParams(window.location.search);
-    const buildParam = params.get('build');
-    
-    if (!buildParam) return false;
-    
-    try {
-        const json = LZString.decompressFromEncodedURIComponent(buildParam);
-        if (!json) {
-            showToast('Invalid share link', 'error');
-            return false;
-        }
-        
-        const data = JSON.parse(json);
-        const safe = sanitizeImport(data);
-        
-        if (!safe) {
-            showToast('Invalid build data in link', 'error');
-            return false;
-        }
-        
-        hydrate(safe);
-        showToast('Build loaded from share link!', 'success');
-        
-        // Clean URL without reloading
-        window.history.replaceState({}, document.title, window.location.pathname);
-        
-        return true;
-    } catch(e) {
-        console.error('Failed to load build from URL:', e);
-        showToast('Failed to load build from link', 'error');
-        return false;
-    }
-}
 
 /* ═══════════════════════════════════════════════
    CONFIRMATION DIALOG SYSTEM
