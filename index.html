@@ -375,21 +375,35 @@
       <button onclick="closeBuildKeyModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;font-family:inherit;">✕</button>
     </div>
     <div style="display:flex; border-bottom:1px solid rgba(255,208,96,0.2); margin-bottom:14px;">
-      <button id="bk-tab-gen" class="bk-tab bk-tab-active" onclick="showBuildKeyTab('gen')">◈ GENERATE</button>
+      <button id="bk-tab-share" class="bk-tab bk-tab-active" onclick="showBuildKeyTab('share')" title="Short typeable share code — strips history/notes for compactness">◈ SHARE CODE</button>
+      <button id="bk-tab-gen" class="bk-tab" onclick="showBuildKeyTab('gen')" title="Full build key — preserves everything including skill history and notes">◈ FULL KEY</button>
       <button id="bk-tab-load" class="bk-tab" onclick="showBuildKeyTab('load')">◈ LOAD FROM KEY</button>
     </div>
-    <div id="bk-pane-gen">
-      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
-        Binary encodes your complete build (NSB3) — all perks, notes, internalized traits, reward perks, conditional toggles and skill history. Approx 500–700 chars for a level 30 build.
+
+    <!-- SHARE CODE PANE -->
+    <div id="bk-pane-share">
+      <div style="font-size:0.63rem;color:rgba(40,255,40,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(40,255,40,0.15);background:rgba(40,255,40,0.03);">
+        Compact typeable code — <b>~120–150 chars</b> grouped in segments (vs 400–600 for a full key). All build-critical data preserved. Skill history, char name &amp; notes are omitted for brevity. Paste directly into the LOAD tab to import.
       </div>
-      <button class="action-btn" onclick="generateAndShowKey()" style="border-color:#ffd060;color:#ffd060;margin-bottom:12px;">⚡ GENERATE KEY FROM CURRENT BUILD</button>
+      <button class="action-btn" onclick="generateAndShowShareCode()" style="border-color:#28ff28;color:#28ff28;margin-bottom:12px;">⚡ GENERATE SHARE CODE</button>
+      <div id="bk-share-out"></div>
+    </div>
+
+    <!-- FULL KEY PANE -->
+    <div id="bk-pane-gen" style="display:none;">
+      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
+        Binary encodes your complete build (NSB4) — all perks, notes, internalized traits, reward perks, conditional toggles and skill history. Approx 300–400 chars for a level 30 build. Use this for archiving or full data transfer.
+      </div>
+      <button class="action-btn" onclick="generateAndShowKey()" style="border-color:#ffd060;color:#ffd060;margin-bottom:12px;">⚡ GENERATE FULL KEY FROM CURRENT BUILD</button>
       <div id="bk-gen-out"></div>
     </div>
+
+    <!-- LOAD PANE -->
     <div id="bk-pane-load" style="display:none;">
       <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
-        Paste an NSB3-... key (or older NSB2/NSB1) to load a build. This overwrites your current build — save or export first if needed.
+        Paste an NSB5 share code or full NSB4/NSB3 key to load a build. Accepts all key formats. This overwrites your current build — save or export first if needed.
       </div>
-      <textarea id="bk-key-input" placeholder="PASTE NSB3-... KEY HERE..." style="width:100%;height:90px;background:#000;border:1px solid rgba(255,208,96,0.25);color:#ffd060;padding:10px;font-family:inherit;font-size:0.6rem;resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
+      <textarea id="bk-key-input" placeholder="PASTE NSB5-... SHARE CODE OR NSB4-... FULL KEY HERE..." style="width:100%;height:90px;background:#000;border:1px solid rgba(255,208,96,0.25);color:#ffd060;padding:10px;font-family:inherit;font-size:0.6rem;resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
       <div id="bk-load-err" style="display:none;color:#ff5555;font-size:0.65rem;margin-bottom:10px;padding:6px 10px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.05);"></div>
       <button class="action-btn" onclick="loadBuildFromKey()" style="border-color:#ffd060;color:#ffd060;">◈ LOAD BUILD FROM KEY</button>
     </div>

@@ -7339,3 +7339,22 @@ body.theme-owb:not(.mode-hc) .plab-trait { color: #40f0d0; }
     flex-wrap: nowrap;
     gap: 3px;
 }
+
+
+/* UX Enhancement Animations */
+@keyframes numberPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+}
+.number-changing { animation: numberPulse 0.25s ease; }
+
+
+@keyframes rowReveal {
+    from { opacity: 0; transform: translateX(-5px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+.progressive-reveal { animation: rowReveal 0.3s ease forwards; }
+
+.modal-overlay { transition: opacity 0.15s ease; }
+.modal-box { transition: all 0.2s ease; }
+button, input { transition: all 0.15s ease; }
