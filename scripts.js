@@ -31,7 +31,7 @@ const TRAIT_SLOT = Object.freeze({ STARTING: '__starting__', LEVELUP: '__levelup
 const ATTR_BOOST = Object.freeze({ HP: 'hp', AP: 'ap', CW: 'cw' });
 
 /* --- STATE VARIABLES --- */
-let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHA: 5, INT: 5, AGI: 5, LCK: 5 };
+let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHR: 5, INT: 5, AGI: 5, LCK: 5 };
 let currentSort = 'az';
 let skillPoints = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let charLevel = 1;
@@ -49,13 +49,12 @@ let _lvlupAttributeChoice = null; // Tracks current level-up attribute choice: '
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
 let _itCancelled = false; // tracks if IT modal was cancelled
 let _showBaseSpecial = false; // toggle: show base-only SPECIAL (allocated points before IT/implants/traits/perks)
-let _showDetailedSpecial = false; // toggle: show detailed breakdown of SPECIAL bonuses by source
 let _hydrating = false; // true during hydrate() — suppresses choice modals (IT, Action Star, Tag!)
 let _specialModDebounce = null; // debounce timer for SPECIAL +/- button clicks
 let _toastQueue = []; // queue for managing multiple toasts
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
-const sKeys = ["STR", "PER", "END", "CHA", "INT", "AGI", "LCK"];
+const sKeys = ["STR", "PER", "END", "CHR", "INT", "AGI", "LCK"];
 const skills = ["BARTER", "BIG GUNS", "ENERGY WEAPONS", "EXPLOSIVES", "GUNS", "LOCKPICK", "MEDICINE", "MELEE WEAPONS", "REPAIR", "SCIENCE", "SNEAK", "SPEECH", "SURVIVAL", "UNARMED"];
 
 /* ===== SKILL ENGINE ===== */
@@ -225,7 +224,7 @@ function getActivePerkBonuses() {
     const allPerkEls = document.querySelectorAll(
         '#prog-list .prog-name-input, #extra-perk-list .prog-name-input'
     );
-    const perkSpecialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const perkSpecialDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
     const perkSkillDelta = {};
     const applyBonus = (name) => {
         if (!name) return;
@@ -251,7 +250,7 @@ function getActivePerkBonuses() {
 }
 
 function getActiveTraitBonuses() {
-    const specialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const specialDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
     const skillDelta = {};
     const activeNames = getChosenTraitNames();
     for (const name of activeNames) {
@@ -335,10 +334,10 @@ function getConditionalToggleDelta() {
 }
 
 /* ===== GEAR EFFECTS ===== */
-const SPECIAL_STATS = ['STR','PER','END','CHA','INT','AGI','LCK'];
+const SPECIAL_STATS = ['STR','PER','END','CHR','INT','AGI','LCK'];
 
 function getGearEffectsDelta() {
-    const specDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const specDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
     const skillDelta = {};
     for (const ge of gearEffectsList) {
         if (!ge.toggled || !ge.effect) continue;
@@ -457,7 +456,7 @@ function removeGearEffect(idx) {
 
 /* ===== TRAIT REQUIREMENTS ===== */
 const TRAIT_STAT_MAP = {
-  STR:'STR', PER:'PER', END:'END', CHR:'CHA', CHA:'CHA', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK'
+  STR:'STR', PER:'PER', END:'END', CHR:'CHR', CHA:'CHR', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK'
 };
 
 function getChosenTraitNames() {
@@ -934,7 +933,214 @@ function openPerkZoom(name, req, desc) {
     document.getElementById('perk-zoom-desc').textContent = desc;
     const perkData = PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
     _setupPerkZoomButtons(perkData || null);
+    // Add graph button to zoom modal
+    let graphBtn = document.getElementById('perk-zoom-graph-btn');
+    if (!graphBtn) {
+        graphBtn = document.createElement('button');
+        graphBtn.id = 'perk-zoom-graph-btn';
+        graphBtn.className = 'action-btn';
+        graphBtn.textContent = '⊞ GRAPH';
+        const actions = document.getElementById('perk-zoom-actions');
+        if (actions) actions.appendChild(graphBtn);
+    }
+    graphBtn.onclick = () => {
+        document.getElementById('perk-zoom-modal').style.display = 'none';
+        const target = perkData ? perkData.name : name;
+        setTimeout(() => openPerkGraph(target), 100);
+    };
+    graphBtn.style.display = perkData ? '' : 'none';
     document.getElementById('perk-zoom-modal').style.display = 'flex';
+}
+
+/* ===== PERK DEPENDENCY GRAPH ===== */
+
+let _pgNavStack = [];
+let _pgCurrentName = null;
+
+function _pgGoBack() {
+    const prev = _pgNavStack.pop();
+    if (prev) openPerkGraph(prev, false);
+}
+
+const _allNamedReqs = new Set([
+    ...PERKS_DATA.map(p => p.name.toUpperCase()),
+    ...TRAITS_DATA.map(t => t.name.toUpperCase()),
+    ...REWARD_PERKS_DATA.map(r => r.name.toUpperCase()),
+    ...INTERNALIZED_TRAITS_DATA.map(i => i.name.toUpperCase())
+]);
+const _karmaReqs = new Set(['EVIL KARMA','VERY EVIL KARMA','GOOD KARMA','VERY GOOD KARMA','NEUTRAL KARMA']);
+
+function _parseGraphReq(perk) {
+    const req = perk.req;
+    const parts = req.split(',').map(s => s.trim());
+    const result = { level: 0, special: [], skills: [], perkPre: [], perkOr: [] };
+    for (const part of parts) {
+        const lvlM = part.match(/^Level\s+(\d+)/i);
+        if (lvlM) { result.level = parseInt(lvlM[1]); continue; }
+        if (_karmaReqs.has(part.toUpperCase())) continue;
+        const subs = part.split(/\s+or\s+/i).map(s => s.trim());
+        let sp = [], sk = [], pk = [];
+        for (const s of subs) {
+            const capM = s.match(/^(STR|PER|END|CHR|CHA|INT|AGL|AGI|LCK)\s*<\s*(\d+)$/i);
+            if (capM) { sp.push({ stat: REQ_STAT_MAP[capM[1].toUpperCase()]||capM[1].toUpperCase(), min: null, max: parseInt(capM[2]) }); continue; }
+            const minM = s.match(/^(STR|PER|END|CHR|CHA|INT|AGL|AGI|LCK)\s+(\d+)$/i);
+            if (minM) { sp.push({ stat: REQ_STAT_MAP[minM[1].toUpperCase()]||minM[1].toUpperCase(), min: parseInt(minM[2]), max: null }); continue; }
+            let ms = false;
+            for (const { pattern, skill } of SKILL_REQ_MAP) { const m = s.match(pattern); if (m) { sk.push({ skill, value: parseInt(m[1]) }); ms = true; break; } }
+            if (ms) continue;
+            if (s.toUpperCase().startsWith('NOT ')) { const n = s.slice(4).trim(); if (_allNamedReqs.has(n.toUpperCase())) pk.push({ name: n, not: true }); continue; }
+            if (_allNamedReqs.has(s.toUpperCase())) { pk.push({ name: s, not: false }); continue; }
+        }
+        if (subs.length > 1) {
+            const real = pk.filter(p => !p.not);
+            if (real.length > 1) { result.perkOr.push(real); }
+            else if (real.length === 1) { result.perkPre.push(real[0]); }
+            if (sk.length) result.skills.push(sk[0]);
+            if (sp.length) result.special.push(sp[0]);
+        } else {
+            result.special.push(...sp);
+            result.skills.push(...sk);
+            result.perkPre.push(...pk.filter(p => !p.not));
+        }
+    }
+    return result;
+}
+
+function _pgSkillIcon(skill) {
+    const icons = { BARTER:'$', 'BIG GUNS':'≡', 'ENERGY WEAPONS':'~', EXPLOSIVES:'*', GUNS:'⌐', LOCKPICK:'⌂', MEDICINE:'+', 'MELEE WEAPONS':'/', REPAIR:'⚙', SCIENCE:'☰', SNEAK:'►', SPEECH:'⌨', SURVIVAL:'♣', UNARMED:'✜' };
+    return `<span style="color:#ffcc44;font-size:1.2rem;width:30px;display:inline-block;text-align:center;">${icons[skill]||'?'}</span>`;
+}
+
+function _pgReqRow(iconHtml, label, statusHtml, met) {
+    const c = met ? 'rgba(80,255,80,0.85)' : 'rgba(255,80,80,0.75)';
+    const dot = met ? '●' : '○';
+    return `<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:0.85rem;line-height:1.6;color:${c};">
+        <span style="flex-shrink:0;width:14px;text-align:center;">${dot}</span>
+        ${iconHtml ? `<span style="flex-shrink:0;width:30px;text-align:center;">${iconHtml}</span>` : ''}
+        <span style="flex:1;">${label}</span>
+        <span style="flex-shrink:0;font-size:0.75rem;opacity:0.7;">${statusHtml}</span>
+    </div>`;
+}
+
+function _pgSection(title, html) {
+    if (!html) return '';
+    return `<div style="margin-bottom:10px;">
+        <div style="font-size:0.68rem;letter-spacing:0.12em;opacity:0.4;padding:0 6px 3px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:3px;">${title}</div>
+        ${html}
+    </div>`;
+}
+
+function _pgBackBtn() {
+    if (!_pgNavStack.length) return '';
+    const prev = _pgNavStack[_pgNavStack.length - 1];
+    const enc = prev.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+    return `<button onclick="_pgGoBack()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:var(--pip-color);padding:3px 12px;cursor:pointer;font-size:0.80rem;letter-spacing:0.05em;">← ${prev}</button>`;
+}
+
+function openPerkGraph(name, pushNav = true) {
+    closeWishlist();
+    const container = document.getElementById('perk-graph-container');
+    const nameEl = document.getElementById('perk-graph-name');
+    const reqEl = document.getElementById('perk-graph-req');
+    const perk = PERKS_DATA.find(p => p.name.toUpperCase() === name.toUpperCase());
+    if (!perk) { container.innerHTML = '<div style="color:rgba(255,80,80,0.6);padding:30px;font-size:0.85rem;">Perk not found</div>'; document.getElementById('perk-graph-modal').style.display = 'flex'; return; }
+
+    // Nav history
+    if (pushNav && _pgCurrentName && _pgCurrentName !== name) {
+        _pgNavStack.push(_pgCurrentName);
+        if (_pgNavStack.length > 20) _pgNavStack.shift();
+    }
+    _pgCurrentName = name;
+
+    nameEl.innerHTML = _pgBackBtn() + ' ◆ ' + name;
+    reqEl.textContent = 'REQ: ' + perk.req;
+
+    const parts = _parseGraphReq(perk);
+    const taken = getTakenPerkCounts();
+
+    // ── Level ──
+    let lvlHTML = '';
+    if (parts.level) {
+        const met = charLevel >= parts.level;
+        lvlHTML += _pgReqRow('', `Level ${parts.level}`, `Lvl ${charLevel}`, met);
+    }
+
+    // ── SPECIAL ──
+    let specHTML = '';
+    for (const s of parts.special) {
+        const v = effectiveSpecial(s.stat);
+        const met = s.min != null ? v >= s.min : v < s.max;
+        const r = s.min != null ? `${s.stat} ${s.min}+` : `${s.stat} <${s.max}`;
+        specHTML += _pgReqRow('', r, `${v}`, met);
+    }
+
+    // ── Skills ──
+    let skillHTML = '';
+    for (const s of parts.skills) {
+        const v = skillTotal(s.skill);
+        const met = v >= s.value;
+        skillHTML += _pgReqRow(_pgSkillIcon(s.skill), `${s.skill} ${s.value}`, `${Math.floor(v)}`, met);
+    }
+
+    // ── Perk prereqs ──
+    let perkHTML = '';
+    for (const p of parts.perkPre) {
+        const met = taken.has(p.name.toUpperCase());
+        const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+        const label = `<span style="cursor:pointer;border-bottom:1px dashed rgba(255,255,255,0.15);" onclick="openPerkGraph('${enc}')">${p.name}</span>`;
+        perkHTML += _pgReqRow('', label, met ? '✓' : '✗', met);
+    }
+
+    // ── OR groups ──
+    for (const group of parts.perkOr) {
+        const anyMet = group.some(p => taken.has(p.name.toUpperCase()));
+        const labels = group.map(p => {
+            const pm = taken.has(p.name.toUpperCase());
+            const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+            return `<span style="cursor:pointer;border-bottom:1px dashed rgba(255,255,255,0.12);color:${pm?'rgba(80,255,80,0.9)':'rgba(255,255,255,0.5)'};" onclick="openPerkGraph('${enc}')">${p.name}</span>`;
+        }).join(' <span style="opacity:0.3;font-size:0.68rem;">OR</span> ');
+        perkHTML += _pgReqRow('', labels, anyMet ? '✓' : '✗', anyMet);
+    }
+
+    // ── Dependents ──
+    let depHTML = '';
+    for (const other of PERKS_DATA) {
+        if (other.name.toUpperCase() === name.toUpperCase()) continue;
+        const op = _parseGraphReq(other);
+        let isDep = false;
+        for (const p of op.perkPre) { if (p.name.toUpperCase() === name.toUpperCase()) { isDep = true; break; } }
+        if (!isDep) {
+            for (const og of op.perkOr) {
+                if (og.some(p => p.name.toUpperCase() === name.toUpperCase())) { isDep = true; break; }
+            }
+        }
+        if (isDep) {
+            const met = taken.has(other.name.toUpperCase());
+            const enc = other.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
+            const c = met ? 'rgba(80,255,80,0.85)' : 'rgba(200,200,200,0.5)';
+            depHTML += `<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;font-size:0.85rem;line-height:1.6;color:${c};cursor:pointer;" onclick="openPerkGraph('${enc}')">
+                <span style="flex-shrink:0;width:14px;text-align:center;font-size:0.75rem;">▸</span>
+                <span style="flex:1;border-bottom:1px dashed rgba(255,255,255,0.1);">${other.name}</span>
+                <span style="flex-shrink:0;font-size:0.68rem;opacity:0.35;">[→]</span>
+            </div>`;
+        }
+    }
+
+    // ── Render ──
+    let html = '<div style="display:flex;flex-direction:column;gap:2px;width:100%;max-width:580px;margin:0 auto;">';
+    if (lvlHTML) html += _pgSection('LEVEL', lvlHTML);
+    if (specHTML) html += _pgSection('SPECIAL', specHTML);
+    if (skillHTML) html += _pgSection('SKILLS', skillHTML);
+    if (perkHTML) html += _pgSection('PERKS', perkHTML);
+    if (!lvlHTML && !specHTML && !skillHTML && !perkHTML) html += '<div style="padding:6px;font-size:0.80rem;opacity:0.25;">NO REQUIREMENTS</div>';
+    html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:6px 0 4px;"></div>';
+    if (depHTML) html += _pgSection('REQUIRED BY', depHTML);
+    else html += '<div style="padding:6px;font-size:0.80rem;opacity:0.25;">NO PERKS REQUIRE THIS</div>';
+    html += '</div>';
+
+    container.innerHTML = html;
+    document.getElementById('perk-graph-modal').style.display = 'flex';
+    document.getElementById('perk-graph-refresh').onclick = () => openPerkGraph(name);
 }
 
 // Clicked from PERK & TRAIT LOG overview panel
@@ -1768,7 +1974,7 @@ function getPerkLevel(perk) {
 }
 
 function getPerkSPECIAL(perk) {
-    const order = ['STR','PER','END','CHA','INT','AGI','LCK'];
+    const order = ['STR','PER','END','CHR','INT','AGI','LCK'];
     const m = perk.req.match(/\b(STR|PER|END|CHA|INT|AGI|LCK)\b/);
     if (!m) return 99;
     return order.indexOf(m[1]);
@@ -1869,6 +2075,7 @@ function buildPerkCard(p) {
         <div class="perk-card-actions">
             <button class="action-btn" onclick="addPerkToBuild('${escapedName}','${escapedReq}',${isIT})">${addBtnLabel}</button>
             <button class="action-btn perk-zoom-action" title="EXPAND DESCRIPTION" onclick="openPerkZoom('${escapedName}','${p.req.replace(/'/g,"\\'")}','${p.desc.replace(/'/g,"\\'")}')">⊕ ZOOM</button>
+            <button class="action-btn perk-graph-action" title="DEPENDENCY GRAPH" onclick="openPerkGraph('${escapedName}')">⊞ GRAPH</button>
             <button class="action-btn perk-wishlist-action ${wishlistClass}" onclick="togglePerkWishlist('${escapedName}')" title="${wishlistTitle}">${wishlistLabel}</button>
         </div>
     </div>`;
@@ -2591,6 +2798,78 @@ function renderLevelUpBonuses() {
 
 function getSPECIALPool() { return mode === 'hc' ? 30 : 33; }
 
+function getActiveEffects() {
+    const effects = [];
+    const itBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row) .prog-name-input').forEach(el => {
+        const m = (el.value||'').match(/^Intense Training \(\+1 (STR|PER|END|CHR|INT|AGI|LCK)\)/i);
+        if (m) itBonus[m[1].toUpperCase()]++;
+    });
+    const implantBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    IMPLANTS_DATA.forEach(i => { if (i.cat==='special' && i.stat && implantsTaken[i.name]) implantBonus[i.stat]++; });
+
+    // Intense Training
+    for (const k of sKeys) {
+        if (itBonus[k]) effects.push({ group:'Intense Training', source:'Intense Training', stat:k, value:itBonus[k] });
+    }
+    // Implants
+    for (const k of sKeys) {
+        if (implantBonus[k]) effects.push({ group:'Implants', source:'Implant ('+k+')', stat:k, value:implantBonus[k] });
+    }
+    // Traits
+    for (const name of getChosenTraitNames()) {
+        const b = TRAIT_BONUSES[name];
+        if (!b) continue;
+        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Traits', source:name, stat:k, value:v });
+        if (b.skills) for (const [k,v] of Object.entries(b.skills)) {
+            if (k === '__ALL__') { for (const s of skills) effects.push({ group:'Traits', source:name, skill:s, value:v }); }
+            else effects.push({ group:'Traits', source:name, skill:k, value:v });
+        }
+    }
+    // Perks (from PERK_SKILL_BONUSES)
+    const counted = new Set();
+    document.querySelectorAll('#prog-list .prog-name-input, #extra-perk-list .prog-name-input').forEach(el => {
+        const raw = (el.value||'').trim();
+        if (!raw) return;
+        const name = raw.replace(/\s*\(Rank\s+\d+\)\s*$/i, '').trim();
+        if (counted.has(name)) return; counted.add(name);
+        const b = PERK_SKILL_BONUSES[name];
+        if (!b) return;
+        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Perks', source:name, stat:k, value:v });
+        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Perks', source:name, skill:k, value:v });
+    });
+    (rewardPerksList||[]).forEach(rp => {
+        if (counted.has(rp.name)) return; counted.add(rp.name);
+        const b = PERK_SKILL_BONUSES[rp.name];
+        if (!b) return;
+        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Perks', source:rp.name, stat:k, value:v });
+        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Perks', source:rp.name, skill:k, value:v });
+    });
+    // Conditionals
+    for (const [name, isOn] of Object.entries(conditionalToggles)) {
+        if (!isOn) continue;
+        const b = CONDITIONAL_TOGGLE_BONUSES[name];
+        if (!b) continue;
+        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Conditionals', source:name, stat:k, value:v });
+        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Conditionals', source:name, skill:k, value:v });
+    }
+    // Gear Effects
+    for (const ge of gearEffectsList) {
+        if (!ge.toggled || !ge.effect) continue;
+        const m = ge.effect.match(/^([+-]\d+)\s+(.+)$/);
+        if (!m) continue;
+        const val = parseInt(m[1], 10);
+        const target = m[2].toUpperCase().trim();
+        if (SPECIAL_STATS.includes(target)) effects.push({ group:'Gear Effects', source:ge.name||ge.effect, stat:target, value:val });
+        else if (skills.includes(target)) effects.push({ group:'Gear Effects', source:ge.name||ge.effect, skill:target, value:val });
+    }
+    // Head Trauma
+    for (const [k,v] of Object.entries(humbledReductions)) {
+        effects.push({ group:'Head Trauma', source:'Head Trauma', stat:k, value:-v });
+    }
+    return effects;
+}
+
 function updateAll() {
     beginBonusCache();
     try {
@@ -2599,128 +2878,78 @@ function updateAll() {
     // Cache the prog-row query — used for IT tracking and perks overview
     const _progRows = document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row');
     let _itb=0;
-    const itBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const itBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
     _progRows.forEach(r => {
         const v = r.querySelector('.prog-name-input')?.value||'';
         if (/^Intense Training \(\+1 \w+\)/i.test(v)) _itb++;
-        const m = v.match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
+        const m = v.match(/^Intense Training \(\+1 (STR|PER|END|CHR|INT|AGI|LCK)\)/i);
         if (m) itBonus[m[1].toUpperCase()]++;
     });
     const rem = pool - Math.max(0, (Object.values(special).reduce((a,b)=>a+b,0) - 7) - _ib - _itb);
     document.getElementById('pts-left').innerText = rem;
-    const { specialDelta, skillDelta, hasConditional } = getCachedBonuses().trait;
-    const { perkSpecialDelta, perkSkillDelta } = getCachedBonuses().perk;
-    const { specDelta: ctDelta, skillDelta: condSkillDelta } = getCachedBonuses().cond;
-    const { specDelta: gearSpecDelta, skillDelta: gearSkillDelta } = getGearEffectsDelta();
-    // Merge perk deltas into combined display deltas
-    const combSpecDelta = {};
-    for (const k of Object.keys(specialDelta)) {
-        combSpecDelta[k] = (specialDelta[k]||0) + (perkSpecialDelta[k]||0);
-    }
-    const combSkillDelta = {};
-    const allSkillKeys = new Set([...Object.keys(skillDelta), ...Object.keys(perkSkillDelta)]);
-    for (const k of allSkillKeys) {
-        combSkillDelta[k] = (skillDelta[k]||0) + (perkSkillDelta[k]||0);
-    }
+    const { skillDelta, specialDelta } = getCachedBonuses().trait;
+    const { perkSkillDelta, perkSpecialDelta } = getCachedBonuses().perk;
+    const { skillDelta: condSkillDelta, specDelta: ctDelta } = getCachedBonuses().cond;
+    const { specDelta: gearSpecDelta } = getGearEffectsDelta();
     // Build per-stat implant bonus lookup
-    const implantBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
+    const implantBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
     IMPLANTS_DATA.forEach(i => { if (i.cat==='special' && i.stat && implantsTaken[i.name]) implantBonus[i.stat]++; });
 
     document.getElementById('special-list').innerHTML = sKeys.map(k => {
+        const imp = implantBonus[k] || 0;
+        const it  = itBonus[k] || 0;
         const td  = specialDelta[k] || 0;
         const pd  = perkSpecialDelta[k] || 0;
         const cd  = ctDelta[k] || 0;
         const gd  = gearSpecDelta[k] || 0;
-        const imp = implantBonus[k] || 0;
-        const it  = itBonus[k] || 0;
-
+        const hd  = -(humbledReductions[k] || 0);
 
         // special[k] already embeds IT increments (confirmIT) and implant increments (toggleImplant).
         // baseVal  = pure allocated points only — subtract both to get the number the player typed in
         const baseVal = special[k] - it - imp;
-        // effectiveTotal = special[k] (base+IT+implants) + external modifiers (trait/perk/conditional)
-        // NOTE: do NOT add imp again — it's already in special[k]
-        const effectiveTotal = special[k] + td + pd + cd + gd;
+        // effectiveTotal = current stat with all modifiers applied
+        const effectiveTotal = special[k] + td + pd + cd + gd + hd;
         // what the number shows in the UI
-        const dispVal = _showBaseSpecial ? baseVal : special[k];
-        // bar fills against the full effective total
-        const _ds = Math.max(1, Math.min(10, _showBaseSpecial ? baseVal : effectiveTotal));
-
-        // Show = badge when external modifiers (trait / perk / conditional) are active.
-        // In detailed mode, also show it if ANY modifier exists (including IT/implants) for full transparency
-        const hasExternalBonus = !_showBaseSpecial && (td + pd + cd + gd) !== 0;
-        const hasAnyModifier = (it || imp || td || pd || cd || gd) !== 0;
-        const hasBonus = !_showBaseSpecial && (_showDetailedSpecial ? hasAnyModifier : hasExternalBonus);
-        
-        const tooltipParts = [];
-        if (it  !== 0) tooltipParts.push(`+${it} IT`);
-        if (imp !== 0) tooltipParts.push(`+${imp} Impl`);
-        if (td  !== 0) tooltipParts.push(`${td>0?'+':''}${td} Trait`);
-        if (pd  !== 0) tooltipParts.push(`${pd>0?'+':''}${pd} Perk`);
-        if (cd  !== 0) tooltipParts.push(`${cd>0?'+':''}${cd} Cond`);
-        if (gd  !== 0) tooltipParts.push(`${gd>0?'+':''}${gd} Gear`);
-        const bonusTooltip = tooltipParts.length
-            ? tooltipParts.join(' / ') + ` = ${effectiveTotal}`
-            : '';
-        
-        // Compact single delta badge (simplified mode)
-        const totalDelta = (it||0) + (imp||0) + (td||0) + (pd||0) + (cd||0) + (gd||0);
-        let deltaBadge = '';
-        if (!_showBaseSpecial && totalDelta !== 0 && !_showDetailedSpecial) {
-            const sign = totalDelta > 0 ? '+' : '';
-            const cls = totalDelta > 0 ? 'sdelta-pos' : 'sdelta-neg';
-            deltaBadge = `<span class="spec-delta-badge ${cls}" title="${bonusTooltip}">${sign}${totalDelta}</span>`;
-        }
-        
-        // Detailed breakdown badges (detailed mode)
-        // Shows ALL individual modifiers, even if they cancel out to zero
-        let detailedBadges = '';
-        if (!_showBaseSpecial && _showDetailedSpecial) {
-            const badges = [];
-            if (it !== 0) badges.push(`<span class="spec-source-badge spec-badge-it" title="Intense Training">IT ${it>0?'+':''}${it}</span>`);
-            if (imp !== 0) badges.push(`<span class="spec-source-badge spec-badge-impl" title="Implant">I ${imp>0?'+':''}${imp}</span>`);
-            if (td !== 0) badges.push(`<span class="spec-source-badge spec-badge-trait" title="Trait">T ${td>0?'+':''}${td}</span>`);
-            if (pd !== 0) badges.push(`<span class="spec-source-badge spec-badge-perk" title="Perk">P ${pd>0?'+':''}${pd}</span>`);
-            if (cd !== 0) badges.push(`<span class="spec-source-badge spec-badge-cond" title="Conditional">C ${cd>0?'+':''}${cd}</span>`);
-            if (gd !== 0) badges.push(`<span class="spec-source-badge spec-badge-gear" title="Gear Effect">G ${gd>0?'+':''}${gd}</span>`);
-            // Always show the container in detailed mode for consistent layout
-            detailedBadges = `<div class="spec-detailed-sources">${badges.length > 0 ? badges.join('') : '<span class="spec-no-mods">NO MODIFIERS</span>'}</div>`;
-        }
-
+        const dispVal = _showBaseSpecial ? baseVal : effectiveTotal;
+        // bar fill: stacked segments — base + modifier portion
+        const modDelta = _showBaseSpecial ? 0 : effectiveTotal - special[k];
+        const baseBar = _showBaseSpecial ? baseVal : Math.min(special[k], effectiveTotal);
+        const _ds = Math.max(1, Math.min(10, baseBar));
+        const modBar = Math.max(0, Math.min(10 - _ds, Math.abs(modDelta)));
 
         // Glow tier based on effective display value (1–10)
-        const glowTier = _ds >= 10 ? 'spec-glow-max' : _ds >= 8 ? 'spec-glow-high' : _ds >= 6 ? 'spec-glow-mid' : _ds >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
+        const showTotal = _showBaseSpecial ? baseVal : effectiveTotal;
+        const glowTier = showTotal >= 10 ? 'spec-glow-max' : showTotal >= 8 ? 'spec-glow-high' : showTotal >= 6 ? 'spec-glow-mid' : showTotal >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
         
         // Bar fill percentage (1-10 scale = 10% per point)
-        const barPercent = Math.max(0, Math.min(100, _ds * 10));
+        const basePct = Math.max(0, Math.min(100, _ds * 10));
+        const modPct = modBar * 10;
+        const modClass = modDelta > 0 ? 'spec-bar-mod-pos' : 'spec-bar-mod-neg';
         
         // Bar tier classes similar to skill system
-        const barTier = _ds >= 10 ? 'spec-bar-max' : _ds >= 8 ? 'spec-bar-high' : _ds >= 6 ? 'spec-bar-mid' : _ds >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
+        const barTier = showTotal >= 10 ? 'spec-bar-max' : showTotal >= 8 ? 'spec-bar-high' : showTotal >= 6 ? 'spec-bar-mid' : showTotal >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
 
-        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}${_showDetailedSpecial?' spec-detailed-mode':''} ${glowTier}" data-key="${k}">
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''} ${glowTier}" data-key="${k}">
             <div class="spec-card-top">
-                <span class="spec-abbr-lg spec-info-btn" title="${bonusTooltip}">${k}</span>
-                ${deltaBadge}
+                <span class="spec-abbr-lg spec-info-btn">${k}</span>
             </div>
             <div class="spec-card-mid">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
                 <span class="spec-val special-val">${dispVal}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
-                ${hasBonus ? `<span class="spec-eq-badge" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
             </div>
-            ${detailedBadges}
             <div class="spec-bar-container">
                 <div class="spec-bar-bg">
-                    <div class="spec-bar-fill ${barTier}" style="width: ${barPercent}%"></div>
+                    <div class="spec-bar-fill ${barTier}" style="width: ${basePct}%"></div>
+                    ${modDelta !== 0 && modPct > 0 ? `<div class="spec-bar-fill ${modClass}" style="width: ${modPct}%"></div>` : ''}
                 </div>
             </div>
-
         </div>`;
     }).join('');
 
     document.getElementById('ov-name').innerText = (document.getElementById('char-name').value || "NO_ID").toUpperCase();
-    document.getElementById('ov-spec').innerHTML = sKeys.map(k => `<div class="char-banner-stat"><span class="char-banner-stat-key">${k}</span><span class="char-banner-stat-val">${special[k]}</span></div>`).join('');
-    document.getElementById('ov-tags').innerHTML = (() => {
+    const ovTagsEl = document.getElementById('ov-tags');
+    if (ovTagsEl) ovTagsEl.innerHTML = (() => {
         const entries = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => {
             const label = c.parentElement.querySelectorAll('span')[1];
             const skillName = label ? label.innerText : '';
@@ -2733,7 +2962,7 @@ function updateAll() {
         }
         return entries.join('') || 'NONE';
     })();
-        const startingTraitHTML = startingTraits.map((t) => {
+    const startingTraitHTML = startingTraits.map((t) => {
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
         const safeN = encodeURIComponent(t.name).replace(/'/g, '%27');
@@ -2788,6 +3017,33 @@ function updateAll() {
             return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(it.name)}')" title="CLICK FOR DETAILS"><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`;
         }).join('');
         return (levelPerks + bonusPerks + rewardPerks + internalized) || '<span style="opacity:0.3; font-size:0.65rem;">NONE YET</span>';
+    })();
+
+    // Active Effects overview
+    (() => {
+        const el = document.getElementById('ov-active-effects');
+        if (!el) return;
+        const all = getActiveEffects();
+        if (!all.length) { el.innerHTML = '<span style="opacity:0.3; font-size:0.65rem;">NONE</span>'; return; }
+        const groups = {};
+        const order = ['Traits','Perks','Implants','Intense Training','Gear Effects','Conditionals','Head Trauma'];
+        for (const e of all) {
+            if (!groups[e.group]) groups[e.group] = [];
+            groups[e.group].push(e);
+        }
+        el.innerHTML = order.filter(g => groups[g]).map(g => {
+            const items = groups[g];
+            const isNeg = items.some(e => e.value < 0);
+            return `<div class="ae-group">
+                <div class="ae-group-header">${g}</div>
+                ${items.map(e => {
+                    const sign = e.value > 0 ? '+' : '';
+                    const cls = e.value > 0 ? 'ae-pos' : 'ae-neg';
+                    const target = e.stat ? e.stat : e.skill;
+                    return `<div class="ae-entry ${cls}" title="${e.source}"><span class="ae-source">${e.source}</span><span class="ae-target">${target}</span><span class="ae-val">${sign}${e.value}</span></div>`;
+                }).join('')}
+            </div>`;
+        }).join('');
     })();
 
     let gearHTML = Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => {
@@ -2854,6 +3110,10 @@ function updateAll() {
             const cDelta = condSkillDelta[s] || 0;
             const bDelta = bookBonus(s);
             const val = Math.min(100, Math.max(0, base + tDelta + pDelta + cDelta + spent + bDelta));
+            const modTotal = tDelta + pDelta + cDelta + bDelta;
+            const basePart = base + spent;
+            const barBase = modTotal < 0 ? val : Math.min(val, basePart);
+            const barMod = modTotal !== 0 ? Math.min(Math.abs(modTotal), 100 - barBase) : 0;
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
@@ -2861,9 +3121,11 @@ function updateAll() {
             const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')+(cDelta?' COND:'+(cDelta>0?'+':'')+cDelta:'')+(bDelta?' BOOK:+'+bDelta:'')).trim();
             const tagClass = isFourthTag ? ' skill-row-tagged skill-row-tag4' : (isTagged ? ' skill-row-tagged' : '');
             const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
+            const modClass = modTotal > 0 ? 'skill-mod-pos' : 'skill-mod-neg';
+            const sBarTier = !isTagged && !isFourthTag ? (val >= 100 ? 'bar-tier-max' : val >= 70 ? 'bar-tier-high' : val >= 50 ? 'bar-tier-mid' : val >= 30 ? 'bar-tier-low' : 'bar-tier-dim') : '';
             return `<div class="skill-row${tagClass}" data-skill="${s}" title="${breakdown}">
                 <span class="skill-row-name">${tagIcon}${s}</span>
-                <div class="skill-row-bar ${isTagged || isFourthTag ? '' : val >= 100 ? 'bar-tier-max' : val >= 70 ? 'bar-tier-high' : val >= 50 ? 'bar-tier-mid' : val >= 30 ? 'bar-tier-low' : 'bar-tier-dim'}"><div class="skill-row-fill" style="width:${val}%"></div></div>
+                <div class="skill-row-bar"><div class="skill-row-fill ${sBarTier}" style="width:${barBase}%"></div>${barMod > 0 ? `<div class="skill-row-fill ${modClass}" style="width:${barMod}%"></div>` : ''}</div>
                 <span class="skill-row-val">${val}</span>${deltaBadges}
             </div>`;
         }).join('');
@@ -2932,18 +3194,6 @@ function toggleBaseSpecial() {
         btn.title = _showBaseSpecial
             ? 'Showing BASE allocated only — click to show full with all bonuses'
             : 'Showing FULL SPECIAL with all bonuses — click to show base only';
-    }
-    updateAll();
-}
-
-function toggleDetailedSpecial() {
-    _showDetailedSpecial = !_showDetailedSpecial;
-    const btn = document.getElementById('spec-detail-toggle');
-    if (btn) {
-        btn.classList.toggle('spec-detail-toggle-active', _showDetailedSpecial);
-        btn.title = _showDetailedSpecial
-            ? 'Showing DETAILED breakdown — click for simplified view'
-            : 'Showing SIMPLIFIED view — click for detailed breakdown';
     }
     updateAll();
 }
@@ -3144,7 +3394,7 @@ function scheduleCloseAC(input) {
 }
 
 // Map perk req abbreviations → special object keys
-const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHA', CHA:'CHA', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK' };
+const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHR', CHA:'CHR', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK' };
 const STAT_FULL = { STR:'Strength', PER:'Perception', END:'Endurance', CHR:'Charisma', INT:'Intelligence', AGL:'Agility', LCK:'Luck' };
 
 // Cache for trait/perk/conditional bonus lookups — active only during updateAll()
@@ -3513,6 +3763,11 @@ function syncTagLimit() {
 function toggleTag(itemEl) {
     const cb = itemEl.querySelector('input[type="checkbox"]');
     if (!cb || cb.disabled) return;
+    if (!cb.checked) {
+        const cbs = Array.from(document.querySelectorAll('#tag-area input'));
+        const count = cbs.filter(c => c.checked).length;
+        if (count >= 3) return;
+    }
     cb.checked = !cb.checked;
     const marker = itemEl.querySelector('.tag-marker');
     if (marker) marker.textContent = cb.checked ? '[X]' : '[ ]';
@@ -4074,13 +4329,17 @@ function renderWishlist() {
         const statusClass = meets ? 'wishlist-ready' : 'wishlist-not-ready';
         const statusText = meets ? '✓ READY TO TAKE' : '⚠ REQUIREMENTS NOT MET';
         
+        const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
         return `<div class="wishlist-item ${statusClass}">
             <div class="wishlist-perk-info">
                 <div class="wishlist-perk-name">${p.name}</div>
                 <div class="wishlist-perk-req">${p.req}</div>
                 <div class="wishlist-status">${statusText}</div>
             </div>
-            <button class="wishlist-remove-btn" onclick="togglePerkWishlist('${p.name}')" title="Remove from wishlist">✕</button>
+            <div style="display:flex;gap:4px;align-items:center;">
+                <button class="wishlist-graph-btn" onclick="openPerkGraph('${enc}')" title="View perk graph">⊞</button>
+                <button class="wishlist-remove-btn" onclick="togglePerkWishlist('${p.name}')" title="Remove from wishlist">✕</button>
+            </div>
         </div>`;
     }).join('');
 }
@@ -4840,11 +5099,13 @@ function closeHumbledModal() {
 function renderHumbledPicker() {
     const grid = document.getElementById('humbled-special-grid');
     if (!grid) return;
-    const stats = ['STR','PER','END','CHA','INT','AGI','LCK'];
+    const stats = ['STR','PER','END','CHR','INT','AGI','LCK'];
     grid.innerHTML = stats.map(s => {
         const picked = _humbledPickedStats.includes(s);
+        const full = _humbledPickedStats.length >= 4;
         const cur = special[s] || 5;
-        return `<button class="humbled-stat-btn${picked ? ' humbled-stat-picked' : ''}"
+        const extra = picked ? ' humbled-stat-picked' : (full ? ' humbled-stat-disabled' : '');
+        return `<button class="humbled-stat-btn${extra}"
             onclick="toggleHumbledStat('${s}')"
             title="${s}: ${cur} → ${cur - 1}">
             <span class="hs-name">${s}</span>
@@ -5499,7 +5760,11 @@ function onSpecHover(e) {
         const info = SPECIAL_INFO[key];
         if (!info) return;
         const val = special[key];
+        const hd = -(humbledReductions[key] || 0);
         let html = `<div style="color:${info.color};font-weight:bold;font-size:0.85rem;margin-bottom:6px;">${key} — ${info.label} <span style="opacity:0.5;font-weight:normal;">[${val}]</span></div>`;
+        if (hd) {
+            html += `<div style="color:#ff8060;font-size:0.72rem;margin-bottom:4px;">⚠ HEAD TRAUMA −1 (effective: ${val + hd})</div>`;
+        }
         html += `<div style="opacity:0.85;">${info.effects.map(e => `<div style="margin-bottom:2px;">▸ ${e}</div>`).join('')}</div>`;
         if (info.extra) {
             const extraHtml = info.extra(val);

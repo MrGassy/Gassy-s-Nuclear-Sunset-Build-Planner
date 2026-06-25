@@ -151,7 +151,7 @@
           <option value="STR">STR</option>
           <option value="PER">PER</option>
           <option value="END">END</option>
-          <option value="CHA">CHA</option>
+          <option value="CHR">CHR</option>
           <option value="INT">INT</option>
           <option value="AGI">AGI</option>
           <option value="LCK">LCK</option>
@@ -230,7 +230,7 @@
             <span style="color:#ff9060;">This action is permanent and cannot be undone.</span>
         </div>
         <div style="font-size:0.7em; color:#999; margin-bottom:12px; line-height:1.5;">
-            STD: Perks every 4 levels until pre-transit level &nbsp;|&nbsp; HC: No perks until pre-transit level.<br>
+            Perks every 4 levels until pre-transit level.<br>
             Traits &amp; perks retained. Skills from skill books retained. Power Armor Training removed.
         </div>
         <div style="font-size:0.75em; color:#aaa; margin-bottom:8px;">
@@ -308,6 +308,24 @@
     <div id="perk-zoom-actions" style="display:none; margin-top:16px; padding-top:12px; border-top:1px solid rgba(100,255,100,0.15); display:flex; gap:8px;">
       <button id="perk-zoom-take-btn" class="action-btn" style="flex:1;">+ ADD TO BUILD</button>
       <button id="perk-zoom-wishlist-btn" class="action-btn perk-wishlist-action">★ WISHLIST</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="perk-graph-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:840px; width:94vw; background:rgba(0,0,0,0.92); border:1px solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.3); padding:16px;">
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; gap:12px;">
+      <div>
+        <div id="perk-graph-name" style="font-size:1.1rem; font-weight:bold; color:var(--pip-color); letter-spacing:0.08em;"></div>
+        <div id="perk-graph-req" style="font-size:0.78rem; color:#ffd060; letter-spacing:0.06em; font-weight:bold; opacity:0.8; margin-top:4px;"></div>
+      </div>
+      <div style="display:flex; gap:6px;">
+        <button id="perk-graph-refresh" title="Recentre graph" style="background:none; border:1px solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.3); color:var(--pip-color); padding:3px 8px; cursor:pointer; font-size:0.82rem;">⟲</button>
+        <button onclick="document.getElementById('perk-graph-modal').style.display='none'" style="background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.82rem;">✕</button>
+      </div>
+    </div>
+    <div id="perk-graph-container" style="width:100%; overflow:auto; min-height:320px; max-height:70vh; display:flex; align-items:center; justify-content:center;">
+      <div style="color:rgba(255,255,255,0.3); font-size:0.75rem;">Loading graph...</div>
     </div>
   </div>
 </div>
@@ -463,9 +481,6 @@
                     <span class="section-label">S.P.E.C.I.A.L.</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <button id="spec-detail-toggle" class="spec-detail-toggle-btn" onclick="toggleDetailedSpecial()" title="Toggle between simplified view (total bonuses) and detailed view (breakdown by source)">
-                        DETAILED
-                    </button>
                     <button id="spec-base-toggle" class="spec-base-toggle-btn" onclick="toggleBaseSpecial()" title="Toggle between full SPECIAL (with all bonuses) and base-only (allocated points before any IT / implants / traits / perks)">
                         BASE
                     </button>
@@ -509,9 +524,6 @@
             <!-- CHAR BANNER -->
             <div class="char-banner">
                 <div id="ov-name" class="char-banner-name">NO_ID</div>
-                <div class="char-banner-meta">
-                    <div id="ov-spec" class="char-banner-spec"></div>
-                </div>
             </div>
 
             <!-- BUILD FEATURES BAR -->
@@ -524,32 +536,51 @@
                 </button>
             </div>
 
-            <!-- MAIN CHAR SHEET: 3 columns -->
-            <div class="char-sheet-cols">
+            <!-- DASHBOARD: 3 columns -->
+            <div class="dashboard-cols">
 
-                <!-- COL 1: TAGS -->
-                <div class="char-sheet-col">
+                <!-- COL 1: TAGS + GEAR -->
+                <div class="dash-col">
                     <div class="cs-header">
                         <span class="cs-label">TAGS</span>
                         <span class="cs-sublabel">MAX 3</span>
                     </div>
                     <div id="tag-area" class="tag-grid"></div>
+                    <div class="dash-divider"></div>
+                    <div class="cs-header">
+                        <span class="cs-label">GEAR</span>
+                    </div>
+                    <div id="ov-gear" style="font-size:0.75rem;"></div>
                 </div>
 
-                <!-- COL 2: TRAITS -->
-                <div class="char-sheet-col">
+                <!-- COL 2: TRAITS + IMPLANTS + PERK LOG + ACTIVE EFFECTS -->
+                <div class="dash-col">
                     <div class="cs-header">
                         <span class="cs-label" id="trait-header">TRAITS <span id="hc-trait-counter" class="hc-trait-counter">0/5</span></span>
-                        <button class="cs-add-btn cs-start-trait-btn" title="ADD A STARTING TRAIT TO YOUR CHARACTER" onclick="openStartingTraitModal()">◈ ADD STARTING TRAIT</button>
+                        <button class="cs-add-btn cs-start-trait-btn" title="ADD A STARTING TRAIT TO YOUR CHARACTER" onclick="openStartingTraitModal()">◈ ADD</button>
                     </div>
                     <div id="hc-trait-limit-warning" style="display:none; background:rgba(255,0,0,0.1); border-left:3px solid rgba(255,0,0,0.7); color:#ff6060; padding:5px 10px; font-size:0.72rem; margin-bottom:6px; letter-spacing:0.05em;">⚠ HARDERCORE LIMIT — MAX 5 STARTING TRAITS</div>
                     <div id="trait-list" style="display:none;"></div>
-                    <div id="ov-traits-inline"></div>
-                    <div id="ov-traits-empty" style="font-size:0.58rem; color:rgba(255,255,255,0.2); padding:4px 0; letter-spacing:0.04em; display:none;">NO TRAITS SELECTED</div>
+                    <div id="ov-traits" style="font-size:0.75rem;"></div>
+                    <div class="dash-divider"></div>
+                    <div class="cs-header">
+                        <span class="cs-label">IMPLANTS</span>
+                    </div>
+                    <div id="ov-implants" style="font-size:0.75rem;"></div>
+                    <div class="dash-divider"></div>
+                    <div class="cs-header">
+                        <span class="cs-label">PERK &amp; TRAIT LOG</span>
+                    </div>
+                    <div id="ov-perks" style="font-size:0.75rem;"></div>
+                    <div class="dash-divider"></div>
+                    <div class="cs-header">
+                        <span class="cs-label">ACTIVE EFFECTS</span>
+                    </div>
+                    <div id="ov-active-effects" style="font-size:0.75rem;"></div>
                 </div>
 
-                <!-- COL 3: SKILLS + LVL UP -->
-                <div class="char-sheet-col char-sheet-skills-col">
+                <!-- COL 3: SKILLS -->
+                <div class="dash-col dash-col-skills">
                     <div class="cs-header">
                         <span class="cs-label">SKILLS</span>
                         <button id="lvlup-open-btn" class="lvlup-open-btn lvlup-btn-locked" onclick="openLevelUpModal()">
@@ -557,24 +588,13 @@
                             <span id="lvlup-pts-preview" class="lvlup-pts-preview"></span>
                         </button>
                         <button id="rollback-btn" class="rollback-btn" onclick="openLevelRollbackModal()" title="ROLLBACK TO PREVIOUS LEVEL" style="display:none;">↶ ROLLBACK</button>
-                        <button id="transit-btn" class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT — TRIGGERS HEAD TRAUMA DEBUFF (FIRST TIME ONLY)">&#x2622; TRANSIT</button>
+                        <button id="transit-btn" class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT">&#x2622; TRANSIT</button>
                     </div>
                     <div id="lvlup-not-ready" style="display:none;font-size:0.65rem;color:#ff6060;margin-bottom:6px;padding:4px 8px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,0,0,0.06);">⚠ SELECT 3 TAGS TO UNLOCK</div>
                     <div id="skill-list" class="skill-list-2col"></div>
                     <div id="ov-levelup-bonuses" class="levelup-bonuses-display" style="display:none; margin-top:10px;"></div>
                 </div>
 
-            </div>
-
-            <!-- SUMMARY CARDS -->
-            <div class="ov-grid" style="margin-top:16px;">
-                <div>
-                    <div class="ov-card"><span class="ov-sub">GEAR_LIST</span><div id="ov-gear"></div></div>
-                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TAGS_ACTIVE</span><div id="ov-tags"></div></div>
-                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TRAITS_ACTIVE</span><div id="ov-traits"></div></div>
-                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">IMPLANTS</span><div id="ov-implants" style="font-size:0.65rem;"></div></div>
-                </div>
-                <div class="ov-card"><span class="ov-sub">PERK &amp; TRAIT LOG</span><div id="ov-perks"></div></div>
             </div>
         </div>
 
