@@ -10,22 +10,230 @@ const SKILL_GOVERNING = {
     'REPAIR':'INT','SCIENCE':'INT','SNEAK':'AGI','SPEECH':'CHA','SURVIVAL':'END','UNARMED':'END'
 };
 
-/* --- SKILL_BOOKS --- */
-const SKILL_BOOKS = [
-  { skill:'BARTER',          name:'Tales of a Junktown Jerky Vendor',         max:24 },
-  { skill:'BIG GUNS',        name:'U.S. Army: 30 Handy Flamethrower Recipes', max:16 },
-  { skill:'ENERGY WEAPONS',  name:'Nikola Tesla and You',                      max:20 },
-  { skill:'EXPLOSIVES',      name:'Duck and Cover!',                           max:20 },
-  { skill:'GUNS',            name:'Guns and Bullets',                          max:24 },
-  { skill:'LOCKPICK',        name:'Tumblers Today',                            max:20 },
-  { skill:'MEDICINE',        name:'D.C. Journal of Internal Medicine',         max:20 },
-  { skill:'MELEE WEAPONS',   name:'Grognak the Barbarian',                     max:20 },
-  { skill:'REPAIR',          name:"Dean's Electronics",                        max:16 },
-  { skill:'SCIENCE',         name:'Big Book of Science',                       max:20 },
-  { skill:'SNEAK',           name:'Chinese Army: Special Ops Training Manual', max:16 },
-  { skill:'SPEECH',          name:'Lying, Congressional Style',                max:16 },
-  { skill:'SURVIVAL',        name:'Wasteland Survival Guide',                  max:20 },
-  { skill:'UNARMED',         name:'Pugilism Illustrated',                      max:16 },
+/* --- SKILL_BOOKS (per-origin data) ---
+ * Each entry lists every individual copy location for that origin.
+ * `count` gives the total number of copies findable in that wasteland.
+ */
+const SKILL_BOOKS_CW = [
+  { skill:'BARTER', name:'Tales of a Junktown Jerky Vendor', count:6, copies:[
+    { location:'Abandoned Car Fort',       detail:'Left of the ammunition boxes.' },
+    { location:'Bethesda Ruins',           detail:'Bethesda Underworks. On a bucket on a bench immediately after entering from the tunnel.' },
+    { location:'Dupont East',              detail:"Lady Frumperton's Fashions. On top of the safe." },
+    { location:'Grisly Diner',             detail:'Main building. On a shelf.' },
+    { location:'Tenpenny Tower',           detail:"Willy's Grocer (to the east). On the counter." },
+    { location:'Wasteland Gypsy Village',  detail:'Northern shack. On top of a desk in the northwestern area.' },
+  ]},
+  { skill:'BIG GUNS', name:'U.S. Army: 30 Handy Flamethrower Recipes', count:5, copies:[
+    { location:'Evergreen Mills',          detail:'Second room in the southern shack, on a bookshelf.' },
+    { location:'National Guard Depot',     detail:'Armory, right next to the Experimental MIRV.' },
+    { location:'Penn. Ave Northwest',      detail:'Inside the local map marker Hotel (BOS compound). Must be stolen unless Broken Steel DLC is active.' },
+    { location:'Red Racer Factory',        detail:'In a raider shop dead-end alley to the east, on the counter.' },
+    { location:'VAPL-58 Power Station',    detail:'Up on the roof, sitting by the BB gun.' },
+  ]},
+  { skill:'ENERGY WEAPONS', name:'Nikola Tesla and You', count:6, copies:[
+    { location:'Arlington Library',        detail:"Talon Company recon camp south of the library. On top of a round table on the highest level." },
+    { location:'Foggy Bottom Station',     detail:'Protectron area. On the computer console adjacent to the Protectron charging pad.' },
+    { location:'Jury Street Metro Station',detail:"Gold Ribbon Grocers. Awarded for completing the \"Rube's Gold Ribbon\" puzzle." },
+    { location:'Mason Dixon Salvage',      detail:'Abandoned tent to the northeast. On a shelf between two ammunition boxes.' },
+    { location:'MDPL-21 Power Station',    detail:'Main room. On a workbench.' },
+    { location:'Vault 106',                detail:'Living Quarters. Inside the bottom wooden box in a stack on the large desk.' },
+  ]},
+  { skill:'EXPLOSIVES', name:'Duck and Cover!', count:6, copies:[
+    { location:'F. Scott Key Trail & Campground', detail:'Campsite area. On a picnic table.' },
+    { location:"Jocko's Pop & Gas Stop",          detail:'East of the activating antenna mast. Inside the Signal Sierra Victor drainage chamber.' },
+    { location:'Museum of Technology',             detail:'North side. Inside the super mutant bunker on a desk.' },
+    { location:'National Archives',                detail:'Lower level, northwest corner. On top of a school desk next to missiles in a room full of bookshelves.' },
+    { location:'Old Olney',                        detail:'Olney Sewers. At the end of a rocky tunnel next to a skeleton.' },
+    { location:'SatCom Array NW-07c',              detail:'Valley north of the exploding scientist truck. On the ground near car wrecks, next to a skeleton.' },
+  ]},
+  { skill:'GUNS', name:'Guns and Bullets', count:6, copies:[
+    { location:'Alexandria Arms',                 detail:'Second floor. On a desk near a terminal.' },
+    { location:'Everglow National Campground',    detail:'Silver trailer. Inside the main raider lair.' },
+    { location:'Flooded Metro',                   detail:'First big open room. Behind the left (west) pillar next to a skeleton.' },
+    { location:'Fort Constantine',                detail:'CO Quarters. On top of the bed.' },
+    { location:'Hubris Comics',                   detail:'Outdoor square, southwest corner. Second story of a destroyed brick building (south of the entrances to Hubris Comics/metro).' },
+    { location:'Relay Tower KX-B8-11',            detail:'Hilltop farm ruins to the southeast. Inside the outhouse.' },
+  ]},
+  { skill:'LOCKPICK', name:'Tumblers Today', count:6, copies:[
+    { location:'Broadcast Tower KB5',           detail:'Drainage chamber. On the floor in front of a locked door.' },
+    { location:'Falls Church/Mason Dst Metro',  detail:'Franklin Metro Utility. Lower floor, on top of the average locked mine box to the right of the turret.' },
+    { location:'Mason Dixon Salvage',           detail:'Abandoned shack without the broken fridge. On the floor next to the footlocker.' },
+    { location:'Roosevelt Academy',             detail:'Arts and Athletics Hall. On a desk near a locked safe on the third floor.' },
+    { location:'Seward Sq. North Metro',        detail:'Sewer northeast of the map marker. Near the debris area on the southeastern tunnel.' },
+    { location:'Sewer Waystation',              detail:'Talon Company camp to the southwest. In the storeroom on a shelf.' },
+  ]},
+  { skill:'MEDICINE', name:'D.C. Journal of Internal Medicine', count:6, copies:[
+    { location:'Anchorage Memorial',            detail:'Bottom floor clinic. On a table next to the one above the safe, hidden behind a light.' },
+    { location:'Greener Pastures Disposal Site',detail:'Northeastern area. Inside the makeshift shack.' },
+    { location:'Jalbert Brothers Waste Disposal',detail:'Main office. On top of a bookshelf.' },
+    { location:'Mason Dixon Salvage',           detail:'Abandoned shack with the broken refrigerator. Sitting on the floor.' },
+    { location:'Our Lady of Hope Hospital',     detail:'First floor. In a room guarded by a centaur.' },
+    { location:'Roosevelt Academy',             detail:'Academy building, first floor. Inside the Nurse\'s Office.' },
+  ]},
+  { skill:'MELEE WEAPONS', name:'Grognak the Barbarian', count:6, copies:[
+    { location:'Bethesda Ruins',      detail:'Bethesda Underworks. Down the stairs, inside a side passage room off the train tracks.' },
+    { location:'Chaste Acres Dairy Farm', detail:'Barn, second floor. Next to a bed.' },
+    { location:'Cliffside Cavern',    detail:'Main hall sniper nest. On top of the wooden housing of a large generator (northeast from the central platform with the chessboard).' },
+    { location:'Clifftop Shacks',     detail:'Northern shack. Beware of the super mutant master guarding the door.' },
+    { location:'Vault 101',           detail:'Growing Up Fast quest. Added to inventory when starting NS in D.C.' },
+    { location:'Vernon Square North', detail:'Metro Junction. Halfway down to the platform, follow the board over the railing to a table with a lamp below.' },
+  ]},
+  { skill:'REPAIR', name:"Dean's Electronics", count:6, copies:[
+    { location:'Andale',                    detail:'Road to the east. Inside a truck on the road.' },
+    { location:'Canterbury Commons',        detail:"Dominic and Machete's house. On the desk near the northwest corner." },
+    { location:'Our Lady of Hope Hospital', detail:'Dry sewer from basement to Dupont Circle. On a shelf in a room at the south end.' },
+    { location:"Rockbreaker's Last Gas",    detail:'Abandoned sniper shack on the cliff to the west. In a wooden crate under the workbench.' },
+    { location:'VAPL-58 Power Station',     detail:'Main desk. Next to the computer.' },
+    { location:'VAPL-66 Power Station',     detail:'Main desk. Next to the broken computer.' },
+  ]},
+  { skill:'SCIENCE', name:'Big Book of Science', count:6, copies:[
+    { location:'Bethesda Ruins',              detail:'Bethesda Offices West, ground floor. On the main desk next to the terminal. Watch out for the turret!' },
+    { location:'Broadcast Tower LP8',         detail:'Signal Echo Foxtrot. Inside the sealed cistern.' },
+    { location:'Corvega Factory',             detail:'South of the factory. In a waste container. Jump in from the cliff above.' },
+    { location:'Greener Pastures Disposal Site', detail:'Southwest area. In the back of a truck near a dead scientist.' },
+    { location:"L'Enfant Plaza",              detail:'South of the map marker/metro, slightly east. Inside a Pulowski Preservation shelter.' },
+    { location:'Nuka-Cola Plant',             detail:'Second floor. In the office area.' },
+  ]},
+  { skill:'SNEAK', name:'Chinese Army: Special Ops Training Manual', count:5, copies:[
+    { location:'Broadcast Tower KT8',    detail:'Signal Sierra Romeo. Inside the drainage ditch room.' },
+    { location:'Fairfax Ruins',          detail:'Fairfax Metro Station, bottom level. On a slab of concrete on the rubble below the mezzanine next to the east escalator.' },
+    { location:'L.O.B. Enterprises',     detail:'L.O.B. Enterprises Archives. On a desk with a computer.' },
+    { location:"Mama Dolce's",           detail:'Loading Yard. On the floor next to a Chinese remnant sniper on the eastern upper level.' },
+    { location:'SatCom Array NW-05a',    detail:'Ground level entrance. Near a terminal towards the left upon entering.' },
+  ]},
+  { skill:'SPEECH', name:'Lying, Congressional Style', count:6, copies:[
+    { location:'The Capitol Building',   detail:'Conference Hall. On top of a podium.' },
+    { location:'Corvega Factory',        detail:'Main entrance. On the reception desk.' },
+    { location:'Georgetown North',       detail:"McClellan family townhome. Inside the house." },
+    { location:'Jury Street Metro Station', detail:"Jury St. Tunnels. On top of a safe in Ryan Briggs' room." },
+    { location:'Museum of History',      detail:'Underworld (Paradise Lost). Talk to Tulip; can be obtained for free.' },
+    { location:'Takoma Industrial',      detail:'Main facility. In the easternmost room.' },
+  ]},
+  { skill:'SURVIVAL', name:"Scout's Handbook", count:6, copies:[
+    { location:'Arlington Cemetery North',  detail:'Arlington Utility Tunnels. Up the left stairs, turn right at the top. On a shelf on the right side of the room.' },
+    { location:'Arlington/Falls Church Metro', detail:'Shipping container on the path to the Arlington Cemetery exit. Sitting on a chair inside.' },
+    { location:'Dupont Northeast',          detail:'Sunken sewer. On top of an Average locked safe.' },
+    { location:'Fairfax Ruins',             detail:'Car dealership to the east. Upper level, on a generator near ruined vehicles (jump onto the corner coffee table to reach it).' },
+    { location:'Georgetown East',           detail:"La Maison Beauregard. On the floor beside a desk with a cash register upon entering the lobby." },
+    { location:'Takoma Industrial',         detail:'Auto shop adjacent to the main factory. Inside the shop.' },
+  ]},
+  { skill:'UNARMED', name:'Pugilism Illustrated', count:6, copies:[
+    { location:'Anacostia Crossing Station',  detail:'Upper level, northern end. On a table mixed with various chems and alcohol.' },
+    { location:'Chaste Acres Dairy Farm',     detail:'Grain silo. Located inside.' },
+    { location:'Flooded Metro',               detail:'Raider encampment southeast of southern entrance. On the makeshift kitchen table.' },
+    { location:'SatCom Array NN-03d',         detail:'Tower C. On the leftmost toilet seat.' },
+    { location:'Vault 108',                   detail:'Living Quarters. On the counter in the cafeteria.' },
+    { location:'Warrington Station',          detail:"Lucky's. Behind the bar/counter." },
+  ]},
+];
+const SKILL_BOOKS_MW = [
+  { skill:'BARTER', name:'Tales of a Junktown Jerky Vendor', count:6, copies:[
+    { location:'Vault 22',                     detail:'Lab area upstairs from the elevator, on a table.' },
+    { location:'Allied Technologies Offices',   detail:'Inside the building on the floor in the southwestern corner.' },
+    { location:'Cap Counterfeiting Shack',      detail:'In the cellar, on top of the suitcases in the far bedroom.' },
+    { location:'Primm',                         detail:'Bison Steve Hotel, behind the counter on top of the safe in the northeast room on the first floor.' },
+    { location:'Salida del Sol South [DEAD MONEY]', detail:'' },
+    { location:'Marked men guard outpost [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'ENERGY WEAPONS', name:'Nikola Tesla and You', count:6, copies:[
+    { location:'Old Nuclear Testing Site', detail:'Inside the entrance on a table.' },
+    { location:'Hidden Valley',            detail:"Schuler's office, in a bin near his desk." },
+    { location:'REPCONN Headquarters',     detail:'Locked shipping room, on top of a safe in the corner.' },
+    { location:'REPCONN Headquarters',     detail:'Server room on the second floor.' },
+    { location:'Sierra Madre Vault [DEAD MONEY]', detail:'' },
+    { location:'Hopeville Missile Base Headquarters [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'EXPLOSIVES', name:'Duck and Cover!', count:6, copies:[
+    { location:'Sloan',                   detail:'Worker barracks, on the back-left shelf under a first aid box.' },
+    { location:'Mojave Outpost',          detail:'Inside the barracks, below the bar counter on the middle shelf.' },
+    { location:'Nellis Air Force Base',   detail:"Pearl's Barracks, on a bookshelf above the grenade rifle." },
+    { location:'Ranger Station Foxtrot',  detail:'On the table next to Comm Officer Lenk.' },
+    { location:'Residential District [DEAD MONEY]', detail:'' },
+    { location:'Collapsed Overpass Tunnel [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'GUNS', name:'Guns and Bullets', count:6, copies:[
+    { location:"Raul's Shack",                detail:'Inside a wooden crate to the left as you enter the shack.' },
+    { location:'Nevada Highway Patrol Station',detail:'On a desk covered in papers in the first room.' },
+    { location:'Vault 34',                     detail:'Armory Common room, next to the pool table on a box.' },
+    { location:'Gomorrah',                     detail:"Bookshelf along the same wall as a wall safe near Sal's room." },
+    { location:'Sierra Madre Casino [DEAD MONEY]', detail:'' },
+    { location:'Hopeville Armory [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'LOCKPICK', name:'Tumblers Today', count:6, copies:[
+    { location:'Wolfhorn Ranch',               detail:'Underneath the broken refrigerator in the farmhouse.' },
+    { location:'Silver Peak Mine',             detail:'In an open locker to the right of the entrance.' },
+    { location:"The Prospector's Den",         detail:'On the floor in the corner of the large barracks room.' },
+    { location:'Bitter Springs Recreation Area',detail:'On the desk in the smaller office of the office shack.' },
+    { location:'Sierra Madre Casino [DEAD MONEY]', detail:'' },
+    { location:"Men's Barracks [LONESOME ROAD]", detail:'' },
+  ]},
+  { skill:'MEDICINE', name:'D.C. Journal of Internal Medicine', count:6, copies:[
+    { location:'HELIOS One',              detail:'Top floor, cross over the planks. On top of a bed.' },
+    { location:'Novac',                   detail:"Ranger Andy's motel room, on his bed." },
+    { location:'Mesquite Mountains Crater',detail:"Hell's Motel, on the table with the repair kit." },
+    { location:"Follower's Safehouse",    detail:'Second room, on a bedside table.' },
+    { location:'Villa Clinic [DEAD MONEY]', detail:'' },
+    { location:'Cave of the Abaddon [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'MELEE WEAPONS', name:'Grognak the Barbarian', count:6, copies:[
+    { location:'Hidden Supply Cave',        detail:'On top of a metal box inside the cave.' },
+    { location:"Cannibal Johnson's Cave",   detail:'Lying next to the campfire near the ham radio.' },
+    { location:'Jacobstown',                detail:'Near the pond inside the eastern building, on the floor.' },
+    { location:'Cottonwood Cove',           detail:'In the bedside table on the upper floor.' },
+    { location:'Villa Police Station [DEAD MONEY]', detail:'' },
+    { location:"Women's Barracks [LONESOME ROAD]", detail:'' },
+  ]},
+  { skill:'REPAIR', name:"Dean's Electronics", count:6, copies:[
+    { location:'Nellis Air Force Base',       detail:"Loyal's workshop shed, on a shelf near the ruined terminal." },
+    { location:'Sloan',                       detail:'Worker barracks, on a bookshelf next to the toy dinosaur.' },
+    { location:'Southern Nevada Wind Farm',   detail:'Inside the shack, on the table with the clipboard.' },
+    { location:"Abandoned BOS Bunker [DEAD MONEY]", detail:'' },
+    { location:'Puesta del Sol Switching Station [DEAD MONEY]', detail:'' },
+    { location:'Hopeville Missile Silo Bunker [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'SCIENCE', name:'Big Book of Science', count:8, copies:[
+    { location:'REPCONN Headquarters',   detail:'Inside the gift shop storeroom near the rocket souvenirs.' },
+    { location:'Nipton',                 detail:'Town Hall top floor, on the Mayor\'s desk.' },
+    { location:'Camp Forlorn Hope',      detail:"Major Polatli's tent, on the desk." },
+    { location:"Brewer's Beer Bootlegging",detail:'In the basement on a table.' },
+    { location:'HELIOS One',             detail:'Reward from Fantastic for repairing the solar panels.' },
+    { location:"Executive Suites [DEAD MONEY]", detail:'' },
+    { location:'Y-0 Research Center [OLD WORLD BLUES]', detail:'' },
+    { location:'Ashton Missile Silo [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'SNEAK', name:'Chinese Army: Special Ops Training Manual', count:8, copies:[
+    { location:'NCR Sharecropper Farms',  detail:'Northeast corner, house near large fertilizer tanks, on the desk.' },
+    { location:'Vault 3',                 detail:'Executive dorm, in a bookcase opposite the entrance.' },
+    { location:'Goodsprings',             detail:'House just east of the schoolhouse, in a bookshelf.' },
+    { location:'Camp Searchlight',        detail:'Gecko-infested basement area of the east chapel.' },
+    { location:'Puesta del Sol Switching Station [DEAD MONEY]', detail:'' },
+    { location:"X-13 Research Facility [OLD WORLD BLUES]", detail:'' },
+    { location:'X-13 Research Facility [OLD WORLD BLUES]', detail:'' },
+    { location:"Sunstone Tower roof [LONESOME ROAD]", detail:'' },
+  ]},
+  { skill:'SPEECH', name:'Lying, Congressional Style', count:6, copies:[
+    { location:'Brooks Tumbleweed Ranch',   detail:'Upper floor inside the house, in an open locker.' },
+    { location:'Cerulean Robotics',         detail:'On the floor in the middle of the office desks.' },
+    { location:'NCR Correctional Facility', detail:'Inside the dark room opposite of Eddie\'s room.' },
+    { location:'Lucky Jim Mine',            detail:'On the shelf near the Varmint Rifle inside the shack.' },
+    { location:'The Tampico [DEAD MONEY]', detail:'' },
+    { location:'Third Street Municipal Building [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'SURVIVAL', name:'Wasteland Survival Guide', count:5, copies:[
+    { location:'Lone Wolf Radio',              detail:'Inside the trailer on the floor.' },
+    { location:'Mesquite Mountains Camp Site', detail:'Inside a tent behind the sleeping bag.' },
+    { location:"Matthew's Animal Husbandry Farm", detail:'Top floor of the northernmost barn.' },
+    { location:'Scavenger Platform',           detail:'Mixed in a pile of books under a knocked-over bookshelf.' },
+    { location:'Waste disposal station [LONESOME ROAD]', detail:'' },
+  ]},
+  { skill:'UNARMED', name:'Pugilism Illustrated', count:6, copies:[
+    { location:"Fisherman's Pride Shack", detail:'Inside the shack on the bedside table.' },
+    { location:'Nipton Road Reststop',   detail:'Inside the general store building on the left wall, on a bookshelf.' },
+    { location:'Vault 11',               detail:'Next to the knocked-over dresser in the female dorm room.' },
+    { location:'The Tops Casino',        detail:'Presidential Suite near the pool tables.' },
+    { location:'Villa [DEAD MONEY]', detail:'' },
+    { location:"Wastewater treatment plant [LONESOME ROAD]", detail:'' },
+  ]},
 ];
 
 /* --- SKILL_REQ_MAP --- */
@@ -819,18 +1027,18 @@ const CUSTOM_THEMES = ['bos','enclave','vault21','legion','ncr','house','shi','v
 
 /* --- FACTION_THEMES --- */
 const FACTION_THEMES = {
-    '':            { label: 'NUCLEAR SUNSET',               quote: '' },
-    'vaulttec':    { label: 'VAULT-TEC',                    quote: 'Revolutionizing safety for an uncertain future!' },
-    'bos':         { label: 'BROTHERHOOD OF STEEL',         quote: 'Ad Victoriam. Knowledge is power.' },
-    'enclave':     { label: 'THE ENCLAVE',                  quote: 'God bless the Enclave. God bless America.' },
-    'legion':      { label: "CAESAR'S LEGION",              quote: 'The Legion does not retreat. Ave, true to Caesar.' },
-    'ncr':         { label: 'NEW CALIFORNIA REPUBLIC',      quote: 'Patrolling the Mojave almost makes you wish for a nuclear winter.' },
-    'house':       { label: 'MR. HOUSE / NEW VEGAS STRIP',  quote: 'The House always wins. Welcome to the Strip.' },
-    'nukacola':    { label: 'NUKA-COLA',                    quote: 'Ice cold Nuka-Cola! The taste of a world gone by.' },
-    'zeta':        { label: 'MOTHERSHIP ZETA',              quote: 'You are being held aboard Mothership Zeta.' },
-    'sierramadre': { label: 'SIERRA MADRE',                 quote: 'Begin again. Let go.' },
-    'pitt':        { label: 'THE PITT',                     quote: 'Welcome to the Pitt. Now get back to work.' },
-    'owb':         { label: 'OLD WORLD BLUES',              quote: 'All right. I am ready to be awed.' },
+    '':            { label: 'NUCLEAR SUNSET' },
+    'vaulttec':    { label: 'VAULT-TEC' },
+    'bos':         { label: 'BROTHERHOOD OF STEEL' },
+    'enclave':     { label: 'THE ENCLAVE' },
+    'legion':      { label: "CAESAR'S LEGION" },
+    'ncr':         { label: 'NEW CALIFORNIA REPUBLIC' },
+    'house':       { label: 'MR. HOUSE / NEW VEGAS STRIP' },
+    'nukacola':    { label: 'NUKA-COLA' },
+    'zeta':        { label: 'MOTHERSHIP ZETA' },
+    'sierramadre': { label: 'SIERRA MADRE' },
+    'pitt':        { label: 'THE PITT' },
+    'owb':         { label: 'OLD WORLD BLUES' },
 };
 
 /* --- CONDITIONAL_PERK_NAMES (perks with toggleable situational SPECIAL/skill bonuses) --- */
@@ -892,82 +1100,150 @@ const CONDITIONAL_TOGGLE_BONUSES = {
 
 /* --- KARMA_TIERS --- */
 const KARMA_TIERS = [
-    { id: 'very-good', label: '★★ VERY GOOD', color: '#a0e8ff' },
-    { id: 'good',      label: '★ GOOD',        color: '#70d870' },
-    { id: 'neutral',   label: '◆ NEUTRAL',     color: '#c8c888' },
-    { id: 'evil',      label: '✖ EVIL',         color: '#ff8040' },
-    { id: 'very-evil', label: '✖✖ VERY EVIL',  color: '#ff3030' },
+    { id: 'very-good', label: 'VERY GOOD', color: '#a0e8ff' },
+    { id: 'good',      label: 'GOOD',       color: '#70d870' },
+    { id: 'neutral',   label: 'NEUTRAL',    color: '#c8c888' },
+    { id: 'evil',      label: 'EVIL',       color: '#ff8040' },
+    { id: 'very-evil', label: 'VERY EVIL',  color: '#ff3030' },
 ];
 
-/* --- ARCHETYPES_DATA --- */
-const _EMPTY_PERK_SLOT = ['',''];
-const ARCHETYPES_DATA = [];
-/* Archetypes registered via addArchetypeKey() */
+/* --- KARMA_ICONS_BY_THEME --- */
+const KARMA_ICONS_BY_THEME = {
+    cw:         { 'very-good': '✦✦✦', 'good': '✦✦', 'neutral': '◆', 'evil': '☠', 'very-evil': '☠☠' },
+    mw:         { 'very-good': '♛♛♛', 'good': '♛♛', 'neutral': '◈', 'evil': '♠', 'very-evil': '♠♠' },
+    vaulttec:   { 'very-good': '☼☼☼', 'good': '☼☼', 'neutral': '◎', 'evil': '☢', 'very-evil': '☢☢' },
+    bos:        { 'very-good': '⚜⚜⚜', 'good': '⚜⚜', 'neutral': '▰', 'evil': '✙', 'very-evil': '✙✙' },
+    enclave:    { 'very-good': '★★★', 'good': '★★', 'neutral': '▬', 'evil': '☠', 'very-evil': '☠☠' },
+    legion:     { 'very-good': '⬟⬟⬟', 'good': '⬟⬟', 'neutral': '⚔', 'evil': '💀', 'very-evil': '💀💀' },
+    ncr:        { 'very-good': '⭐⭐⭐', 'good': '⭐⭐', 'neutral': '▮', 'evil': '⚠', 'very-evil': '⚠⚠' },
+    house:      { 'very-good': '♛♛♛', 'good': '♛♛', 'neutral': '◈', 'evil': '♠', 'very-evil': '♠♠' },
+    nukacola:   { 'very-good': '●●●', 'good': '●●', 'neutral': '○', 'evil': '☠', 'very-evil': '☠☠' },
+    zeta:       { 'very-good': '◉◉◉', 'good': '◉◉', 'neutral': '◯', 'evil': '⦿', 'very-evil': '⦿⦿' },
+    sierramadre:{ 'very-good': '◆◆◆', 'good': '◆◆', 'neutral': '◇', 'evil': '☢', 'very-evil': '☢☢' },
+    pitt:       { 'very-good': '▲▲▲', 'good': '▲▲', 'neutral': '△', 'evil': '☠', 'very-evil': '☠☠' },
+    owb:        { 'very-good': '◈◈◈', 'good': '◈◈', 'neutral': '◇', 'evil': '⚗', 'very-evil': '⚗⚗' },
+};
 
+/* --- KARMA_FACES_BY_THEME --- */
+const KARMA_FACES_BY_THEME = {
+    cw: {
+        'very-good': { top:'✦ ✦ ✦', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☠‿☠', s:'VERY EVIL' },
+    },
+    mw: {
+        'very-good': { top:'♛ ♛ ♛', g:'◠◡◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠◡◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☠_☠', s:'VERY EVIL' },
+    },
+    vaulttec: {
+        'very-good': { top:'☼ ☼ ☼', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☢‿☢', s:'VERY EVIL' },
+    },
+    bos: {
+        'very-good': { top:'⚜ ⚜ ⚜', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'✙_✙', s:'VERY EVIL' },
+    },
+    enclave: {
+        'very-good': { top:'★ ★ ★', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☠‿☠', s:'VERY EVIL' },
+    },
+    legion: {
+        'very-good': { top:'⬟ ⬟ ⬟', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'💀_💀', s:'VERY EVIL' },
+    },
+    ncr: {
+        'very-good': { top:'★ ★ ★', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'⚠_⚠', s:'VERY EVIL' },
+    },
+    house: {
+        'very-good': { top:'♛ ♛ ♛', g:'◠◡◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠◡◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'♠_♠', s:'VERY EVIL' },
+    },
+    nukacola: {
+        'very-good': { top:'● ● ●', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☠‿☠', s:'VERY EVIL' },
+    },
+    zeta: {
+        'very-good': { top:'◉ ◉ ◉', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'⦿_⦿', s:'VERY EVIL' },
+    },
+    sierramadre: {
+        'very-good': { top:'◆ ◆ ◆', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☢‿☢', s:'VERY EVIL' },
+    },
+    pitt: {
+        'very-good': { top:'▲ ▲ ▲', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'☠‿☠', s:'VERY EVIL' },
+    },
+    owb: {
+        'very-good': { top:'◈ ◈ ◈', g:'◠‿◠', s:'VERY GOOD' },
+        'good':      { top:'',      g:'◠‿◠', s:'GOOD' },
+        'neutral':   { top:'',      g:'◉_◉', s:'NEUTRAL' },
+        'evil':      { top:'',      g:'◉益◉', s:'EVIL' },
+        'very-evil': { top:'',      g:'⚗_⚗', s:'VERY EVIL' },
+    },
+};
 
-/* addArchetypeKey stub — runs before scripts.js loads.
-   The full version in scripts.js overwrites this at runtime,
-   but ARCHETYPES_DATA is already populated so both work. */
-function addArchetypeKey(keyStr, meta) {
-    ARCHETYPES_DATA.push(Object.assign({}, meta, { key: keyStr }));
-}
-
-/* ═══════════════════════════════════════════════
-   ARCHETYPES — registered via addArchetypeKey()
-═══════════════════════════════════════════════ */
-
-/* 1 ── THE ASSASSIN ─────────────────────────── */
-addArchetypeKey(
-  'NSB3-GHTKmjKgg06cGnTkzsMrxYNCfOpioKCZpz6OiCno07tO7Og07kETDy17svPmgQIECDnp2Zd2PLkQMWG3ag4aefTfsQIECBBT2ZcvDz087cqBAgQIIejlp59NO7Kn5oIe-mgp6dmXdjy8kFLTm2ZRQqDSmz6tIVD0ad2XnlQU-mXDs6aEEHlt38kCBAgQQefPDz56dyCn109ECBAgQQ-Xnh0349HLftw9NONBT4ZcfTDj2ZeaBAgQIJnXHr8oKejDky8xQqhMg2UFOpZmRRU7L2y8kGXd0y8kGPftxYeiDruyZemXH0y5FyCll4b-enpp37kGHN0y8kGXtl5eUGvTs2LkFPTsy7seXIg4aefTfs5oN-7Z5QIEHTRlQbd-3Lu6IOfXhw5ZefPTv3IMXLLh181iDll6csuHogw7siDll55eiDnuy4da4UKmb8evhpx60GXtl5eUGzfj15ciDHv3dMOndl5IMWXNv5ZUG3f207s6DfuXIIeHhzQZuu7IgxZenTLyQZ8uHkgzYefTLyQdNGHcg2b9_TTuzoMW_Jpy81yCrzyoOmjKgp7cOzYgjcsO3Kgw7siCdpz6OiChl5c9-5B05YdPRBj37cWndh6ad-5B03oMWXHv25UGnd2089OLZlQd9GnZlQY-W_rj0ZciDDuyIOfTD00792Hl5XChVKgKgoMe_d05YcfTfyXIJ29BpyZd-zfn8rEG7egzYcfTTv3INm_zh2dPKDDi39sqDpoyoMe_d05YcfRcgh79mzLj6c0HTRlQcMPnbl3dEGHdkQdsO7Tz0Zea5BT4ZcOvmg5YeWXZ5QYd2RBw5Zcennl2eVyCvp2bEG7f0QdMOvKgwoNW_Egw58Ondz6IMejTsycsu5Bv5IOmjKg07t2_Hl3dECBBhQbNO7KsQbt_RBhQcNGnZv57-GjyuR1JYgMIAAAAAAFVVVVVVtICAAAEufRAUV7wE4AAAAAAAAAAAAAAAAk4K_QMAAAAAAAAAAAAAAZ0ANADOAggEMCxAUABAC3ASwF0ArAqgCEBLAAAAAAAAAAAAAAAAAAAAAAAAAs42no6oRaQAoA6DoYQAAGgAAAAABaGEAAALAAAoCAehhAAABAAAACgJoYQAAACAAVAAC6GEAAAgAAIoAA2hhAAAAABoAAAPoYQAAAAwOAAAEaGEAAAQKDAAABOhhAAALAAAAAAVoYQAAAAAKCgYF6GEAABCCAAAABmhhAAAKAAAKBgboYQAAAAgAABIHaGEAAAAKBqAAB-hhAAAACg4gAAhoYQAAAAYAABQI6GEAAAFkAAAACWhhAAAAQAqAQAnoYQQAABQAIAAKaGEAAAAKCIAACuhhAAAACgxAAAtoYQAAAAAAYBQL6GEAAAAKAKAGDGhhAAAACgoABgzoYQAAAAAAgBINaGEAAAAECsAADehhAAAAEAoAAA5oYQAAAAoKYAAO6GEAAAAKCmAAA',
-  { id: 'the-assassin', name: 'The Assassin', tagline: 'They never hear you coming',
-    icon: '🗡️', color: '#6a3a8a', buildKarma: 'neutral' }
-);
-
-/* 2 ── THE BREACHER ──────────────────────────── */
-addArchetypeKey(
-  'NSB3-EHTKkiKghUosGHIi0uqrxYNCfOpiomnduy8kELLs2IECBAgqaMqCpl5ctOLZlQU9G_pn67kCBAgQVNGVBL3ZcuPDw4ZeSBAgQIKWnf0QU9G_pn67hQqDSmz6tIVEy88vLogpYd2fLyQQ9-3Fh6IIPLbv5IECBAgr4d2TLyy8k_NBMy4emjLyQQeW3fyQIECBBD5eeHTfj0ct-3D0040FPhlx9MOPZl5oECBAgpZcXLLh6aMvIUKoTINlBTqWZkUVOy9svJBl3Z8OfKgxZfO_dkQMmCDbl6csvNcgh7MPXn05b-Gjfi04UGflh3dOaBWxQdN6DL2y8vKCnQiw5MGYg39emTfv5c1iDnvQcOWnfy09NPPKg38Mu5B307MmXluy8-aDDuyIOvPKg6aMPRBi37uvNB03oNuHTu6YdO5BXw7NeXkgk7ufTTux9EHXh007cq4UKqcvPDpv4aN-LKg5Ze-Hlk5oMvbLy8oIXLDo26dyCn0y4daDDuyIOWHugxaeWRBty4eiDzv6oMeHcg548PbLuz5VyCn15dtPbDs08-iDblw7uaDLh6ad2dBh3ZEGTlp3a9O7Og54emXmg6d9OPKgw80GXNmy4-mntl2eUCBBj37cWndlyIO-npoQROvPpi399ifmg57N_dBo67s-XksQed_VBz6YfKDTuQdNGVBIw8snlBh3ZEEbTn0dEEjruz8vKDvp3ZN_fmgw7Nu_n0QcMvLbh3Zd3TZ5XChVPplw7OmhBv4Zd3NB00ZUGbTy59EHPRv6IMPNBhQc92XDrW4enTDj1oMfLT0QYeiDhv07ui3Fsw7taxB30acehB0y7snNB03oMu7Ig6aMqDNpz6OiDTt25cmnD0y7PK4UKpUBUFByw7s-Xkg76emjf16IMKDn0w9NO_cuQQ8PLlpy80HTRlQdMvLlp6b-XlBp3c9OTKg6aMu1Bp3c-mXDkXIKezLl4c0HXdky8kHTRlQc-mHlzQYvKDhyy5svLLux5VyCJp59OXXn05oMO7yg55enTZl25d3RBsw8s-Xkg6aMO5B00csuVBi66dmTTuz81yCRh5oO2Xl5Qc-nLfuzoN_DTu0793NBhxb-vRBz0b-mfru5rlZUV2QIgAAKgAABVVVVVbQAKQAA1jSAFIA7AUgAAAAAAAAAAAAAAAJYFkrLAAAAAAAAAAAAAAGV8BBAUwK8CwAsAJoAQA4gGYBdAIQMYAbAUQAAAAAAAAAAAAAAAAAAAAAAAAAAOg6gRAwAAAAgAMAWoEQKAAAAoABgHqBEAAEAAGAAQCagRAoAIADgAAAuoEQAAIAAgACgNqBECgCkACAAAD6gRAABRgAAAABGoEQAABoAAAAATqBEBgAAAKAAoFagRAgAAABAAOBeoEQGAAAAYIBgZqBEAABgAKAAoG6gRAAA7AAAAAB2oEQAAAzgAAAAfqBEBgAAAKAAoIagRA4AAAAAwACOoEQAAKAAAQAAlqBEAAAGoACgAJ6gRAAADsAAAACmoEQAAKEAAAAArqBEAACkwAAAALagRAAAGgAAAAC-oEQAAAAAAaAAxqBEAAACAAGAAM6gRAAACAABIADWoEQAAAGAACAA3qBEAAABoAAAAOagRAAAAaAAAADuoEQAABRAACAA',
-  { id: 'the-breacher', name: 'The Breacher', tagline: 'Point blank is the only range that matters',
-    icon: '💥', color: '#e05a20', buildKarma: 'neutral' }
-);
-
-/* 3 ── THE FIGHTER ───────────────────────────── */
-addArchetypeKey(
-  'NSB3-EHS6kiKgjSY8ipFpXbXiwaE-dTFTN_bKgw7siCRh6ZUCBAgQVO-9bT6ZeCCPv35MXnKgQIECCh156PKBAgQIKeHZ0W1eG_ctr7-u7JzToKG_vl5II2nn0FCoNKbPq0hUzLk39fCfmgkb8evL5QTcPPWgQIECCZlw9NGXkgpZcWXYgQIECCHv28N_PT0yoKWXHv3IIPLbv5IECBAgqctOLDsQUN_fLyQQeW3fyFCqEyDZQU6lmZFFQ9m_nlQZNPPph3Y8qDTt25cmnD0y7PKDDuyIOfTD5QdNGXllXIKWnggnJ0FTLh5IM-ntl5oFbJBTqUkGHogx8suHpp37liDnvQdNGVBm08ufRBmy90GzL2y7OaDRp6INGHlky8kHTRh3IOmjL5Qc9G_rsyLhQqRv6IIWzfvyZciDNp5ZeaDD0QNWCVBIoIMO7Ig6deW7mg87-qDTu6b0GFBz4ctO7ot4dd2PRp3Z0GLZ15LkETlv4INGXDs6aEGnd03oOmjD0Qet-7Kg07umXd00792HZs8oMO7Ig59MPlB00ZeWVB309NCDHh5Zc3XYg59NO3hh1oOmnbp3Z1yCFs349aDpvQYuunZkQRuWnH0079yCDkyacfTTv3IINBBiy9O-XLuQdt-zZl881woVSoCqeXp02ZciDL2y8vKDDyz9duXd0Qd9PTQg6aMunkg0Yd2TmgxZc2_llQdNGVBi37cXNBmy7NiDDuyIOeXLzQbt6Dllw89-5B03oMejDuz5UG7f3XIIejLl5ZuuxBhxb-vRB2079mXdjyrkE7egz8uuTPl5oECDfux5UHTRlQZtOfR0QaeaDJv3ZUGnog080GTfuyrkEjDzQYUHPfm6IOfDf0QZt_JBk35-aDDuyIMXLDo26dy52c0hgEMAAAAAAAABVVVe2AEAAAAZFSdKAAAM6UAAAAAAAAAAAAAACRVN1UwAAAAAAAAAAAAABmoAaABkBoABBcPN1yzyYGKAIAaoFoBgAWgCWA4gH4AAAAAAAAAAAAAAAAAAAAAAAAFnG09HVCLSAFAHQcAQwAAAAQAAEQLAEMAAACQAAADDwBDAAAABQAAUhMAQwAAAAAAAJMXAEMAAAAAAAAMGwBDAAAAUGAAEB8AQwAAAAVwAAAjAEMAAABgEABQJwBDAAAAAAAASCsAQwAAAEMAAAUvAEMAAAABoAAQMwBDAAAAUVAAEDcAQwAAAFBQACA7AEMAAABSUAAAPwBDAAAAUlAAAEMAQwAAAFJQAABHAEMAAABSUAAASwBDAAAAMlAAIE8AQwAAACoAAABTAEMAAAcAAABQVwBDAAAMAAAAAFsAQwAADAAAAABfAEMAAAwAAAAAYwBDAAAMAAAAAGcAQwAAB1AAAABrAEMAAACgIAAAbwBDAAAFAHAAAHMAQwAAAKAgAAB3AEMQABUAQAEAA',
-  { id: 'the-fighter', name: 'The Fighter', tagline: 'Fists, fury and a jawline that absorbs punishment',
-    icon: '👊', color: '#c84020', buildKarma: 'neutral' }
-);
-
-/* 4 ── THE FLESH ─────────────────────────────── */
-addArchetypeKey(
-  'NSB3-IHSakiKgjTItOR6VeLBoT51MVD0Yd2PKn5oJe7TmyoECBAghbN-_ItnYeCBAgQIKWnhwy8kCBAgQQ9GHTu54e4oVBpTZ9WkKoad3RbT0-suRBT2YeejLyQTcPPWgQIECCPy05umXkn5oI2nogQIECCZlw9NGXkgpZcWXYgQIECCDy27-SDfmQdNGVA4b9NCCpy04sooVQmQbKCnUszIoqDs74fPNBv4ZdyDNy37UHPplw7OmhcghbMOTKgk7kFTRlQU9GHJv7oMOTJzQZtmHogyYduHPlQYsubfyyoOmjKg57suHWgx8tPRBt67Omnhs05eSDNp5ZeaBAg6aMqDfwy7svJBo09OaDRh5ZMvJB00YdyDT0QaMPNBh3eUHLTn0dEHTeuFCp-7HlQY9-3Fh6INPNBs09sqxB0w8s-Xog2aduLmuQQuvTHoy8kHTry3c0GXtl5eUGPlp4cNmVBp3dN6Dll59N_LLkQQaCDDuyIMW_d15oLFBYg570GHPn5ZefPT2yoNmnbiQdMPLPl6ad2dBhx9NPbLs8oOfXn0w6d3NB539VyCvoy7kGHcgy7su3yg5dd3NYg6aMvlB0w68qDJv64tmVBkw7cOfKuFCq-jLuQdNGVBi35PKDJy38OaxB00ZUEPDu3acWHYg6csOnog2ZenNB539UHLLj39svJBoy4dnTQg26ci3Npz6Oi5BH0YefTZ5QU8eHtl3Z8vJBl8dMu7JzQdNGnmg6b0FPrwy8kE3r0w7unNBh3ZEEbLyw7EEfRv67Oa5BU0ZUEPRh07ueHug67tm_Hr5oMPRBMrTGThBh3ZEGPRh3Z8vNBl7ZeXnpo07s6BAg67umnYg6aMu5YgxbMOTLzQb92zyuFCqVAVT37cvTRp3Z0Gncg6aMqDRlw5EGnnuT9EHLTn0dFyCpoy-UGTfuT9EHTDs1oNvXHoXIKmjL5QZN-5P0QbsuXIg6b1yCpoyoOnLDp2IN-ZBi35NOXmgxZdGndkQdNGXag58MuHXzQY9mXDy2eUGXdv659CxBh3ZEHTRlQd8PlB00ZfKDHy39cehBv7ZeSDpoyoOWXbh07uaDRh5oNuHJlQZe2Xcg0YeWTLuy5EHfDz6ZdmHdky8uaDZv360GHvh8rkFTRlQbcPPWg59MPnmg37lztALDgJQAAFVKqqoAAAANsAAAAAAUKU6kQnAJwAAAAAAAAAAAAAAAEEjVNpgAAAAAAAAAAAAADIkAZAOQGaAhgWIFiAPgJQGkBJgCAEOARgbQAAAAAAAAAAAAAAAAAAAAAAAAJnG09HUWdEZxtPR1BjyQCIBgHQdASgAAAAQAkAALQEoAAAAAAJBAD0BKAAAABwBgABNASgAAAAMAoAAXQEoAAAAAADCgG0BKAAALAAAgAB9ASgAAAcAAAAAjQEoAAAOgAAAAJ0BKAAADCgAAACtASgAAAgUAAGAvQEoAAAIlAABAM0BKAAAIAAAAUDdASgAAANAAAAA7QEoAAAAFgAAAP0BKAAAAANAAAENASgAAAAAwAKBHQEoAAABQgAAAS0BKAAADAKAAAE9ASgAACSAgAABTQEoAAAVQMAAAV0BKAAADUFAAAFtASgAABTBQAABfQEoAAAVQMAAAY0BKAAAAEMAAAGdASgAABJAAAABrQEoAAA0AAAAAb0BKAAADoAAAAHNASgAAAACjAAB3QEoAAAAADQAAA',
-  { id: 'the-flesh', name: 'The Flesh', tagline: 'The wasteland is a buffet if you stop being squeamish',
-    icon: '🩸', color: '#8a1a1a', buildKarma: 'evil' }
-);
-
-/* 5 ── THE GADGETEER ─────────────────────────── */
-addArchetypeKey(
-  'NSB3-EHTakiKgjwYkeLUixaVv14sGhPnUxVfD6y8kFfTm2ZUCBAgQU9vXPn2ZeSfmgi7siBAgQINuXph2IMWzDz6ZeQoVBpTZ9WkKg7Ni2h15cN_PKgp49OXdjyoKfXT0QIECBBWw9dnRBMw4kFXdpzb-W1AgQIEETkuQS9mXTuT80EfZh588vNAgQIEETkuQS9mXTuT80FPHy64uaBAgQIJ2Xryw7EEnd0y8s2HHlQU-unoKFUJkGygp1LMyKKk7u2Xn0QaMuHtp2eUGncgp49OXdjyoMO7IgpZeGHTyQZcPLZ5QIEGLf00IMe_bw39d2RBh5oOmjKgxddOzIg4ct-fll588vNcgkYcetBl7ZeXlB0y8tundh2LkETTzw8-eXbi2ZUGXdl2-UHLfi39OaDNv5IMe_bw37su7pzQYsubfyyoNu_tp3Z0G_cuFCp2nPo6IKGXlz37kG3Lh3c0G7Tn0dOmnblQd9_LXiy7sehBzy8-enfu5oMPLKg6aMqDbv59EHDlvydcfTT2yoNG_ry5rkFfRh6IIPLKgs7-qxBT6deGnI_QcOu7Tz0ZeaDLuy7dOXmg76emhBs398vJBJnVECBBt38-iDlh05MvLmg49cOzTm8rhQqlQFVNGVBv3bPKDhl5c9-5Bp3IOmjKg74efTLsw7siDvo3oMOPp1w7NnlByy4ciDpoyoNuHd1w7FyCTu59c2bLyw4tnlBj38uWXH0QYcW_r0QaN_dB00ad2fmg77-WtcgqYdeXmg3b-mXmg37kGXtl5eemjTuzrkEPfu7ad2PLkQdNGHog6aMqDvh59MuzDuyJ-aDhy34tmXbzQYeWVBm67smHbl3dMOzZ5QZd2fTuy5eWndnQcOW_Fsy7ea5IUXWSJAAABUQAAqqqqqk0DIBNAAJs0BNdAB1EAAAAAAAAAAAAAAACqH9S_JYAAAAAAAAAAAAAAzkAGIDGA5gQoFOA_AUIDcAIAboBEA2AIYEiAAAAAAAAAAAAAAAAAAAAAAAACZxtPR1Qi0mcbT0dQY8kAkAYB0HiJAA4AAAAAAAC4iQAAAAoAQAAA-IkACgAEAAAAATiJAAAAAA4AAAF4iQACAHADIAABuIkAAABAAKAAAfiJAAAADAIAAAI4iQAAALADAAACeIkAAABUBQAAAriJAAUABABQAAL4iQAFAAIAcAADOIkAAwAjBRAAA3iJAAAAgAYAAAO4iQUAAFAEAAAD-IkEAABQBQAABDiJAAAAUAkAAAR4iQAAAJAFAAAEuIkAAABgBgACBPiJAAAAUAUABAU4iQAAAFAFAAQFeIkAAAAAAAAOBbiJAAAAAAAADgX4iQAAAAAAAA4GOIkAAAAAAAAOBniJAAAAAAAADga4iQ0AAAAAAAEG-IkOAAAAAAAABziJAwAAAAAAsAd4iQsAAAAAADAA',
-  { id: 'the-gadgeteer', name: 'The Gadgeteer', tagline: 'High intelligence, even higher voltage',
-    icon: '⚡', color: '#20a8d0', buildKarma: 'neutral' }
-);
-
-/* 6 ── THE MOUTH ─────────────────────────────── */
-addArchetypeKey(
-  'NSB3-EHSakiKgmz6tSRLNeLBoT51MVM649flAgQIEE3Dy04UCBAgQWtHVbS37s6Cs0YuBQqDSmz6tIVCy7t3lPzQU-unogQIECCDtxYefPDk38kEPlvx68vJPzQU-unogQIECCZ1x6_KCnow5MvNAgQIEFPrh7ZUEfDtxbMvJBIw9ECBAgQVMu7hl3bvKfmgp9dPQUKoTINlBTqWZkUVB6dMu3h0QVJ6CpBmS0FmfVpIK8Gygn1aiCfGQRa0WlZQZd2Pf13dMvJYgkSY8hBDkQaUmnNgoJsWDOpoItaLOQTJ9dBJnVotOpFiIKcuTMmU0FeTMmIIUVBCnz6dSLEQRKtKTOjoIkmDMnx6sVAgQed_VB307NiDn1x48uXIg27-WVB00YdyDzv6oMvjhlx9FyCXly8EGPDw5oMPbDp2YcWzKgzb-SCFh5dMvJBsy9svLDnyrhQqlQFQUGbT4y8kHfRvQYsuzTl7ZeaDL2y8vKDHv3ZtmnH0QaMPNBhQZMuHYg07uenJlQaeiDvh09NO7Og6b0GLKgzb-u7IuQTd_LDs2eUGbZl8acWzKuQTNOvLzQZe2Xl537sqDru6adiDpoy-UG3DryoNPRBp28N_PnpxbMq5BIw80GFBs08-iDfmQcMu_hsyoN_fLkQZsPbf15c0GHdkQcMu_hsyoO-jeg398qDpoy7ViDXl4dEGXd008suzyg07kG3Lt38vK5FVXSIIQAABVAAAKqqqqm0FEAAAAJk0BIkAKK0AAAAAAAAAAAAAAACoVpNjKYAAAAAAAAAAAAAAzkAVYFWAYgVYDiASgIAD0AUAcID4A-gcoC2AAAAAAAAAAAAAAAAAAAAAAAAAAB0HoIRQAABAAAUAC6CEAAAAUAAJAA-ghDAAAFAABCAToITgAAAAAAAAF6CEEAAAAIAAUBughHAAAAAABwAfoIQAAABQQAUAI6CEAAAAAA4AACeghAAACgAEAAAroIQAAAJQYAAQL6CEAAAFAFAAQDOghDAAADAAA1A3oIQAAAAgAADAO6CEUAAAUAAEAD-ghDAAAFAABgBDoIQwAAUAAAMwR6CEYAAAACAGAEughAAACQAUAABPoIQAAAAAFQCAU6CEAAAFAFMAEFeghAAAAgBXAABboIQAAAQAVQAAX6CEAAAEAFUAAGOghAAACgAiAABnoIQAAAUAVAAAa6CEAAAHADQAAG-ghAAAAwBWAABzoIQAAAUAVAAAd6CEAAAAAFUAQAA',
-  { id: 'the-mouth', name: 'The Mouth', tagline: 'The wasteland yields to those who talk loudest',
-    icon: '💬', color: '#d4a820', buildKarma: 'neutral' }
-);
-
-/* 7 ── THE PISTOLERO ─────────────────────────── */
-addArchetypeKey(
-  'NSB3-EHTakiKgoSadSfMi0p-f14sGhPnUxUzrj1-UCBAgQTcPLThQIECBBT2ZcvDz087cqBAgQIK-nZkQQtOzYn5oKenJlw8tooVBpTZ9WkKj8tObpl5J-aCNp6IECBAgmZcPTRl5IKWXFl2IECBAgmdcevygp6MOTLzQIECBBT64e2VBHw7cWzLyQSMPQUKoTINlBTqWZkUVG08sqDNy37UHTRlQaNPBB30admVBt39tO7OuQRsPPogp6N_RBh3ZEEjTwQU9G_f0y8kG3Lh3IPO_qg3Ze2Xkg59N_BB03oMOnagw7siDzv6oMWHll2eUHPrmzZeSDNv5INPRcgpddyDcnQR-u5Bow7O2Xmg6aMqDbv7ZduXd0Qc-HLLhyIOGXdh2dPKBAg09EGnmg6aMqDXl88-m_dlQdNGHog24deXmg6aMqDvo37MqDDw4ct-HHoQd9_LWuFCp_DLuQd9PTQgp49_Xdk5ZdiDJpw7N-frlQd9GXllQcN_PnpxbMq5BX0ZdyDpow9EGbDp2c1iDXly8EG3f207s6DDuyINmXog6aMqDhp59N-xBk3oOmjKg6YdmvTuzrkELrp2dEHTegiZefTlv8oMOPHl2ZeWHpl5oO-XDw37kHfLh5IOe9Bry5eCDFhx6-vDmuFCoPbfpyIOnfet0Yd2TLkQd8uHhv3c0GXd008suzygQIKWnPo6IJGHdky5EGjDs7ZeaDzv68kGHHj68sOPyg76emhB00Zdq4UKpUBVTDs180HTfvQbeuPQgzb-SDnv25d-7Kg76emhBu39NGndnQdN6Dnh8rEGHdkQc8Pnmgy-MOPps8oOmjKg5ac-jog6aNO7Ogy9svLyg6aduVcgkYeaDdl7ZeSDn0378iDn007NiDTuQYUGbTn0dFyCRh5oN2Xtl5IOejf0QZuW_agx7-2XkuQSMPNBuy9svJBt08-eXIgQIN_JBh6INmXDz6IOWXN155eaDpvQYcm3T0Qaei5GR1hwgwAACgAABVVVVVaWBIAABTlQcTIVTp0QAAAAAAAAAAAAAAACHk4uIwAAAAAAAAAAAAABnIABBcPN1h4KAFWBNAcYCkAoACACkBVgCICWAVgLYAAAAAAAAAAAAAAAAAAAAAAAANnG09HVCLSZxtPR1BjyWcbT0dTIcsA0AIBgHQdCDAAA0AAAAAALQgwAABAAADkAD0IMAAAAAHBgABNCDAAAUAAAAIAXQgwAAAAAAFUwG0IMAAAAAAAA0B9CDAAAoAAwAAAjQgwAAAAAMACgJ0IMAAAAANAAACtCDAAAAADQAAAvQgwAAKAAMAAAM0IMAAAAIABVEDdCDAAAAAAAIpA7QgwAAAAAAFgAP0IMAAAAAFAwUENCDAAAAwAAVQBHQgwAAAMAAFUAS0IMAAAGAAcAAE9CDAAAAABVADBTQgwAAABQYAAgV0IMAAACAEIAUFtCDAAABQAIAABfQgwAAA0AAAAAY0IMAAAAADoAAGdCDAAAAQBwAFBrQgxAAAQABQAAb0IMcAIABAAAAHNCDHAAAAUAABB3QgwAAAUABQAwA',
-  { id: 'the-pistolero', name: 'The Pistolero', tagline: 'One hand, one bullet, one less problem',
-    icon: '🔫', color: '#c8903a', buildKarma: 'neutral' }
-);
-
-/* 8 ── THE TITAN ─────────────────────────────── */
-addArchetypeKey(
-  'NSB3-AHSakiKgqSakGdeVeLBoT51MVDtNW6CD2y7s-XkgQIECCFv9YeSBAgQIIXXlu24efTLyQIECBBNy8sfkUKg0ps-rSFUsu3dh3dOaChv75eSCDy27-SBAgQIJ0OkgpYd2fLyQQ9-3Fh6IIPLbv5IECBAgh79vDfz09MqCllx79yCDy27-SBAgQIGPPogpZce_cghZeWXoKFUJkGygp1LMyKKj5eiDTu6b0HDfz09NO_cgxZc2_llQdNGVBm059HRBz6YeXTmuQQtOdBn67uaDRh7ZUHPZv7oMnLD3QYd2RBoy4e3lBh27d6DHv3c-u3h0079yBAg4csq3hsw48qDzv68ueXZmQd9PTQg6aMqDLuy7fKDTuQZuW_d0QYd2RBh2bNOXmg6b0HTRlQc9OTLzXChUjry6IJuVBN38sqDNs08OaDJh24c-VB0w68u5Bp3dN6DFv3deeXmsQc96DDi57-WLTuzoMKDRp6INPNBu39EGFBs38-a5BJyZd-zfn65UHDD55oN_Xog4YefPT2y7PKDNv5IK2Xl5QR9-_Ig14eW3CgQIMWVBny7uundl2eUGffvyIMO7Ig6aMqDF107MiDll74eWTmg09EG3Lj0Yd2nHh2bPK4UKpUBUFBw5b-mXH038kHfRvQdeeXmg39svLvoy7NundnQZt_LHlQc-GXHpzaceHZs8oOe9B00ZUHDLv4bMqDFl0ad2RB00ZdqDdl7ZeSDRh7ZUHTeuQQ9-zZlx9OaDNs398vLmgzct-1Bn5YemXN12IOeXp02ZduXd05oMO7Ig0YeaDdvQacmXCg76MPRB03oMm9B309NCDpoy7VyCHh5ctOXmg6b96Db1x6FyCHv28NmHTu5oMOLf16INPRcgh4eXLTl5oNu_llXQ0GqukBAAAUVUqqoAAAB2wATgFKkApAKQwAAnAAAAAAAAAAAAAAAASwJNKmAAAAAAAAAAAAAAM5AFmBggLICYAsAKIA4AVgaoAgA0gWYGwAuAAAAAAAAAAAAAAAAAAAAAAAAAmcbT0dUItJnG09HUWdEAIgGAdB1ICBABgAAAAMAtSAgoAAAAAADAPUgIAAAAAUACAE1ICAABQAHAAEBdSAgUEAAAAAEAbUgIACFAAAAAAH1ICAAAAcGAAACNSAgAAAKAwAAAnUgIAAAAAsAAgK1ICAAMAAKAAAC9SAgAHEFAAAAAzUgIFAFAAAAAwN1ICAAAwoAAAADtSAgUAYCAAAAA_UgIAAACAAABQQ1ICAAAAANAAAEdSAgUAUAAAADBLUgIFABAAAABwT1ICAAVAICAAAFNSAgANAAAAAABXUgIADAAQAAAAW1ICAAUAgAAAAF9SAgAFAGAgAABjUgIABQBAQAAAZ1ICAAUAQEAAAGtSAgAFAFAwAABvUgIABQBQMAAAc1ICAAAAUIAAAHdSAgAAAAAcAAA',
-  { id: 'the-titan', name: 'The Titan', tagline: 'Walk slow, hit hard, bury what remains',
-    icon: '🛡️', color: '#c03030', buildKarma: 'very-good' }
-);
+/* --- BOBBLEHEADS_DATA --- */
+const BOBBLEHEADS_DATA = {
+    special: [
+        { name: 'STR', loc: 'Vault 87, Overseer\'s Office' },
+        { name: 'PER', loc: 'Washington Monument' },
+        { name: 'END', loc: 'Deathclaw Sanctuary, first room' },
+        { name: 'CHA', loc: 'Vault 108, Cloning Lab' },
+        { name: 'INT', loc: 'Vault 112, Overseer\'s Office' },
+        { name: 'AGI', loc: 'Greener Pastures Disposal Site' },
+        { name: 'LCK', loc: 'Arlington National Cemetery, Arlington House' },
+    ],
+    skills: [
+        { skill: 'BARTER', loc: 'Evergreen Mills, Bazaar' },
+        { skill: 'BIG GUNS', loc: 'Fort Constantine, CO Quarters' },
+        { skill: 'ENERGY WEAPONS', loc: 'Fort Bannister, CO Quarters' },
+        { skill: 'EXPLOSIVES', loc: 'WKML Broadcast Station' },
+        { skill: 'GUNS', loc: 'National Guard Depot, Armory' },
+        { skill: 'LOCKPICK', loc: 'Bethesda Ruins, Office East' },
+        { skill: 'MEDICINE', loc: 'Our Lady of Hope Hospital' },
+        { skill: 'MELEE WEAPONS', loc: 'Dunwich Building, Virulent Underchamber' },
+        { skill: 'REPAIR', loc: 'Corvega Factory, main desk' },
+        { skill: 'SCIENCE', loc: 'Vault 106, Living Quarters' },
+        { skill: 'SNEAK', loc: 'Yao Guai Tunnels, den' },
+        { skill: 'SPEECH', loc: 'Museum of History Offices' },
+        { skill: 'SURVIVAL', loc: 'Andale Shack' },
+        { skill: 'UNARMED', loc: 'Rockopolis' },
+    ]
+};

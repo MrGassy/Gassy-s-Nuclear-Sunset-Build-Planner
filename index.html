@@ -21,61 +21,6 @@
     </div>
 </div>
 
-<!-- ARCHETYPES MODAL -->
-<div class="modal-overlay" id="archetypes-modal" style="display:none;">
-    <div class="modal-box" style="max-width:860px; width:96vw; max-height:90vh; overflow-y:auto; padding:0;">
-        <div style="padding:22px 24px 14px; border-bottom:1px solid rgba(255,255,255,0.07); position:sticky; top:0; background:var(--pip-bg); z-index:1;">
-            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
-                <h2 style="font-size:1rem; letter-spacing:2px; margin:0;">◈ BUILD ARCHETYPES</h2>
-                <button class="modal-cancel-btn" onclick="closeArchetypesModal()" style="padding:4px 14px;">✕ CLOSE</button>
-            </div>
-            <div style="font-size:0.62rem; opacity:0.5; letter-spacing:1px; line-height:1.6;">SELECT A STARTING TEMPLATE — LOADS SPECIAL, TAGS, TRAITS &amp; PERK SUGGESTIONS &nbsp;|&nbsp; ALL VALUES CAN BE FREELY EDITED AFTER LOADING</div>
-        </div>
-        <div style="padding:18px 20px;">
-            <!-- FILTER BAR -->
-            <div id="arch-filter-bar">
-                <input type="text" id="arch-search" class="pip-search" placeholder="SEARCH BY NAME OR TAGLINE..." oninput="renderArchetypeGrid()">
-                <input type="text" id="arch-perk-search" class="pip-search" placeholder="SEARCH BUILDS BY PERK NAME..." oninput="renderArchPerkSearch()" style="margin-top:6px;">
-                <div id="arch-perk-results" style="display:none; margin-top:8px; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); font-size:0.7rem; letter-spacing:0.5px;"></div>
-                <div class="arch-filter-grid">
-
-                    <div class="arch-filter-row">
-                        <span class="arch-filter-label">KARMA</span>
-                        <div class="arch-chip-group">
-                            <button class="arch-chip active" data-filter="karma" data-val="" onclick="toggleArchChip(this)">ALL</button>
-                            <button class="arch-chip" data-filter="karma" data-val="very-good" onclick="toggleArchChip(this)">V. GOOD</button>
-                            <button class="arch-chip" data-filter="karma" data-val="good" onclick="toggleArchChip(this)">GOOD</button>
-                            <button class="arch-chip" data-filter="karma" data-val="neutral" onclick="toggleArchChip(this)">NEUTRAL</button>
-                            <button class="arch-chip" data-filter="karma" data-val="evil" onclick="toggleArchChip(this)">EVIL</button>
-                            <button class="arch-chip" data-filter="karma" data-val="very-evil" onclick="toggleArchChip(this)">V. EVIL</button>
-                        </div>
-                    </div>
-
-                    <div class="arch-filter-row">
-                        <span class="arch-filter-label">STYLE</span>
-                        <div class="arch-chip-group">
-                            <button class="arch-chip active" data-filter="style" data-val="" onclick="toggleArchChip(this)">ALL</button>
-                            <button class="arch-chip" data-filter="style" data-val="GUNS" onclick="toggleArchChip(this)">GUNS</button>
-                            <button class="arch-chip" data-filter="style" data-val="ENERGY WEAPONS" onclick="toggleArchChip(this)">ENERGY</button>
-                            <button class="arch-chip" data-filter="style" data-val="MELEE WEAPONS" onclick="toggleArchChip(this)">MELEE</button>
-                            <button class="arch-chip" data-filter="style" data-val="UNARMED" onclick="toggleArchChip(this)">UNARMED</button>
-                            <button class="arch-chip" data-filter="style" data-val="EXPLOSIVES" onclick="toggleArchChip(this)">EXPLOSIVES</button>
-                            <button class="arch-chip" data-filter="style" data-val="SNEAK" onclick="toggleArchChip(this)">SNEAK</button>
-                            <button class="arch-chip" data-filter="style" data-val="SPEECH" onclick="toggleArchChip(this)">SPEECH</button>
-                            <button class="arch-chip" data-filter="style" data-val="SCIENCE" onclick="toggleArchChip(this)">SCIENCE</button>
-                            <button class="arch-chip" data-filter="style" data-val="SURVIVAL" onclick="toggleArchChip(this)">SURVIVAL</button>
-                            <button class="arch-chip" data-filter="style" data-val="MEDICINE" onclick="toggleArchChip(this)">MEDICINE</button>
-                        </div>
-                    </div>
-                </div>
-                <div id="arch-filter-count"></div>
-            </div>
-            <div id="archetype-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-bottom:18px;"></div>
-            <div id="archetype-detail" style="display:none;"></div>
-        </div>
-    </div>
-</div>
-
 <!-- LEVEL UP MODAL -->
 <div class="modal-overlay" id="lvlup-modal">
     <div class="modal-box lvlup-box">
@@ -144,28 +89,95 @@
 </div>
 
 <!-- REWARD PERK MODAL -->
-<div class="modal-overlay" id="reward-perk-modal" style="display:none; align-items:flex-start; padding-top:4vh;">
-  <div class="lvlup-box" style="max-width:700px; width:95vw; max-height:90vh; overflow-y:auto;">
-    <div class="lvlup-header">
-      <span style="font-size:1rem; letter-spacing:0.15em; color:#ffd080;">SELECT REWARD PERK</span>
+<div class="modal-overlay" id="reward-perk-modal" style="display:none; align-items:flex-start; padding-top:3vh;">
+  <div class="lvlup-box perk-picker-box" style="max-width:960px; width:96vw; max-height:92vh; display:flex; flex-direction:column; overflow:hidden;">
+    <div class="lvlup-header" style="flex-shrink:0;">
+      <div>
+        <span style="font-size:1rem; letter-spacing:0.15em; color:#ffd080;">SELECT REWARD PERK</span>
+      </div>
       <button class="lvlup-close" onclick="closeRewardPerkModal()">✕</button>
     </div>
-    <input type="text" id="reward-perk-search" class="pip-search" placeholder="SEARCH REWARD PERKS..."
-      oninput="renderRewardPerkGrid(this.value)" style="margin:10px 16px; width:calc(100% - 32px); box-sizing:border-box;">
-    <div id="reward-perk-modal-grid" style="padding:0 16px 16px;"></div>
+    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(255,208,128,0.15);">
+      <input type="text" id="reward-perk-search" class="pip-search" placeholder="SEARCH REWARD PERKS..."
+        oninput="renderRewardPerkGrid(this.value)" style="width:100%; box-sizing:border-box;">
+    </div>
+    <div id="reward-perk-modal-grid" class="perk-picker-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
   </div>
 </div>
 
 <!-- INTERNALIZED TRAITS MODAL -->
-<div class="modal-overlay" id="internalized-modal" style="display:none; align-items:flex-start; padding-top:4vh;">
-  <div class="lvlup-box" style="max-width:700px; width:95vw; max-height:90vh; overflow-y:auto;">
-    <div class="lvlup-header">
-      <span style="font-size:1rem; letter-spacing:0.15em; color:#c8a0ff;">SELECT INTERNALIZED TRAIT</span>
+<div class="modal-overlay" id="internalized-modal" style="display:none; align-items:flex-start; padding-top:3vh;">
+  <div class="lvlup-box perk-picker-box" style="max-width:960px; width:96vw; max-height:92vh; display:flex; flex-direction:column; overflow:hidden;">
+    <div class="lvlup-header" style="flex-shrink:0;">
+      <div>
+        <span style="font-size:1rem; letter-spacing:0.15em; color:#c8a0ff;">SELECT INTERNALIZED TRAIT</span>
+      </div>
       <button class="lvlup-close" onclick="closeInternalizedModal()">✕</button>
     </div>
-    <input type="text" id="internalized-search" class="pip-search" placeholder="SEARCH..."
-      oninput="renderInternalizedGrid(this.value)" style="margin:10px 16px; width:calc(100% - 32px); box-sizing:border-box;">
-    <div id="internalized-modal-grid" style="padding:0 16px 16px;"></div>
+    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(200,160,255,0.15);">
+      <input type="text" id="internalized-search" class="pip-search" placeholder="SEARCH INTERNALIZED TRAITS..."
+        oninput="renderInternalizedGrid(this.value)" style="width:100%; box-sizing:border-box;">
+    </div>
+    <div id="internalized-modal-grid" class="perk-picker-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
+  </div>
+</div>
+
+<!-- GEAR EFFECT MODAL -->
+<div class="modal-overlay" id="gear-effect-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:460px; width:92vw; border-color:rgba(100,220,255,0.35);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px;">
+      <div>
+        <div style="font-size:1.05rem; font-weight:bold; color:#80d8ff; letter-spacing:0.12em; margin-bottom:6px;">⚙ ADD GEAR EFFECT</div>
+        <div style="font-size:0.7rem; color:rgba(100,220,255,0.6); letter-spacing:0.06em;">EFFECTS ARE CONDITIONAL — NEVER AFFECT PERK ELIGIBILITY</div>
+      </div>
+      <button onclick="closeGearEffectModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;">✕</button>
+    </div>
+    <div style="border-top:1px solid rgba(100,220,255,0.12); padding-top:12px;">
+      <div style="margin-bottom:10px;">
+        <label style="display:block; font-size:0.7rem; opacity:0.6; letter-spacing:0.1em; margin-bottom:3px;">NAME (E.G. "COMBAT ARMOR", "BUFFOUT")</label>
+        <input type="text" id="ge-name" class="pip-search" placeholder="NAME..." style="width:100%; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block; font-size:0.7rem; opacity:0.6; letter-spacing:0.1em; margin-bottom:3px;">TYPE</label>
+        <select id="ge-category" class="pip-search" onchange="toggleGearEffectFields()" style="width:100%; box-sizing:border-box; color:var(--pip-color); background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.3); padding:6px 8px; font-family:inherit; font-size:0.78rem;">
+          <option value="special">SPECIAL STAT</option>
+          <option value="skill">SKILL</option>
+          <option value="other">OTHER (CUSTOM)</option>
+        </select>
+      </div>
+      <!-- SPECIAL fields -->
+      <div id="ge-special-fields" style="margin-bottom:10px; display:flex; gap:8px;">
+        <select id="ge-stat" class="pip-search" style="flex:1; color:var(--pip-color); background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.3); padding:6px 8px; font-family:inherit; font-size:0.78rem;">
+          <option value="STR">STR</option>
+          <option value="PER">PER</option>
+          <option value="END">END</option>
+          <option value="CHA">CHA</option>
+          <option value="INT">INT</option>
+          <option value="AGI">AGI</option>
+          <option value="LCK">LCK</option>
+        </select>
+        <select id="ge-stat-val" class="pip-search" style="flex:0 0 80px; color:var(--pip-color); background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.3); padding:6px 8px; font-family:inherit; font-size:0.78rem;">
+          <option value="1">+1</option>
+          <option value="2">+2</option>
+          <option value="3">+3</option>
+        </select>
+      </div>
+      <!-- SKILL fields -->
+      <div id="ge-skill-fields" style="margin-bottom:10px; display:none; gap:8px;">
+        <select id="ge-skill" class="pip-search" style="flex:1; color:var(--pip-color); background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.3); padding:6px 8px; font-family:inherit; font-size:0.78rem;"></select>
+        <input type="number" id="ge-skill-val" class="pip-search" value="15" min="1" max="20" style="flex:0 0 80px; color:var(--pip-color); background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.3); padding:6px 8px; font-family:inherit; font-size:0.78rem; text-align:center;">
+      </div>
+      <!-- OTHER field -->
+      <div id="ge-other-field" style="margin-bottom:10px; display:none;">
+        <label style="display:block; font-size:0.7rem; opacity:0.6; letter-spacing:0.1em; margin-bottom:3px;">CUSTOM EFFECT TEXT</label>
+        <input type="text" id="ge-other-text" class="pip-search" placeholder="+5% POISON RESIST" style="width:100%; box-sizing:border-box;">
+      </div>
+      <div style="margin-bottom:14px;">
+        <label style="display:block; font-size:0.7rem; opacity:0.6; letter-spacing:0.1em; margin-bottom:3px;">NOTES (OPTIONAL)</label>
+        <input type="text" id="ge-notes" class="pip-search" placeholder="E.G. WEARING REINFORCED ARMOR" style="width:100%; box-sizing:border-box;">
+      </div>
+      <button onclick="addGearEffect()" style="width:100%; padding:8px; font-size:0.78rem; font-weight:bold; letter-spacing:0.12em; background:rgba(100,220,255,0.08); border:1px solid rgba(100,220,255,0.3); color:#80d8ff; cursor:pointer; border-radius:2px;">ADD TO BUILD</button>
+    </div>
   </div>
 </div>
 
@@ -367,49 +379,6 @@
     </div>
 </div>
 
-<!-- BUILD KEY MODAL -->
-<div id="build-key-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-box" style="max-width:580px; width:95vw; max-height:85vh; overflow-y:auto;">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
-      <div style="font-size:1rem; font-weight:bold; color:#ffd060; letter-spacing:0.1em;">🔑 BUILD KEY</div>
-      <button onclick="closeBuildKeyModal()" style="background:none;border:1px solid rgba(255,80,80,0.4);color:rgba(255,80,80,0.8);padding:3px 10px;cursor:pointer;font-size:0.75rem;font-family:inherit;">✕</button>
-    </div>
-    <div style="display:flex; border-bottom:1px solid rgba(255,208,96,0.2); margin-bottom:14px;">
-      <button id="bk-tab-share" class="bk-tab bk-tab-active" onclick="showBuildKeyTab('share')" title="Short typeable share code — strips history/notes for compactness">◈ SHARE CODE</button>
-      <button id="bk-tab-gen" class="bk-tab" onclick="showBuildKeyTab('gen')" title="Full build key — preserves everything including skill history and notes">◈ FULL KEY</button>
-      <button id="bk-tab-load" class="bk-tab" onclick="showBuildKeyTab('load')">◈ LOAD FROM KEY</button>
-    </div>
-
-    <!-- SHARE CODE PANE -->
-    <div id="bk-pane-share">
-      <div style="font-size:0.63rem;color:rgba(40,255,40,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(40,255,40,0.15);background:rgba(40,255,40,0.03);">
-        Compact typeable code — <b>~120–150 chars</b> grouped in segments (vs 400–600 for a full key). All build-critical data preserved. Skill history, char name &amp; notes are omitted for brevity. Paste directly into the LOAD tab to import.
-      </div>
-      <button class="action-btn" onclick="generateAndShowShareCode()" style="border-color:#28ff28;color:#28ff28;margin-bottom:12px;">⚡ GENERATE SHARE CODE</button>
-      <div id="bk-share-out"></div>
-    </div>
-
-    <!-- FULL KEY PANE -->
-    <div id="bk-pane-gen" style="display:none;">
-      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
-        Binary encodes your complete build (NSB4) — all perks, notes, internalized traits, reward perks, conditional toggles and skill history. Approx 300–400 chars for a level 30 build. Use this for archiving or full data transfer.
-      </div>
-      <button class="action-btn" onclick="generateAndShowKey()" style="border-color:#ffd060;color:#ffd060;margin-bottom:12px;">⚡ GENERATE FULL KEY FROM CURRENT BUILD</button>
-      <div id="bk-gen-out"></div>
-    </div>
-
-    <!-- LOAD PANE -->
-    <div id="bk-pane-load" style="display:none;">
-      <div style="font-size:0.63rem;color:rgba(255,208,96,0.6);line-height:1.7;margin-bottom:12px;padding:8px 10px;border:1px solid rgba(255,208,96,0.15);background:rgba(255,208,96,0.04);">
-        Paste an NSB5 share code or full NSB4/NSB3 key to load a build. Accepts all key formats. This overwrites your current build — save or export first if needed.
-      </div>
-      <textarea id="bk-key-input" placeholder="PASTE NSB5-... SHARE CODE OR NSB4-... FULL KEY HERE..." style="width:100%;height:90px;background:#000;border:1px solid rgba(255,208,96,0.25);color:#ffd060;padding:10px;font-family:inherit;font-size:0.6rem;resize:vertical;margin-bottom:10px;box-sizing:border-box;"></textarea>
-      <div id="bk-load-err" style="display:none;color:#ff5555;font-size:0.65rem;margin-bottom:10px;padding:6px 10px;border:1px solid rgba(255,80,80,0.3);background:rgba(255,80,80,0.05);"></div>
-      <button class="action-btn" onclick="loadBuildFromKey()" style="border-color:#ffd060;color:#ffd060;">◈ LOAD BUILD FROM KEY</button>
-    </div>
-  </div>
-</div>
-
 <!-- WISHLIST MODAL -->
 <div id="wishlist-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
     <div class="modal-box" style="max-width:650px; width:95vw; max-height:85vh;">
@@ -422,19 +391,6 @@
             <button class="action-btn" onclick="closeWishlist()">CLOSE</button>
         </div>
     </div>
-</div>
-
-<!-- SPECIAL INFO MODAL -->
-<div class="modal-overlay" id="special-info-modal" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-box" style="max-width:460px; width:92vw; position:relative;">
-    <button onclick="closeSpecialInfoModal()" style="position:absolute; top:10px; right:12px; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:2px 9px; cursor:pointer; font-size:0.75rem; font-family:inherit;">✕</button>
-    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:14px;">
-      <span id="sinfo-title" style="font-size:1.1rem; font-weight:bold; letter-spacing:0.12em;"></span>
-      <span id="sinfo-val" style="font-size:2rem; font-weight:bold; line-height:1;"></span>
-    </div>
-    <div id="sinfo-effects" style="margin-bottom:12px;"></div>
-    <div id="sinfo-extra"></div>
-  </div>
 </div>
 
 <!-- TRAIT DETAIL MODAL -->
@@ -566,9 +522,6 @@
                 <button class="feature-btn" onclick="openWishlist()" title="VIEW YOUR WISHLISTED PERKS">
                     ★ WISHLIST <span id="wishlist-count" class="wishlist-count-badge">0</span>
                 </button>
-                <button class="feature-btn" onclick="openBuildKeyModal()" title="GENERATE OR LOAD A COMPACT BUILD KEY" style="border-color:rgba(255,208,96,0.4);color:#ffd060;">
-                    🔑 BUILD KEY
-                </button>
             </div>
 
             <!-- MAIN CHAR SHEET: 3 columns -->
@@ -619,7 +572,7 @@
                     <div class="ov-card"><span class="ov-sub">GEAR_LIST</span><div id="ov-gear"></div></div>
                     <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TAGS_ACTIVE</span><div id="ov-tags"></div></div>
                     <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TRAITS_ACTIVE</span><div id="ov-traits"></div></div>
-                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub" style="color:#7ecfff;">IMPLANTS</span><div id="ov-implants" style="font-size:0.65rem; color:#7ecfff;"></div></div>
+                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">IMPLANTS</span><div id="ov-implants" style="font-size:0.65rem;"></div></div>
                 </div>
                 <div class="ov-card"><span class="ov-sub">PERK &amp; TRAIT LOG</span><div id="ov-perks"></div></div>
             </div>
@@ -714,14 +667,28 @@
                     <div id="armor-empty" class="gear-empty-state">NO APPAREL EQUIPPED — ADD YOUR FIRST PIECE ABOVE</div>
                 </div>
             </div>
+            <!-- GEAR EFFECTS -->
+            <div class="gear-effects-section" style="margin-top:18px; border-top:1px solid rgba(var(--pip-rgb,100,200,100),0.12); padding-top:10px;">
+                <div class="gear-effects-header" style="display:flex; align-items:center; gap:8px; padding:0 0 8px;">
+                    <span style="font-size:1rem;">⚙</span>
+                    <span style="font-size:0.83rem; font-weight:bold; letter-spacing:2px; color:var(--pip-color);">GEAR EFFECTS</span>
+                    <span style="font-size:0.72rem; opacity:0.4; letter-spacing:1px; flex:1;">CONDITIONAL BONUSES FROM EQUIPMENT</span>
+                    <button class="gear-effects-add-btn" onclick="openGearEffectModal()" style="font-size:0.82rem; background:none; border:1px solid currentColor; color:#80ffd8; padding:3px 10px; cursor:pointer; letter-spacing:1px; opacity:0.7; border-radius:2px;">+ ADD</button>
+                </div>
+                <div id="gear-effects-list" class="prog-grid"></div>
+            </div>
         </div>
 
         <div id="tab-quests" class="tab-content scroll-v" style="display:none;">
             <input type="text" id="quest-search-bar" class="pip-search" placeholder="SEARCH QUESTS..." oninput="searchQuests()">
+            <button class="uni-toggle-all-btn" style="margin:6px 0;" onclick="toggleAllInContainer('quest-list-container',this)">▼ COLLAPSE ALL</button>
             <div id="quest-list-container"></div>
         </div>
         
-        <div id="tab-coll" class="tab-content scroll-v" style="display:none;"><div id="coll-list"></div></div>
+        <div id="tab-coll" class="tab-content scroll-v" style="display:none;">
+            <button class="uni-toggle-all-btn" style="margin:6px 10px;" onclick="toggleAllInContainer('coll-list',this)">▼ COLLAPSE ALL</button>
+            <div id="coll-list"></div>
+        </div>
 
         <div id="tab-uni" class="tab-content scroll-v" style="display:none;">
             <div class="uni-section-header">
@@ -754,9 +721,10 @@
     <section class="right-panel">
         <h2 style="margin-top:0;">DWELLER_NOTES.LOG</h2>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:0;">
-            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="copyShareLink()">🔗 SHARE BUILD</button>
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="exportBuild()">📥 EXPORT</button>
+            <button class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="importBuild()">📂 IMPORT</button>
             <button id="ns-mute-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="nsAudio.toggleMute()">🔊 SFX</button>
-            <button id="hud-theme-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem; grid-column:1/-1;" onclick="toggleThemePanel()">🎨 HUD THEME</button>
+            <button id="hud-theme-btn" class="action-btn" style="margin-bottom:0; font-size:0.65rem;" onclick="toggleThemePanel()">🎨 HUD THEME</button>
         </div>
         <!-- HUD THEME PANEL -->
         <div id="hud-theme-panel" class="hud-theme-panel" style="display:none;">
@@ -797,22 +765,10 @@
                     <span class="hud-theme-swatch" style="background:#c0e8f0;"></span>
                     <span class="hud-theme-name">MOTHERSHIP ZETA</span>
                 </button>
-                <button class="hud-theme-tile" data-theme="sierramadre" onclick="setCustomTheme('sierramadre'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#c89040;"></span>
-                    <span class="hud-theme-name">SIERRA MADRE</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="pitt" onclick="setCustomTheme('pitt'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#e05010;"></span>
-                    <span class="hud-theme-name">THE PITT</span>
-                </button>
-                <button class="hud-theme-tile" data-theme="owb" onclick="setCustomTheme('owb'); closeThemePanel();">
-                    <span class="hud-theme-swatch" style="background:#00d8b0;"></span>
-                    <span class="hud-theme-name">OLD WORLD BLUES</span>
-                </button>
+
             </div>
         </div>
         <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
-            <button onclick="openArchetypesModal()" class="randomize-btn" style="margin-bottom:5px;" title="Load a curated starting build">◈ ARCHETYPES</button>
             <button onclick="randomizeBuild()" class="randomize-btn">🎲 RANDOMIZE BUILD</button>
         <div id="sync-status" style="font-size:0.6rem; text-align:right; opacity:0.6; margin-top:5px;">SYSTEM_SYNCED</div>
         
@@ -839,8 +795,7 @@
     </section>
 </div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
-<script src="data.js"></script>
+    <script src="data.js"></script>
 <script src="scripts.js"></script>
 
 <!-- Toast Notification Container -->
