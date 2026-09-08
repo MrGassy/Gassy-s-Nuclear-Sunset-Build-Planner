@@ -21,22 +21,23 @@ function progressiveReveal(container) {
 
 /* --- BUILD CONSTANTS ---
  * Named constants for the magic strings used throughout the codebase.
- * Comparing against MODE.HC instead of 'hc' makes typos a loud ReferenceError
- * rather than a silent logic failure. Existing string literals remain valid for
- * now; new code should prefer these constants.
+ * Comparing against a named constant instead of a string literal makes typos a
+ * loud ReferenceError rather than a silent logic failure. Existing string
+ * literals remain valid for now; new code should prefer these constants.
  */
-const MODE       = Object.freeze({ STD: 'std',         HC: 'hc' });
 const ORIGIN     = Object.freeze({ CW:  'CW',          MW: 'MW' });
 const TRAIT_SLOT = Object.freeze({ STARTING: '__starting__', LEVELUP: '__levelup__' });
 const ATTR_BOOST = Object.freeze({ HP: 'hp', AP: 'ap', CW: 'cw' });
 
 /* --- STATE VARIABLES --- */
-let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHR: 5, INT: 5, AGI: 5, LCK: 5 };
+let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHA: 5, INT: 5, AGI: 5, LCK: 5 };
 let currentSort = 'az';
 let skillPoints = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let charLevel = 1;
+let companions = []; // [{ name, butchBonus: 'improved' | 'worsened' | null }]
 let levelUpBonuses = []; // Tracks level-up bonus choices: 'hp', 'ap', or 'cw' for each level
 let showEligibleOnly = false;
+let _forceEnable = false; // Global override: allow adding traits/perks regardless of requirements
 let skillBooksFound = {
   CW: { BARTER:[],'BIG GUNS':[],'ENERGY WEAPONS':[],EXPLOSIVES:[],GUNS:[],LOCKPICK:[],MEDICINE:[],'MELEE WEAPONS':[],REPAIR:[],SCIENCE:[],SNEAK:[],SPEECH:[],SURVIVAL:[],UNARMED:[] },
   MW: { BARTER:[],'BIG GUNS':[],'ENERGY WEAPONS':[],EXPLOSIVES:[],GUNS:[],LOCKPICK:[],MEDICINE:[],'MELEE WEAPONS':[],REPAIR:[],SCIENCE:[],SNEAK:[],SPEECH:[],SURVIVAL:[],UNARMED:[] }
@@ -49,12 +50,13 @@ let _lvlupAttributeChoice = null; // Tracks current level-up attribute choice: '
 let _itTargetRow = null; // tracks which prog-row triggered the Intense Training modal
 let _itCancelled = false; // tracks if IT modal was cancelled
 let _showBaseSpecial = false; // toggle: show base-only SPECIAL (allocated points before IT/implants/traits/perks)
+let _showDetailedSpecial = false; // toggle: show detailed breakdown of SPECIAL bonuses by source
 let _hydrating = false; // true during hydrate() — suppresses choice modals (IT, Action Star, Tag!)
 let _specialModDebounce = null; // debounce timer for SPECIAL +/- button clicks
 let _toastQueue = []; // queue for managing multiple toasts
 // skillHistory entry schema: [{level, allocation:{skill:pts_spent}, gains:{skill:pts_gained}, tagged:[...], pointsTotal}]
 let skillHistory = [];
-const sKeys = ["STR", "PER", "END", "CHR", "INT", "AGI", "LCK"];
+const sKeys = ["STR", "PER", "END", "CHA", "INT", "AGI", "LCK"];
 const skills = ["BARTER", "BIG GUNS", "ENERGY WEAPONS", "EXPLOSIVES", "GUNS", "LOCKPICK", "MEDICINE", "MELEE WEAPONS", "REPAIR", "SCIENCE", "SNEAK", "SPEECH", "SURVIVAL", "UNARMED"];
 
 /* ===== SKILL ENGINE ===== */
@@ -121,21 +123,9 @@ function skillBaseForEligibility(s) {
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
-// HC uses a reduced base of 3 with similar scaling
-/* Returns how many starting traits count toward the HC 5-trait limit.
-   Wild Wasteland is cosmetic/optional and is intentionally excluded. */
-function hcTraitCount() {
-    return startingTraits.filter(t => t.name !== 'Wild Wasteland').length;
-}
-
 function pointsPerLevel() {
     const int = Math.max(1, special.INT || 1);
-    let base;
-    if (mode === 'hc') {
-        base = Math.floor(Math.min(int, 9) * 0.5) + 3;
-    } else {
-        base = Math.floor(Math.min(int, 9) * 0.5 + 10);
-    }
+    const base = Math.floor(Math.min(int, 9) * 0.5 + 10);
     // Architect toggle: +floor(INT/2) when indoors
     const { skillPtsPerLevel } = getCachedBonuses().cond;
     // Ideologue trait: +1 skill point per level
@@ -224,7 +214,7 @@ function getActivePerkBonuses() {
     const allPerkEls = document.querySelectorAll(
         '#prog-list .prog-name-input, #extra-perk-list .prog-name-input'
     );
-    const perkSpecialDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    const perkSpecialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     const perkSkillDelta = {};
     const applyBonus = (name) => {
         if (!name) return;
@@ -250,7 +240,7 @@ function getActivePerkBonuses() {
 }
 
 function getActiveTraitBonuses() {
-    const specialDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    const specialDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     const skillDelta = {};
     const activeNames = getChosenTraitNames();
     for (const name of activeNames) {
@@ -334,10 +324,10 @@ function getConditionalToggleDelta() {
 }
 
 /* ===== GEAR EFFECTS ===== */
-const SPECIAL_STATS = ['STR','PER','END','CHR','INT','AGI','LCK'];
+const SPECIAL_STATS = ['STR','PER','END','CHA','INT','AGI','LCK'];
 
 function getGearEffectsDelta() {
-    const specDelta = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    const specDelta = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     const skillDelta = {};
     for (const ge of gearEffectsList) {
         if (!ge.toggled || !ge.effect) continue;
@@ -456,7 +446,7 @@ function removeGearEffect(idx) {
 
 /* ===== TRAIT REQUIREMENTS ===== */
 const TRAIT_STAT_MAP = {
-  STR:'STR', PER:'PER', END:'END', CHR:'CHR', CHA:'CHR', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK'
+  STR:'STR', PER:'PER', END:'END', CHR:'CHA', CHA:'CHA', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK'
 };
 
 function getChosenTraitNames() {
@@ -484,9 +474,11 @@ function getTakenPerkCounts() {
     return counts;
 }
 
-function checkTraitEligible(trait) {
+function checkTraitEligible(trait, opts) {
     if (!trait.req || trait.req.trim() === '') return true;
-    const chosen = getChosenTraitNames();
+    // Defaults read live build state; randomize passes overrides to evaluate against a clean SPECIAAL only
+    const chosen = (opts && opts.chosen) ? opts.chosen : getChosenTraitNames().map(n => n.toUpperCase());
+    const statOf = (opts && opts.stat) ? opts.stat : (k) => effectiveSpecial(k);
     const parts = trait.req.split(',').map(p => p.trim());
     for (const part of parts) {
         const up = part.toUpperCase();
@@ -507,7 +499,7 @@ function checkTraitEligible(trait) {
         if (capM) {
             const key = TRAIT_STAT_MAP[capM[1]] || capM[1];
             const cap = parseInt(capM[2]);
-            if (effectiveSpecial(key) >= cap) return false;
+            if (statOf(key) >= cap) return false;
             continue;
         }
         // SPECIAL min: STAT N
@@ -515,7 +507,7 @@ function checkTraitEligible(trait) {
         if (minM) {
             const key = TRAIT_STAT_MAP[minM[1]] || minM[1];
             const req = parseInt(minM[2]);
-            if (effectiveSpecial(key) < req) return false;
+            if (statOf(key) < req) return false;
             continue;
         }
         // (No further checks needed — the NOT branch above already handles exclusion and continues)
@@ -550,6 +542,7 @@ function openTraitModal(slotId) {
     const reqBtn = document.getElementById('tpick-sort-req');
     if (azBtn) { azBtn.classList.add('active'); }
     if (reqBtn) { reqBtn.classList.remove('active'); }
+    syncForceButtons();
     renderTraitGrid('');
 }
 
@@ -583,6 +576,7 @@ function showTraitLevelUpPrompt(lvl) {
     const reqBtn2 = document.getElementById('tpick-sort-req');
     if (azBtn2) { azBtn2.classList.add('active'); }
     if (reqBtn2) { reqBtn2.classList.remove('active'); }
+    syncForceButtons();
     renderTraitGrid('');
     document.getElementById('trait-modal').style.display = 'flex';
     // Hide the banner while modal is open
@@ -623,7 +617,8 @@ function renderTraitGrid(search) {
     // Pre-compute eligibility once per trait — checkTraitEligible does DOM reads internally
     // (it calls getChosenTraitNames and effectiveSpecial), so caching avoids doing that
     // work O(n) times during sort, O(n) times for the count, and O(n) times for HTML build.
-    const eligMap = new Map(filtered.map(t => [t.name, checkTraitEligible(t)]));
+    const natMap = new Map(filtered.map(t => [t.name, checkTraitEligible(t)]));
+    const eligMap = new Map(filtered.map(t => [t.name, _forceEnable ? true : natMap.get(t.name)]));
 
     // Sort: eligible group first, then ineligible — within each group apply chosen sort
     filtered = filtered.slice().sort((a, b) => {
@@ -646,18 +641,25 @@ function renderTraitGrid(search) {
     // Update count — read from the cached map, no extra DOM work
     const eligible   = filtered.filter(t =>  eligMap.get(t.name));
     const ineligible = filtered.filter(t => !eligMap.get(t.name));
+    const forced     = _forceEnable ? filtered.filter(t => !natMap.get(t.name)) : [];
     const countEl = document.getElementById('trait-picker-count');
-    if (countEl) countEl.textContent = `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE · ${chosen.length} TAKEN`;
+    if (countEl) countEl.textContent = _forceEnable
+        ? `${eligible.length} ELIGIBLE · ${forced.length} FORCED`
+        : `${eligible.length} ELIGIBLE · ${ineligible.length} INELIGIBLE · ${chosen.length} TAKEN`;
 
     container.innerHTML = _traitPickerList.map((t, i) => {
         const isElig = eligMap.get(t.name);
+        const isForced = _forceEnable && !natMap.get(t.name);
         const cardCls = isElig ? 'ptrait-card' : 'ptrait-card ptrait-ineligible';
-        const badge = isElig
-            ? `<span class="ptrait-badge ptrait-elig-badge">✓ ELIGIBLE</span>`
-            : `<span class="ptrait-badge ptrait-inelig-badge">REQ NOT MET</span>`;
+        const badge = isForced
+            ? `<span class="ptrait-badge ptrait-forced-badge">⚡ FORCED</span>`
+            : isElig
+                ? `<span class="ptrait-badge ptrait-elig-badge">✓ ELIGIBLE</span>`
+                : `<span class="ptrait-badge ptrait-inelig-badge">REQ NOT MET</span>`;
         const reqText = t.req ? `<div class="pperk-req">${t.req}</div>` : `<div class="pperk-req" style="opacity:0.3;">NO REQUIREMENTS</div>`;
-        const btnLabel = isElig ? '◈ TAKE THIS TRAIT' : '⚠ REQ NOT MET';
-        return `<div class="${cardCls}" onclick="selectTraitByIndex(${i})" title="${isElig ? 'TAKE TRAIT' : 'REQUIREMENTS NOT MET'}">
+        const btnLabel = isForced ? '⚡ FORCE TAKE' : isElig ? '◈ TAKE THIS TRAIT' : '⚠ REQ NOT MET';
+        const cardTitle = isForced ? 'FORCE TAKE (REQ BYPASSED)' : isElig ? 'TAKE TRAIT' : 'REQUIREMENTS NOT MET';
+        return `<div class="${cardCls}" onclick="selectTraitByIndex(${i})" title="${cardTitle}">
             <div class="pperk-card-top">
                 <span class="ptrait-name">${t.name}</span>
                 ${badge}
@@ -672,7 +674,7 @@ function renderTraitGrid(search) {
 function selectTraitByIndex(i) {
     const t = _traitPickerList[i];
     if (!t) return;
-    if (!checkTraitEligible(t)) return;
+    if (!_forceEnable && !checkTraitEligible(t)) return;
     selectTraitForSlot(t.name);
 }
 
@@ -933,214 +935,7 @@ function openPerkZoom(name, req, desc) {
     document.getElementById('perk-zoom-desc').textContent = desc;
     const perkData = PERKS_DATA.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
     _setupPerkZoomButtons(perkData || null);
-    // Add graph button to zoom modal
-    let graphBtn = document.getElementById('perk-zoom-graph-btn');
-    if (!graphBtn) {
-        graphBtn = document.createElement('button');
-        graphBtn.id = 'perk-zoom-graph-btn';
-        graphBtn.className = 'action-btn';
-        graphBtn.textContent = '⊞ GRAPH';
-        const actions = document.getElementById('perk-zoom-actions');
-        if (actions) actions.appendChild(graphBtn);
-    }
-    graphBtn.onclick = () => {
-        document.getElementById('perk-zoom-modal').style.display = 'none';
-        const target = perkData ? perkData.name : name;
-        setTimeout(() => openPerkGraph(target), 100);
-    };
-    graphBtn.style.display = perkData ? '' : 'none';
     document.getElementById('perk-zoom-modal').style.display = 'flex';
-}
-
-/* ===== PERK DEPENDENCY GRAPH ===== */
-
-let _pgNavStack = [];
-let _pgCurrentName = null;
-
-function _pgGoBack() {
-    const prev = _pgNavStack.pop();
-    if (prev) openPerkGraph(prev, false);
-}
-
-const _allNamedReqs = new Set([
-    ...PERKS_DATA.map(p => p.name.toUpperCase()),
-    ...TRAITS_DATA.map(t => t.name.toUpperCase()),
-    ...REWARD_PERKS_DATA.map(r => r.name.toUpperCase()),
-    ...INTERNALIZED_TRAITS_DATA.map(i => i.name.toUpperCase())
-]);
-const _karmaReqs = new Set(['EVIL KARMA','VERY EVIL KARMA','GOOD KARMA','VERY GOOD KARMA','NEUTRAL KARMA']);
-
-function _parseGraphReq(perk) {
-    const req = perk.req;
-    const parts = req.split(',').map(s => s.trim());
-    const result = { level: 0, special: [], skills: [], perkPre: [], perkOr: [] };
-    for (const part of parts) {
-        const lvlM = part.match(/^Level\s+(\d+)/i);
-        if (lvlM) { result.level = parseInt(lvlM[1]); continue; }
-        if (_karmaReqs.has(part.toUpperCase())) continue;
-        const subs = part.split(/\s+or\s+/i).map(s => s.trim());
-        let sp = [], sk = [], pk = [];
-        for (const s of subs) {
-            const capM = s.match(/^(STR|PER|END|CHR|CHA|INT|AGL|AGI|LCK)\s*<\s*(\d+)$/i);
-            if (capM) { sp.push({ stat: REQ_STAT_MAP[capM[1].toUpperCase()]||capM[1].toUpperCase(), min: null, max: parseInt(capM[2]) }); continue; }
-            const minM = s.match(/^(STR|PER|END|CHR|CHA|INT|AGL|AGI|LCK)\s+(\d+)$/i);
-            if (minM) { sp.push({ stat: REQ_STAT_MAP[minM[1].toUpperCase()]||minM[1].toUpperCase(), min: parseInt(minM[2]), max: null }); continue; }
-            let ms = false;
-            for (const { pattern, skill } of SKILL_REQ_MAP) { const m = s.match(pattern); if (m) { sk.push({ skill, value: parseInt(m[1]) }); ms = true; break; } }
-            if (ms) continue;
-            if (s.toUpperCase().startsWith('NOT ')) { const n = s.slice(4).trim(); if (_allNamedReqs.has(n.toUpperCase())) pk.push({ name: n, not: true }); continue; }
-            if (_allNamedReqs.has(s.toUpperCase())) { pk.push({ name: s, not: false }); continue; }
-        }
-        if (subs.length > 1) {
-            const real = pk.filter(p => !p.not);
-            if (real.length > 1) { result.perkOr.push(real); }
-            else if (real.length === 1) { result.perkPre.push(real[0]); }
-            if (sk.length) result.skills.push(sk[0]);
-            if (sp.length) result.special.push(sp[0]);
-        } else {
-            result.special.push(...sp);
-            result.skills.push(...sk);
-            result.perkPre.push(...pk.filter(p => !p.not));
-        }
-    }
-    return result;
-}
-
-function _pgSkillIcon(skill) {
-    const icons = { BARTER:'$', 'BIG GUNS':'≡', 'ENERGY WEAPONS':'~', EXPLOSIVES:'*', GUNS:'⌐', LOCKPICK:'⌂', MEDICINE:'+', 'MELEE WEAPONS':'/', REPAIR:'⚙', SCIENCE:'☰', SNEAK:'►', SPEECH:'⌨', SURVIVAL:'♣', UNARMED:'✜' };
-    return `<span style="color:#ffcc44;font-size:1.2rem;width:30px;display:inline-block;text-align:center;">${icons[skill]||'?'}</span>`;
-}
-
-function _pgReqRow(iconHtml, label, statusHtml, met) {
-    const c = met ? 'rgba(80,255,80,0.85)' : 'rgba(255,80,80,0.75)';
-    const dot = met ? '●' : '○';
-    return `<div style="display:flex;align-items:center;gap:6px;padding:3px 6px;font-size:0.85rem;line-height:1.6;color:${c};">
-        <span style="flex-shrink:0;width:14px;text-align:center;">${dot}</span>
-        ${iconHtml ? `<span style="flex-shrink:0;width:30px;text-align:center;">${iconHtml}</span>` : ''}
-        <span style="flex:1;">${label}</span>
-        <span style="flex-shrink:0;font-size:0.75rem;opacity:0.7;">${statusHtml}</span>
-    </div>`;
-}
-
-function _pgSection(title, html) {
-    if (!html) return '';
-    return `<div style="margin-bottom:10px;">
-        <div style="font-size:0.68rem;letter-spacing:0.12em;opacity:0.4;padding:0 6px 3px;border-bottom:1px solid rgba(255,255,255,0.06);margin-bottom:3px;">${title}</div>
-        ${html}
-    </div>`;
-}
-
-function _pgBackBtn() {
-    if (!_pgNavStack.length) return '';
-    const prev = _pgNavStack[_pgNavStack.length - 1];
-    const enc = prev.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-    return `<button onclick="_pgGoBack()" style="background:none;border:1px solid rgba(255,255,255,0.2);color:var(--pip-color);padding:3px 12px;cursor:pointer;font-size:0.80rem;letter-spacing:0.05em;">← ${prev}</button>`;
-}
-
-function openPerkGraph(name, pushNav = true) {
-    closeWishlist();
-    const container = document.getElementById('perk-graph-container');
-    const nameEl = document.getElementById('perk-graph-name');
-    const reqEl = document.getElementById('perk-graph-req');
-    const perk = PERKS_DATA.find(p => p.name.toUpperCase() === name.toUpperCase());
-    if (!perk) { container.innerHTML = '<div style="color:rgba(255,80,80,0.6);padding:30px;font-size:0.85rem;">Perk not found</div>'; document.getElementById('perk-graph-modal').style.display = 'flex'; return; }
-
-    // Nav history
-    if (pushNav && _pgCurrentName && _pgCurrentName !== name) {
-        _pgNavStack.push(_pgCurrentName);
-        if (_pgNavStack.length > 20) _pgNavStack.shift();
-    }
-    _pgCurrentName = name;
-
-    nameEl.innerHTML = _pgBackBtn() + ' ◆ ' + name;
-    reqEl.textContent = 'REQ: ' + perk.req;
-
-    const parts = _parseGraphReq(perk);
-    const taken = getTakenPerkCounts();
-
-    // ── Level ──
-    let lvlHTML = '';
-    if (parts.level) {
-        const met = charLevel >= parts.level;
-        lvlHTML += _pgReqRow('', `Level ${parts.level}`, `Lvl ${charLevel}`, met);
-    }
-
-    // ── SPECIAL ──
-    let specHTML = '';
-    for (const s of parts.special) {
-        const v = effectiveSpecial(s.stat);
-        const met = s.min != null ? v >= s.min : v < s.max;
-        const r = s.min != null ? `${s.stat} ${s.min}+` : `${s.stat} <${s.max}`;
-        specHTML += _pgReqRow('', r, `${v}`, met);
-    }
-
-    // ── Skills ──
-    let skillHTML = '';
-    for (const s of parts.skills) {
-        const v = skillTotal(s.skill);
-        const met = v >= s.value;
-        skillHTML += _pgReqRow(_pgSkillIcon(s.skill), `${s.skill} ${s.value}`, `${Math.floor(v)}`, met);
-    }
-
-    // ── Perk prereqs ──
-    let perkHTML = '';
-    for (const p of parts.perkPre) {
-        const met = taken.has(p.name.toUpperCase());
-        const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-        const label = `<span style="cursor:pointer;border-bottom:1px dashed rgba(255,255,255,0.15);" onclick="openPerkGraph('${enc}')">${p.name}</span>`;
-        perkHTML += _pgReqRow('', label, met ? '✓' : '✗', met);
-    }
-
-    // ── OR groups ──
-    for (const group of parts.perkOr) {
-        const anyMet = group.some(p => taken.has(p.name.toUpperCase()));
-        const labels = group.map(p => {
-            const pm = taken.has(p.name.toUpperCase());
-            const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-            return `<span style="cursor:pointer;border-bottom:1px dashed rgba(255,255,255,0.12);color:${pm?'rgba(80,255,80,0.9)':'rgba(255,255,255,0.5)'};" onclick="openPerkGraph('${enc}')">${p.name}</span>`;
-        }).join(' <span style="opacity:0.3;font-size:0.68rem;">OR</span> ');
-        perkHTML += _pgReqRow('', labels, anyMet ? '✓' : '✗', anyMet);
-    }
-
-    // ── Dependents ──
-    let depHTML = '';
-    for (const other of PERKS_DATA) {
-        if (other.name.toUpperCase() === name.toUpperCase()) continue;
-        const op = _parseGraphReq(other);
-        let isDep = false;
-        for (const p of op.perkPre) { if (p.name.toUpperCase() === name.toUpperCase()) { isDep = true; break; } }
-        if (!isDep) {
-            for (const og of op.perkOr) {
-                if (og.some(p => p.name.toUpperCase() === name.toUpperCase())) { isDep = true; break; }
-            }
-        }
-        if (isDep) {
-            const met = taken.has(other.name.toUpperCase());
-            const enc = other.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
-            const c = met ? 'rgba(80,255,80,0.85)' : 'rgba(200,200,200,0.5)';
-            depHTML += `<div style="display:flex;align-items:center;gap:5px;padding:3px 6px;font-size:0.85rem;line-height:1.6;color:${c};cursor:pointer;" onclick="openPerkGraph('${enc}')">
-                <span style="flex-shrink:0;width:14px;text-align:center;font-size:0.75rem;">▸</span>
-                <span style="flex:1;border-bottom:1px dashed rgba(255,255,255,0.1);">${other.name}</span>
-                <span style="flex-shrink:0;font-size:0.68rem;opacity:0.35;">[→]</span>
-            </div>`;
-        }
-    }
-
-    // ── Render ──
-    let html = '<div style="display:flex;flex-direction:column;gap:2px;width:100%;max-width:580px;margin:0 auto;">';
-    if (lvlHTML) html += _pgSection('LEVEL', lvlHTML);
-    if (specHTML) html += _pgSection('SPECIAL', specHTML);
-    if (skillHTML) html += _pgSection('SKILLS', skillHTML);
-    if (perkHTML) html += _pgSection('PERKS', perkHTML);
-    if (!lvlHTML && !specHTML && !skillHTML && !perkHTML) html += '<div style="padding:6px;font-size:0.80rem;opacity:0.25;">NO REQUIREMENTS</div>';
-    html += '<div style="border-top:1px solid rgba(255,255,255,0.06);margin:6px 0 4px;"></div>';
-    if (depHTML) html += _pgSection('REQUIRED BY', depHTML);
-    else html += '<div style="padding:6px;font-size:0.80rem;opacity:0.25;">NO PERKS REQUIRE THIS</div>';
-    html += '</div>';
-
-    container.innerHTML = html;
-    document.getElementById('perk-graph-modal').style.display = 'flex';
-    document.getElementById('perk-graph-refresh').onclick = () => openPerkGraph(name);
 }
 
 // Clicked from PERK & TRAIT LOG overview panel
@@ -1352,15 +1147,8 @@ function renderSkillLog() {
 function renderStartingTraitsList() {
     const container = document.getElementById('starting-traits-list');
     if (!container) return;
-    // Update HC counter
-    const counter = document.getElementById('hc-trait-counter');
-    if (counter) counter.textContent = `${hcTraitCount()}/5`;
-    // Dim ADD button at limit in HC mode (Wild Wasteland does not count toward limit)
     const addBtn = document.querySelector('.cs-start-trait-btn');
-    if (addBtn && mode === 'hc') {
-        addBtn.style.opacity = hcTraitCount() >= 5 ? '0.35' : '1';
-        addBtn.title = hcTraitCount() >= 5 ? 'HARDERCORE LIMIT: 5 STARTING TRAITS MAX' : 'ADD STARTING TRAIT';
-    }
+    if (addBtn) { addBtn.style.opacity = ''; addBtn.title = 'ADD STARTING TRAIT'; }
     if (startingTraits.length === 0) {
         container.innerHTML = '<div style="font-size:0.58rem; opacity:0.3; padding:6px 0; letter-spacing:1px;">NO STARTING TRAITS SELECTED</div>';
         return;
@@ -1381,13 +1169,7 @@ function renderStartingTraitsList() {
 }
 
 function addStartingTrait(name) {
-    // Avoid duplicates
     if (startingTraits.some(t => t.name === name)) { closeTraitModal(); return; }
-    // HC mode: max 5 starting traits (Wild Wasteland is exempt from this count)
-    if (mode === 'hc' && name !== 'Wild Wasteland' && hcTraitCount() >= 5) {
-        closeTraitModal();
-        return;
-    }
     startingTraits.push({ name });
     renderStartingTraitsList();
     updateAll();
@@ -1404,13 +1186,8 @@ function removeStartingTrait(idx) {
 }
 
 function openStartingTraitModal() {
-    // HC mode: enforce 5 starting trait limit (Wild Wasteland is exempt)
-    if (mode === 'hc' && hcTraitCount() >= 5) {
-        const el = document.getElementById('hc-trait-limit-warning');
-        if (el) { el.style.display = 'block'; setTimeout(() => el.style.display = 'none', 2500); }
-        return;
-    }
     _traitSlotId = '__starting__';
+    syncForceButtons();
     document.getElementById('trait-modal').style.display = 'flex';
     const srch = document.getElementById('trait-modal-search');
     if (srch) {
@@ -1601,7 +1378,7 @@ function sanitizeImport(d) {
     const clean = {};
     clean.name = sanitizeStr(d.name || '');
     clean.notes = sanitizeStr(d.notes || '');
-    clean.mode = ['std', 'hc'].includes(d.mode) ? d.mode : 'std';
+    clean.mode = 'std';
     clean.origin = ['CW', 'MW'].includes(d.origin) ? d.origin : 'CW';
     clean.special = {};
     sKeys.forEach(k => {
@@ -1711,6 +1488,12 @@ function sanitizeImport(d) {
     clean.levelUpBonuses = Array.isArray(d.levelUpBonuses)
         ? d.levelUpBonuses.filter(v => ['hp','ap','cw'].includes(v))
         : [];
+    clean.companions = Array.isArray(d.companions)
+        ? d.companions.slice(0, 18).map(c => ({
+            name: sanitizeStr(c && typeof c === 'object' ? c.name : ''),
+            butchBonus: (c && (c.butchBonus === 'improved' || c.butchBonus === 'worsened')) ? c.butchBonus : null
+        })).filter(c => COMPANIONS_DATA.some(x => x.name === c.name))
+        : [];
     return clean;
 }
 
@@ -1734,6 +1517,8 @@ function showTab(t) {
         requestAnimationFrame(() => renderImplants());
     } else if (t === 'books') {
         requestAnimationFrame(() => renderBooksTab());
+    } else if (t === 'uni') {
+        requestAnimationFrame(() => applyUniquesVisibility());
     }
     
     nsAudio.click();
@@ -1833,6 +1618,7 @@ function renderBooksTab() {
                 return `<div class="book-copy-item ${found ? 'book-copy-found' : ''}" onclick="toggleSkillBook('${b.skill}',${i})">
                     <span class="tag-marker">${found ? '[X]' : '[ ]'}</span>
                     <span class="book-copy-location">${c.location}</span>
+                    <span class="book-copy-detail">${c.detail}</span>
                 </div>`;
             }).join('')}
             </div>
@@ -1854,35 +1640,17 @@ function renderBooksTab() {
 
 /* ===== MODE & ORIGIN TOGGLES ===== */
 function setMode(m, skipSave=false) {
-    if (m === 'hc' && !skipSave) {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;z-index:99999;';
-        overlay.innerHTML = `<div style="background:#0a0a0a;border:2px solid #ff4444;border-left:6px solid #ff4444;padding:30px 40px;max-width:460px;text-align:center;font-family:var(--font-main);box-shadow:0 0 60px rgba(255,0,0,0.3);">
-            <div style="font-size:2.5rem;margin-bottom:12px;">☢</div>
-            <div style="color:#ff4444;font-size:1.1rem;font-weight:bold;letter-spacing:0.15em;margin-bottom:10px;">⚠ HARDERCORE MODE ⚠</div>
-            <div style="color:#ff8888;font-size:0.8rem;line-height:1.6;margin-bottom:20px;">Full Hardercore support is still being built.<br>Some features may not work correctly yet.<br>Stay tuned for updates!<br><br>Want to help shape it? Reach out on Discord!</div>
-            <button onclick="this.parentElement.parentElement.remove()" style="background:#ff4444;color:#000;border:none;padding:8px 28px;font-family:inherit;font-size:0.9rem;font-weight:bold;cursor:pointer;letter-spacing:0.1em;">UNDERSTOOD</button>
-        </div>`;
-        document.body.appendChild(overlay);
-        return;
-    }
-    // Save current perk entries before wiping the list
     const prevPerks = Array.from(document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)')).map(r => [
         r.querySelector('.prog-name-input')?.value || '',
         r.querySelector('.prog-notes-input')?.value || ''
     ]);
-    mode = m; document.body.classList.toggle('mode-hc', m==='hc');
-    nsAudio.updateModeSound(m === 'hc');
-    document.getElementById('hc-banner').style.display = m==='hc' ? 'flex' : 'none';
-    document.getElementById('sysop-note').style.display = m==='hc' ? 'block' : 'none';
-    document.getElementById('m-std').classList.toggle('active', m==='std');
-    document.getElementById('m-hc').classList.toggle('active', m==='hc');
-    // Reset add-trait button opacity when switching modes
+    mode = m;
+    const stdBtn = document.getElementById('m-std');
+    if (stdBtn) stdBtn.classList.toggle('active', m==='std');
     const addBtn = document.querySelector('.cs-start-trait-btn');
     if (addBtn) addBtn.style.opacity = '';
     renderStartingTraitsList();
     renderProgression();
-    // Restore as many perks as will fit in the new layout
     if (!skipSave && prevPerks.some(p => p[0])) {
         const newRows = document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)');
         prevPerks.forEach((v, i) => {
@@ -1908,9 +1676,7 @@ function setOrigin(o, skipSave=false) {
         else            nsAudio.cwMotif();
     }
     updateTransitBtn();
-    renderKarmaSelector();
     if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
-    if(mode==='hc') document.body.classList.add('mode-hc');
     document.getElementById('btn-cw').classList.toggle('active', o==='CW');
     document.getElementById('btn-mw').classList.toggle('active', o==='MW');
     renderQuests();
@@ -1965,7 +1731,49 @@ function searchItems(inputId, containerId) {
 }
 
 function searchQuests() { searchItems('quest-search-bar', 'quest-list-container'); }
-function searchUniques() { searchItems('uni-search-bar', 'unique-weapon-checklist'); }
+
+/* --- UNIQUES FILTER --- */
+let uniFilter = 'ALL';
+
+function setUniquesFilter(tag) {
+    uniFilter = tag;
+    document.querySelectorAll('#uni-filter-bar .uni-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tag === tag);
+    });
+    applyUniquesVisibility();
+}
+
+function applyUniquesVisibility() {
+    const wpnQuery = (document.getElementById('uni-search-bar').value || '').toUpperCase();
+    const armQuery = (document.getElementById('uni-armor-search-bar').value || '').toUpperCase();
+    const containers = ['unique-weapon-checklist', 'unique-armor-checklist'];
+    containers.forEach(containerId => {
+        const items = document.querySelectorAll(`#${containerId} .grid-item`);
+        const isArmor = containerId === 'unique-armor-checklist';
+        const query = isArmor ? armQuery : wpnQuery;
+        items.forEach(item => {
+            const text = item.innerText.toUpperCase();
+            const hasTag = uniFilter === 'ALL' || text.includes(`[${uniFilter}]`);
+            const matchesSearch = !query || text.includes(query);
+            item.style.display = (hasTag && matchesSearch) ? 'flex' : 'none';
+        });
+        const activeFilter = uniFilter !== 'ALL';
+        document.querySelectorAll(`#${containerId} .grid-tidy`).forEach(grid => {
+            const visibleCount = Array.from(grid.querySelectorAll('.grid-item')).filter(i => i.style.display !== 'none').length;
+            const categoryId = grid.getAttribute('data-category');
+            const header = document.getElementById(`h-${categoryId}`);
+            if (!activeFilter && query === '') {
+                // No filter or search active - let collapse/expand state manage grids
+                header.style.display = 'flex';
+                return;
+            }
+            if (visibleCount > 0) { grid.style.display = 'grid'; header.style.display = 'flex'; }
+            else { grid.style.display = 'none'; header.style.display = 'none'; }
+        });
+    });
+}
+
+function searchUniques() { applyUniquesVisibility(); }
 
 /* ===== ALL PERKS TAB: SORT & RENDER ===== */
 function getPerkLevel(perk) {
@@ -1974,7 +1782,7 @@ function getPerkLevel(perk) {
 }
 
 function getPerkSPECIAL(perk) {
-    const order = ['STR','PER','END','CHR','INT','AGI','LCK'];
+    const order = ['STR','PER','END','CHA','INT','AGI','LCK'];
     const m = perk.req.match(/\b(STR|PER|END|CHA|INT|AGI|LCK)\b/);
     if (!m) return 99;
     return order.indexOf(m[1]);
@@ -1982,7 +1790,10 @@ function getPerkSPECIAL(perk) {
 
 function setSort(s) {
     currentSort = s;
-    document.querySelectorAll('.sort-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.sort-btn').forEach(b => {
+        if (b.id === 'force-main-perks') return;
+        b.classList.remove('active');
+    });
     document.getElementById('sort-'+s).classList.add('active');
     renderAllPerks();
 }
@@ -1999,7 +1810,7 @@ function renderAllPerks() {
         !query || p.name.toUpperCase().includes(query) || p.req.toUpperCase().includes(query) || p.desc.toUpperCase().includes(query)
     );
 
-    if (showEligibleOnly) perks = perks.filter(p => meetsRequirements(p));
+    if (showEligibleOnly && !_forceEnable) perks = perks.filter(p => meetsRequirements(p));
 
     if (currentSort === 'az') {
         perks = [...perks].sort((a, b) => a.name.localeCompare(b.name));
@@ -2036,7 +1847,8 @@ function renderAllPerks() {
 }
 
 function buildPerkCard(p) {
-    const eligible = meetsRequirements(p);
+    const eligible = _forceEnable || meetsRequirements(p);
+    const forced = _forceEnable && !meetsRequirements(p);
     const isIT = p.name.trim().toUpperCase() === 'INTENSE TRAINING';
     const multiRank = p.ranks > 1;
     const rankBadgeClass = multiRank ? 'perk-rank-badge multi' : 'perk-rank-badge';
@@ -2067,15 +1879,14 @@ function buildPerkCard(p) {
         <div class="perk-card-header">
             <h3>${p.name}</h3>
             <span class="${rankBadgeClass}">${rankLabel}</span>
-            ${eligible ? '<span class="perk-eligible-badge">✓ ELIGIBLE</span>' : ''}
+            ${forced ? '<span class="perk-eligible-badge pperk-forced-tag">⚡ FORCED</span>' : (eligible ? '<span class="perk-eligible-badge">✓ ELIGIBLE</span>' : '')}
         </div>
         <div class="perk-req">REQ: ${p.req}</div>
-        ${!eligible && missingLines.length ? `<div class="perk-missing">${missingLines.map(l=>`<span>${l}</span>`).join('')}</div>` : ''}
+        ${!forced && !eligible && missingLines.length ? `<div class="perk-missing">${missingLines.map(l=>`<span>${l}</span>`).join('')}</div>` : ''}
         <div class="perk-desc">${p.desc}</div>
         <div class="perk-card-actions">
             <button class="action-btn" onclick="addPerkToBuild('${escapedName}','${escapedReq}',${isIT})">${addBtnLabel}</button>
             <button class="action-btn perk-zoom-action" title="EXPAND DESCRIPTION" onclick="openPerkZoom('${escapedName}','${p.req.replace(/'/g,"\\'")}','${p.desc.replace(/'/g,"\\'")}')">⊕ ZOOM</button>
-            <button class="action-btn perk-graph-action" title="DEPENDENCY GRAPH" onclick="openPerkGraph('${escapedName}')">⊞ GRAPH</button>
             <button class="action-btn perk-wishlist-action ${wishlistClass}" onclick="togglePerkWishlist('${escapedName}')" title="${wishlistTitle}">${wishlistLabel}</button>
         </div>
     </div>`;
@@ -2084,7 +1895,7 @@ function buildPerkCard(p) {
 function addPerkToBuild(name, req, isIT) {
     if (isIT) { openITModal(name, req); return; }
     const _pd = PERKS_DATA.find(p=>p.name.toUpperCase()===name.toUpperCase());
-    if (_pd && !meetsRequirements(_pd)) { showPerkBlockedToast(name, 'REQUIREMENTS NOT MET'); return; }
+    if (_pd && !_forceEnable && !meetsRequirements(_pd)) { showPerkBlockedToast(name, 'REQUIREMENTS NOT MET'); return; }
     const _mr = _pd ? _pd.ranks : 1;
     const _tk = Array.from(document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row'))
         .filter(r=>{const v=(r.querySelector('.prog-name-input')?.value||'').trim().toUpperCase();return v===name.toUpperCase()||v.startsWith(name.toUpperCase());}).length;
@@ -2111,7 +1922,7 @@ function _getPerkToast() {
     if (!toast) {
         toast = document.createElement('div');
         toast.id = 'perk-added-toast';
-        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--pip-bg-2);border:1px solid var(--pip-color);color:var(--pip-color);padding:10px 18px;font-size:0.7rem;font-family:var(--font-main);letter-spacing:1px;box-shadow:0 0 20px rgba(40,255,40,0.2);transition:opacity 0.4s;opacity:0;pointer-events:none;text-transform:uppercase;';
+        toast.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:99999;background:var(--pip-bg-2);border:1px solid var(--pip-color);color:var(--pip-color);padding:10px 18px;font-size:0.7rem;font-family:var(--font-main);letter-spacing:1px;box-shadow:0 0 20px rgba(var(--pip-rgb),0.2);transition:opacity 0.4s;opacity:0;pointer-events:none;text-transform:uppercase;';
         document.body.appendChild(toast);
     }
     return toast;
@@ -2351,14 +2162,11 @@ function confirmLevelUp() {
     triggerAutosave();
     // Check if new level grants a perk and prompt
     const newLvl = charLevel;
-    // Humbled perk frequency rules:
-    //  Still below pre-humbled level →  STD: every 4;  HC: never
-    //  At/above pre-humbled level    →  normal rules resume
     let isPerkLevel;
     if (hasBeenHumbled && humbledLevel > 0 && newLvl < humbledLevel) {
-        isPerkLevel = (mode === 'hc') ? false : (newLvl % 4 === 0);
+        isPerkLevel = newLvl % 4 === 0;
     } else {
-        isPerkLevel = (mode === 'hc') ? (newLvl % 3 === 0) : (newLvl % 2 === 0);
+        isPerkLevel = newLvl % 2 === 0;
     }
     if (isPerkLevel) {
         showPerkLevelUpPrompt(newLvl);
@@ -2522,7 +2330,7 @@ function updateUniqueMarker(cb) {
     renderBadges();
 }
 
-function searchUniqueArmor() { searchItems('uni-armor-search-bar', 'unique-armor-checklist'); }
+function searchUniqueArmor() { applyUniquesVisibility(); }
 
 function renderUniques() {
     const div = document.getElementById('unique-weapon-checklist'); div.innerHTML = '';
@@ -2634,12 +2442,6 @@ function updateKarmaFace(k){
              'neutral':{top:'',g:'◉_◉',s:'NEUTRAL',c:'#c8c888'},
              'evil':{top:'',g:'◉益◉',s:'EVIL',c:'#ff8040'},
              'very-evil':{top:'',g:'☠‿☠',s:'VERY EVIL',c:'#ff3030'}};
-    const themeKey = _activeCustomTheme || (origin === 'MW' ? 'mw' : 'cw');
-    const themeFaces = KARMA_FACES_BY_THEME[themeKey];
-    const tf = themeFaces && themeFaces[k];
-    if (tf) {
-        F[k] = { top: tf.top, g: tf.g, s: tf.s, c: F[k].c };
-    }
     const f=F[k]||F['neutral'];
     el.innerHTML=(f.top?'<div class="kface-halo" style="color:'+f.c+'">'+f.top+'</div>':'')
         +'<div class="kface-glyph" style="color:'+f.c+';text-shadow:0 0 8px '+f.c+'88">'+f.g+'</div>'
@@ -2796,78 +2598,146 @@ function renderLevelUpBonuses() {
     container.style.display = 'block';
 }
 
-function getSPECIALPool() { return mode === 'hc' ? 30 : 33; }
+function getSPECIALPool() { return 33; }
 
-function getActiveEffects() {
-    const effects = [];
-    const itBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
-    document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row) .prog-name-input').forEach(el => {
-        const m = (el.value||'').match(/^Intense Training \(\+1 (STR|PER|END|CHR|INT|AGI|LCK)\)/i);
-        if (m) itBonus[m[1].toUpperCase()]++;
-    });
-    const implantBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
-    IMPLANTS_DATA.forEach(i => { if (i.cat==='special' && i.stat && implantsTaken[i.name]) implantBonus[i.stat]++; });
+function getTraitForceIcon(name) {
+    const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase())
+            || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (!td || !td.req || td.req.trim() === '') return '';
+    if (checkTraitEligible(td)) return '';
+    return '<span class="ov-req-indicator ov-req-unmet" title="FORCED INTO BUILD — REQUIREMENTS NOT MET">⚡</span>';
+}
 
-    // Intense Training
-    for (const k of sKeys) {
-        if (itBonus[k]) effects.push({ group:'Intense Training', source:'Intense Training', stat:k, value:itBonus[k] });
+/* ===== COMPANION RECRUITMENT ===== */
+function companionCapacity() {
+    const val = special.CHA;
+    let slots = val >= 10 ? 3 : val >= 7 ? 2 : val >= 4 ? 1 : 0;
+    return slots + (hasMagneticPersonalityPerk() ? 1 : 0);
+}
+function _companionEntry(c) { return COMPANIONS_DATA.find(x => x.name === c.name); }
+function _selectedCompanionNames() { return companions.map(c => c.name); }
+function _escQuote(s) { return s.replace(/'/g, "\\'"); }
+
+function closeCompanionModal() {
+    document.getElementById('companion-modal').style.display = 'none';
+    nsAudio.click();
+}
+
+function addCompanion(name) {
+    if (!COMPANIONS_DATA.some(x => x.name === name)) return;
+    if (_selectedCompanionNames().includes(name)) { removeCompanion(name); return; }
+    if (companions.length >= companionCapacity()) {
+        showToast('NO COMPANION SLOTS AVAILABLE — raise permanent Charisma (CHA 4/7/10) or take Magnetic Personality.', 4200);
+        return;
     }
-    // Implants
-    for (const k of sKeys) {
-        if (implantBonus[k]) effects.push({ group:'Implants', source:'Implant ('+k+')', stat:k, value:implantBonus[k] });
+    if (name === 'Butch') {
+        _pendButchName = 'Butch';
+        document.getElementById('butch-modal').style.display = 'flex';
+        return;
     }
-    // Traits
-    for (const name of getChosenTraitNames()) {
-        const b = TRAIT_BONUSES[name];
-        if (!b) continue;
-        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Traits', source:name, stat:k, value:v });
-        if (b.skills) for (const [k,v] of Object.entries(b.skills)) {
-            if (k === '__ALL__') { for (const s of skills) effects.push({ group:'Traits', source:name, skill:s, value:v }); }
-            else effects.push({ group:'Traits', source:name, skill:k, value:v });
-        }
-    }
-    // Perks (from PERK_SKILL_BONUSES)
-    const counted = new Set();
-    document.querySelectorAll('#prog-list .prog-name-input, #extra-perk-list .prog-name-input').forEach(el => {
-        const raw = (el.value||'').trim();
-        if (!raw) return;
-        const name = raw.replace(/\s*\(Rank\s+\d+\)\s*$/i, '').trim();
-        if (counted.has(name)) return; counted.add(name);
-        const b = PERK_SKILL_BONUSES[name];
-        if (!b) return;
-        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Perks', source:name, stat:k, value:v });
-        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Perks', source:name, skill:k, value:v });
+    companions.push({ name, butchBonus: null });
+    showToast('RECRUITED: ' + name.toUpperCase());
+    updateCompanionUI();
+    triggerAutosave();
+}
+function removeCompanion(name) {
+    const idx = companions.findIndex(c => c.name === name);
+    if (idx === -1) return;
+    companions.splice(idx, 1);
+    showToast('DISMISSED: ' + name.toUpperCase());
+    updateCompanionUI();
+    triggerAutosave();
+}
+
+let _pendButchName = null;
+let _companionOriginFilter = 'ALL';
+function cancelButchChoice() { _pendButchName = null; document.getElementById('butch-modal').style.display = 'none'; nsAudio.click(); }
+function syncCompanionFilterButtons() {
+    document.querySelectorAll('#companion-origin-filter button').forEach(b => b.classList.toggle('active', b.dataset.origin === _companionOriginFilter));
+}
+function setCompanionOriginFilter(o) {
+    _companionOriginFilter = o;
+    syncCompanionFilterButtons();
+    renderCompanionModal();
+    nsAudio.click();
+}
+function openCompanionModal() {
+    document.getElementById('companion-modal').style.display = 'flex';
+    syncCompanionFilterButtons();
+    renderCompanionModal();
+    nsAudio.click();
+}
+function renderCompanionModal() {
+    const cap = companionCapacity();
+    document.getElementById('companion-capacity').innerHTML =
+        `ACTIVE: <b>${companions.length}</b> / <b>${cap}</b> SLOTS &nbsp;·&nbsp; PERMANENT CHARISMA: CHA 4 → 1, CHA 7 → 2, CHA 10 → 3${hasMagneticPersonalityPerk() ? ' &nbsp;·&nbsp; <span style="color:var(--pip-color); letter-spacing:0.08em;">MAGNETIC PERSONALITY: +1 SLOT</span>' : ''}`;
+    const q = (document.getElementById('companion-search').value || '').trim().toLowerCase();
+    const cont = document.getElementById('companion-container');
+    const list = COMPANIONS_DATA.filter(c => {
+        if (_companionOriginFilter !== 'ALL' && c.origin !== _companionOriginFilter) return false;
+        if (q && !c.name.toLowerCase().includes(q)) return false;
+        return true;
     });
-    (rewardPerksList||[]).forEach(rp => {
-        if (counted.has(rp.name)) return; counted.add(rp.name);
-        const b = PERK_SKILL_BONUSES[rp.name];
-        if (!b) return;
-        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Perks', source:rp.name, stat:k, value:v });
-        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Perks', source:rp.name, skill:k, value:v });
-    });
-    // Conditionals
-    for (const [name, isOn] of Object.entries(conditionalToggles)) {
-        if (!isOn) continue;
-        const b = CONDITIONAL_TOGGLE_BONUSES[name];
-        if (!b) continue;
-        if (b.special) for (const [k,v] of Object.entries(b.special)) effects.push({ group:'Conditionals', source:name, stat:k, value:v });
-        if (b.skills) for (const [k,v] of Object.entries(b.skills)) effects.push({ group:'Conditionals', source:name, skill:k, value:v });
+    cont.innerHTML = list.map(c => {
+        const has = _selectedCompanionNames().includes(c.name);
+        const atCap = !has && companions.length >= cap;
+        return `<div class="companion-grid-entry ${has ? 'companion-added' : ''}${atCap ? ' companion-capped' : ''}" ${atCap ? '' : 'onclick="addCompanion(\'' + _escQuote(c.name) + '\')"'}${atCap ? 'title="NO COMPANION SLOTS AVAILABLE — raise Charisma to unlock more"' : ''}>
+            <div class="companion-icon">${c.icon}</div>
+            <div class="companion-body">
+                <div class="companion-name-row"><span class="companion-name">${c.name}</span><span class="companion-origin-tag tag-${c.origin}">${c.origin}</span><span class="companion-state">${has ? '✔ IN PARTY' : ''}</span></div>
+                <div class="companion-desc">${c.desc}</div>
+            </div>
+        </div>`;
+    }).join('') || '<div style="opacity:0.4; font-size:0.75rem; padding:14px; text-align:center;">NO COMPANIONS MATCH YOUR SEARCH</div>';
+}
+function confirmButchBonus(b) {
+    if (_pendButchName) {
+        const existing = companions.find(c => c.name === _pendButchName);
+        if (existing) existing.butchBonus = b;
+        else companions.push({ name: _pendButchName, butchBonus: b });
+        _pendButchName = null;
     }
-    // Gear Effects
-    for (const ge of gearEffectsList) {
-        if (!ge.toggled || !ge.effect) continue;
-        const m = ge.effect.match(/^([+-]\d+)\s+(.+)$/);
-        if (!m) continue;
-        const val = parseInt(m[1], 10);
-        const target = m[2].toUpperCase().trim();
-        if (SPECIAL_STATS.includes(target)) effects.push({ group:'Gear Effects', source:ge.name||ge.effect, stat:target, value:val });
-        else if (skills.includes(target)) effects.push({ group:'Gear Effects', source:ge.name||ge.effect, skill:target, value:val });
+    document.getElementById('butch-modal').style.display = 'none';
+    showToast('BUTCH DISPOSITION: ' + (b === 'improved' ? 'IMPROVED — -75% ENEMY CRIT. CHANCE' : 'WORSENED — +50% CRIT. DAMAGE'));
+    updateCompanionUI();
+    triggerAutosave();
+}
+function reChooseButch() {
+    _pendButchName = 'Butch';
+    document.getElementById('butch-modal').style.display = 'flex';
+    nsAudio.click();
+}
+
+function updateCompanionUI() {
+    const badge = document.getElementById('companion-count');
+    if (badge) badge.textContent = companions.length;
+    const modal = document.getElementById('companion-modal');
+    if (modal && modal.style.display === 'flex') openCompanionModal();
+    renderCompanionsPanel();
+}
+function renderCompanionsPanel() {
+    const el = document.getElementById('ov-companions');
+    if (!el) return;
+    const cap = companionCapacity();
+    if (!companions.length) {
+        el.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><span style="opacity:0.35;">NONE</span><button class="companion-mini-btn" onclick="openCompanionModal()">+ RECRUIT</button></div>`;
+        return;
     }
-    // Head Trauma
-    for (const [k,v] of Object.entries(humbledReductions)) {
-        effects.push({ group:'Head Trauma', source:'Head Trauma', stat:k, value:-v });
-    }
-    return effects;
+    el.innerHTML = companions.map(c => {
+        const d = _companionEntry(c);
+        const butchTxt = c.name === 'Butch'
+            ? `<div class="butch-row"><span class="butch-badge">${c.butchBonus === 'improved' ? '▶ IMPROVED: -75% ENEMY CRIT. CHANCE' : c.butchBonus === 'worsened' ? '▶ WORSENED: +50% CRIT. DAMAGE' : '⚑ DISPOSITION PENDING'}</span><button class="companion-mini-btn" onclick="reChooseButch()">SWITCH</button></div>`
+            : '';
+        return `<div class="companion-panel-row">
+            <span class="companion-panel-icon">${d ? d.icon : '❓'}</span>
+            <div class="companion-panel-body">
+                <div class="companion-panel-name">${c.name}<span class="companion-origin-tag tag-${d ? d.origin : 'CW'}">${d ? d.origin : ''}</span></div>
+                <div class="companion-panel-desc">${d ? d.desc : ''}</div>
+                ${butchTxt}
+            </div>
+            <button class="companion-remove-btn" title="Dismiss" onclick="removeCompanion('${_escQuote(c.name)}')">✕</button>
+        </div>`;
+    }).join('') + `<div style="margin-top:6px; font-size:0.68rem; color:rgba(255,255,255,0.35);">${companions.length} / ${cap} SLOT${cap !== 1 ? 'S' : ''} USED${cap - companions.length > 0 ? ' — ' + (cap - companions.length) + ' OPEN' : ''}${hasMagneticPersonalityPerk() ? ' — MAGNETIC PERSONALITY: +1 SLOT' : ''}</div>`;
 }
 
 function updateAll() {
@@ -2878,78 +2748,130 @@ function updateAll() {
     // Cache the prog-row query — used for IT tracking and perks overview
     const _progRows = document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row');
     let _itb=0;
-    const itBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    const itBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     _progRows.forEach(r => {
         const v = r.querySelector('.prog-name-input')?.value||'';
         if (/^Intense Training \(\+1 \w+\)/i.test(v)) _itb++;
-        const m = v.match(/^Intense Training \(\+1 (STR|PER|END|CHR|INT|AGI|LCK)\)/i);
+        const m = v.match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
         if (m) itBonus[m[1].toUpperCase()]++;
     });
     const rem = pool - Math.max(0, (Object.values(special).reduce((a,b)=>a+b,0) - 7) - _ib - _itb);
     document.getElementById('pts-left').innerText = rem;
-    const { skillDelta, specialDelta } = getCachedBonuses().trait;
-    const { perkSkillDelta, perkSpecialDelta } = getCachedBonuses().perk;
-    const { skillDelta: condSkillDelta, specDelta: ctDelta } = getCachedBonuses().cond;
-    const { specDelta: gearSpecDelta } = getGearEffectsDelta();
+    const { specialDelta, skillDelta, hasConditional } = getCachedBonuses().trait;
+    const { perkSpecialDelta, perkSkillDelta } = getCachedBonuses().perk;
+    const { specDelta: ctDelta, skillDelta: condSkillDelta } = getCachedBonuses().cond;
+    const { specDelta: gearSpecDelta, skillDelta: gearSkillDelta } = getGearEffectsDelta();
+    // Merge perk deltas into combined display deltas
+    const combSpecDelta = {};
+    for (const k of Object.keys(specialDelta)) {
+        combSpecDelta[k] = (specialDelta[k]||0) + (perkSpecialDelta[k]||0);
+    }
+    const combSkillDelta = {};
+    const allSkillKeys = new Set([...Object.keys(skillDelta), ...Object.keys(perkSkillDelta)]);
+    for (const k of allSkillKeys) {
+        combSkillDelta[k] = (skillDelta[k]||0) + (perkSkillDelta[k]||0);
+    }
     // Build per-stat implant bonus lookup
-    const implantBonus = {STR:0,PER:0,END:0,CHR:0,INT:0,AGI:0,LCK:0};
+    const implantBonus = {STR:0,PER:0,END:0,CHA:0,INT:0,AGI:0,LCK:0};
     IMPLANTS_DATA.forEach(i => { if (i.cat==='special' && i.stat && implantsTaken[i.name]) implantBonus[i.stat]++; });
 
     document.getElementById('special-list').innerHTML = sKeys.map(k => {
-        const imp = implantBonus[k] || 0;
-        const it  = itBonus[k] || 0;
         const td  = specialDelta[k] || 0;
         const pd  = perkSpecialDelta[k] || 0;
         const cd  = ctDelta[k] || 0;
         const gd  = gearSpecDelta[k] || 0;
-        const hd  = -(humbledReductions[k] || 0);
+        const imp = implantBonus[k] || 0;
+        const it  = itBonus[k] || 0;
+        const rank = getSpecialRank(k);
 
         // special[k] already embeds IT increments (confirmIT) and implant increments (toggleImplant).
         // baseVal  = pure allocated points only — subtract both to get the number the player typed in
         const baseVal = special[k] - it - imp;
-        // effectiveTotal = current stat with all modifiers applied
-        const effectiveTotal = special[k] + td + pd + cd + gd + hd;
+        // effectiveTotal = special[k] (base+IT+implants) + external modifiers (trait/perk/conditional)
+        // NOTE: do NOT add imp again — it's already in special[k]
+        const effectiveTotal = special[k] + td + pd + cd + gd;
         // what the number shows in the UI
-        const dispVal = _showBaseSpecial ? baseVal : effectiveTotal;
-        // bar fill: stacked segments — base + modifier portion
-        const modDelta = _showBaseSpecial ? 0 : effectiveTotal - special[k];
-        const baseBar = _showBaseSpecial ? baseVal : Math.min(special[k], effectiveTotal);
-        const _ds = Math.max(1, Math.min(10, baseBar));
-        const modBar = Math.max(0, Math.min(10 - _ds, Math.abs(modDelta)));
+        const dispVal = _showBaseSpecial ? baseVal : special[k];
+        // bar fills against the full effective total
+        const _ds = Math.max(1, Math.min(10, _showBaseSpecial ? baseVal : effectiveTotal));
+
+        // Show = badge when external modifiers (trait / perk / conditional) are active.
+        // In detailed mode, also show it if ANY modifier exists (including IT/implants) for full transparency
+        const hasExternalBonus = !_showBaseSpecial && (td + pd + cd + gd) !== 0;
+        const hasAnyModifier = (it || imp || td || pd || cd || gd) !== 0;
+        const hasBonus = !_showBaseSpecial && (_showDetailedSpecial ? hasAnyModifier : hasExternalBonus);
+        
+        const tooltipParts = [];
+        if (it  !== 0) tooltipParts.push(`+${it} IT`);
+        if (imp !== 0) tooltipParts.push(`+${imp} Impl`);
+        if (td  !== 0) tooltipParts.push(`${td>0?'+':''}${td} Trait`);
+        if (pd  !== 0) tooltipParts.push(`${pd>0?'+':''}${pd} Perk`);
+        if (cd  !== 0) tooltipParts.push(`${cd>0?'+':''}${cd} Cond`);
+        if (gd  !== 0) tooltipParts.push(`${gd>0?'+':''}${gd} Gear`);
+        const bonusTooltip = tooltipParts.length
+            ? `BASE ${baseVal}: ` + tooltipParts.join(' / ') + ` = ${effectiveTotal}`
+            : rank;
+        
+        // Compact single delta badge (simplified mode)
+        const totalDelta = (it||0) + (imp||0) + (td||0) + (pd||0) + (cd||0) + (gd||0);
+        let deltaBadge = '';
+        if (!_showBaseSpecial && totalDelta !== 0 && !_showDetailedSpecial) {
+            const sign = totalDelta > 0 ? '+' : '';
+            const cls = totalDelta > 0 ? 'sdelta-pos' : 'sdelta-neg';
+            deltaBadge = `<span class="spec-delta-badge ${cls}" title="${bonusTooltip}">${sign}${totalDelta}</span>`;
+        }
+        
+        // Detailed breakdown badges (detailed mode)
+        // Shows ALL individual modifiers, even if they cancel out to zero
+        let detailedBadges = '';
+        if (!_showBaseSpecial && _showDetailedSpecial) {
+            const badges = [];
+            if (it !== 0) badges.push(`<span class="spec-source-badge spec-badge-it" title="Intense Training">IT ${it>0?'+':''}${it}</span>`);
+            if (imp !== 0) badges.push(`<span class="spec-source-badge spec-badge-impl" title="Implant">I ${imp>0?'+':''}${imp}</span>`);
+            if (td !== 0) badges.push(`<span class="spec-source-badge spec-badge-trait" title="Trait">T ${td>0?'+':''}${td}</span>`);
+            if (pd !== 0) badges.push(`<span class="spec-source-badge spec-badge-perk" title="Perk">P ${pd>0?'+':''}${pd}</span>`);
+            if (cd !== 0) badges.push(`<span class="spec-source-badge spec-badge-cond" title="Conditional">C ${cd>0?'+':''}${cd}</span>`);
+            if (gd !== 0) badges.push(`<span class="spec-source-badge spec-badge-gear" title="Gear Effect">G ${gd>0?'+':''}${gd}</span>`);
+            // Always show the container in detailed mode for consistent layout
+            detailedBadges = `<div class="spec-detailed-sources">${badges.length > 0 ? badges.join('') : '<span class="spec-no-mods">NO MODIFIERS</span>'}</div>`;
+        }
+
 
         // Glow tier based on effective display value (1–10)
-        const showTotal = _showBaseSpecial ? baseVal : effectiveTotal;
-        const glowTier = showTotal >= 10 ? 'spec-glow-max' : showTotal >= 8 ? 'spec-glow-high' : showTotal >= 6 ? 'spec-glow-mid' : showTotal >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
+        const glowTier = _ds >= 10 ? 'spec-glow-max' : _ds >= 8 ? 'spec-glow-high' : _ds >= 6 ? 'spec-glow-mid' : _ds >= 4 ? 'spec-glow-low' : 'spec-glow-dim';
         
         // Bar fill percentage (1-10 scale = 10% per point)
-        const basePct = Math.max(0, Math.min(100, _ds * 10));
-        const modPct = modBar * 10;
-        const modClass = modDelta > 0 ? 'spec-bar-mod-pos' : 'spec-bar-mod-neg';
+        const barPercent = Math.max(0, Math.min(100, _ds * 10));
         
         // Bar tier classes similar to skill system
-        const barTier = showTotal >= 10 ? 'spec-bar-max' : showTotal >= 8 ? 'spec-bar-high' : showTotal >= 6 ? 'spec-bar-mid' : showTotal >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
+        const barTier = _ds >= 10 ? 'spec-bar-max' : _ds >= 8 ? 'spec-bar-high' : _ds >= 6 ? 'spec-bar-mid' : _ds >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
 
-        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''} ${glowTier}" data-key="${k}">
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}${_showDetailedSpecial?' spec-detailed-mode':''} ${glowTier}" data-key="${k}">
             <div class="spec-card-top">
-                <span class="spec-abbr-lg spec-info-btn">${k}</span>
+                <span class="spec-abbr-lg spec-info-btn" title="${bonusTooltip}" onclick="openSpecialInfoModal('${k}')">${k}</span>
+                ${deltaBadge}
             </div>
             <div class="spec-card-mid">
                 <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
                 <span class="spec-val special-val">${dispVal}</span>
                 <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
+                ${hasBonus ? `<span class="spec-eq-badge" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
             </div>
+            ${detailedBadges}
             <div class="spec-bar-container">
                 <div class="spec-bar-bg">
-                    <div class="spec-bar-fill ${barTier}" style="width: ${basePct}%"></div>
-                    ${modDelta !== 0 && modPct > 0 ? `<div class="spec-bar-fill ${modClass}" style="width: ${modPct}%"></div>` : ''}
+                    <div class="spec-bar-fill ${barTier}" style="width: ${barPercent}%"></div>
                 </div>
+            </div>
+            <div class="spec-card-bot">
+                <span class="spec-rank-title">${rank}</span>
             </div>
         </div>`;
     }).join('');
 
     document.getElementById('ov-name').innerText = (document.getElementById('char-name').value || "NO_ID").toUpperCase();
-    const ovTagsEl = document.getElementById('ov-tags');
-    if (ovTagsEl) ovTagsEl.innerHTML = (() => {
+    document.getElementById('ov-spec').innerHTML = sKeys.map(k => `<div class="char-banner-stat"><span class="char-banner-stat-key">${k}</span><span class="char-banner-stat-val">${special[k]}</span></div>`).join('');
+    document.getElementById('ov-tags').innerHTML = (() => {
         const entries = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => {
             const label = c.parentElement.querySelectorAll('span')[1];
             const skillName = label ? label.innerText : '';
@@ -2962,12 +2884,12 @@ function updateAll() {
         }
         return entries.join('') || 'NONE';
     })();
-    const startingTraitHTML = startingTraits.map((t) => {
+        const startingTraitHTML = startingTraits.map((t) => {
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
         const safeN = encodeURIComponent(t.name).replace(/'/g, '%27');
         // always clickable — ovPerkClick searches perks, traits, internalized, rewards
-        return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${safeN}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>◈ ${t.name}</span></div>`;
+        return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${safeN}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>${getTraitForceIcon(t.name)}◈ ${t.name}</span></div>`;
     }).join('');
     const levelTraitHTML = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => {
         const n = r.getAttribute('data-chosen')||'';
@@ -2975,7 +2897,7 @@ function updateAll() {
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase())
                  || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase());
         const safeN = encodeURIComponent(n).replace(/'/g, '%27');
-        return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${safeN}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>▸ ${n}</span></div>`;
+        return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${safeN}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>${getTraitForceIcon(n)}▸ ${n}</span></div>`;
     }).join('');
     const traitHTML = startingTraitHTML + levelTraitHTML || 'NONE';
     const ovT = document.getElementById('ov-traits'); if(ovT) ovT.innerHTML = traitHTML;
@@ -2990,7 +2912,7 @@ function updateAll() {
             const meets = meetsRequirements(perk);
             return meets 
                 ? '<span class="ov-req-indicator ov-req-met" title="REQUIREMENTS CURRENTLY MET">✓</span>'
-                : '<span class="ov-req-indicator ov-req-unmet" title="REQUIREMENTS NOT MET">⚠</span>';
+                : '<span class="ov-req-indicator ov-req-unmet" title="FORCED INTO BUILD — REQUIREMENTS NOT MET">⚡</span>';
         }
         const levelPerks = Array.from(document.querySelectorAll('#prog-list .prog-row')).map(r => {
             const lvl = r.querySelector('.lvl-tag')?.innerText || '';
@@ -3019,33 +2941,6 @@ function updateAll() {
         return (levelPerks + bonusPerks + rewardPerks + internalized) || '<span style="opacity:0.3; font-size:0.65rem;">NONE YET</span>';
     })();
 
-    // Active Effects overview
-    (() => {
-        const el = document.getElementById('ov-active-effects');
-        if (!el) return;
-        const all = getActiveEffects();
-        if (!all.length) { el.innerHTML = '<span style="opacity:0.3; font-size:0.65rem;">NONE</span>'; return; }
-        const groups = {};
-        const order = ['Traits','Perks','Implants','Intense Training','Gear Effects','Conditionals','Head Trauma'];
-        for (const e of all) {
-            if (!groups[e.group]) groups[e.group] = [];
-            groups[e.group].push(e);
-        }
-        el.innerHTML = order.filter(g => groups[g]).map(g => {
-            const items = groups[g];
-            const isNeg = items.some(e => e.value < 0);
-            return `<div class="ae-group">
-                <div class="ae-group-header">${g}</div>
-                ${items.map(e => {
-                    const sign = e.value > 0 ? '+' : '';
-                    const cls = e.value > 0 ? 'ae-pos' : 'ae-neg';
-                    const target = e.stat ? e.stat : e.skill;
-                    return `<div class="ae-entry ${cls}" title="${e.source}"><span class="ae-source">${e.source}</span><span class="ae-target">${target}</span><span class="ae-val">${sign}${e.value}</span></div>`;
-                }).join('')}
-            </div>`;
-        }).join('');
-    })();
-
     let gearHTML = Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => {
         const ins = c.querySelectorAll('.gear-field-input');
         const n = ins[0]?.value||''; const a = ins[2]?.value||''; const str = ins[3]?.value||''; const sel = c.querySelector('.gear-skill-type-select'); const st = sel?.value||''; const sr = ins[4]?.value||'';
@@ -3069,11 +2964,14 @@ function updateAll() {
         ovImplants.innerHTML = takenList || '<span style="opacity:0.35;">NONE</span>';
     }
 
+    // Companions overview
+    renderCompanionsPanel();
+
     // Update ov-traits-inline visibility
     const ovTI = document.getElementById('ov-traits-inline');
     const ovTEmpty = document.getElementById('ov-traits-empty');
-    const startingTraitHTML2 = startingTraits.map(t => `<div class="ov-trait-entry"><span class="ov-trait-dot" style="color:#c8ffd4;">◈</span><span>${t.name}</span></div>`).join('');
-    const levelTraitHTML2 = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => { const n = r.getAttribute('data-chosen')||''; return n ? `<div class="ov-trait-entry"><span class="ov-trait-dot">▸</span><span>${n}</span></div>` : ''; }).join('');
+    const startingTraitHTML2 = startingTraits.map(t => `<div class="ov-trait-entry"><span class="ov-trait-dot" style="color:#c8ffd4;">◈</span>${getTraitForceIcon(t.name)}<span>${t.name}</span></div>`).join('');
+    const levelTraitHTML2 = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => { const n = r.getAttribute('data-chosen')||''; return n ? `<div class="ov-trait-entry"><span class="ov-trait-dot">▸</span>${getTraitForceIcon(n)}<span>${n}</span></div>` : ''; }).join('');
     const traitHTML2 = startingTraitHTML2 + levelTraitHTML2;
     if (ovTI) ovTI.innerHTML = traitHTML2;
     if (ovTEmpty) ovTEmpty.style.display = traitHTML2 ? 'none' : 'block';
@@ -3110,10 +3008,6 @@ function updateAll() {
             const cDelta = condSkillDelta[s] || 0;
             const bDelta = bookBonus(s);
             const val = Math.min(100, Math.max(0, base + tDelta + pDelta + cDelta + spent + bDelta));
-            const modTotal = tDelta + pDelta + cDelta + bDelta;
-            const basePart = base + spent;
-            const barBase = modTotal < 0 ? val : Math.min(val, basePart);
-            const barMod = modTotal !== 0 ? Math.min(Math.abs(modTotal), 100 - barBase) : 0;
             let deltaBadges = '';
             if (tDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${tDelta>0?'sdelta-pos':'sdelta-neg'}" title="FROM TRAIT">${tDelta>0?'+':''}${tDelta}<span class="delta-src-tag">T</span></span>`;
             if (pDelta !== 0) deltaBadges += `<span class="skill-delta-badge ${pDelta>0?'sdelta-pos':'sdelta-neg'} sdelta-perk" title="FROM PERK">${pDelta>0?'+':''}${pDelta}<span class="delta-src-tag">P</span></span>`;
@@ -3121,11 +3015,9 @@ function updateAll() {
             const breakdown = ('BASE:'+base+(isTagged?' TAG:x2'+(isFourthTag?' [TAG!]':''):'')+(spent?' LVL:+'+spent:'')+(tDelta?' TRAIT:'+(tDelta>0?'+':'')+tDelta:'')+(pDelta?' PERK:'+(pDelta>0?'+':'')+pDelta:'')+(cDelta?' COND:'+(cDelta>0?'+':'')+cDelta:'')+(bDelta?' BOOK:+'+bDelta:'')).trim();
             const tagClass = isFourthTag ? ' skill-row-tagged skill-row-tag4' : (isTagged ? ' skill-row-tagged' : '');
             const tagIcon = isFourthTag ? '✦ ' : (isTagged ? '★ ' : '');
-            const modClass = modTotal > 0 ? 'skill-mod-pos' : 'skill-mod-neg';
-            const sBarTier = !isTagged && !isFourthTag ? (val >= 100 ? 'bar-tier-max' : val >= 70 ? 'bar-tier-high' : val >= 50 ? 'bar-tier-mid' : val >= 30 ? 'bar-tier-low' : 'bar-tier-dim') : '';
-            return `<div class="skill-row${tagClass}" data-skill="${s}" title="${breakdown}">
+            return `<div class="skill-row${tagClass}" title="${breakdown}">
                 <span class="skill-row-name">${tagIcon}${s}</span>
-                <div class="skill-row-bar"><div class="skill-row-fill ${sBarTier}" style="width:${barBase}%"></div>${barMod > 0 ? `<div class="skill-row-fill ${modClass}" style="width:${barMod}%"></div>` : ''}</div>
+                <div class="skill-row-bar ${isTagged || isFourthTag ? '' : val >= 100 ? 'bar-tier-max' : val >= 70 ? 'bar-tier-high' : val >= 50 ? 'bar-tier-mid' : val >= 30 ? 'bar-tier-low' : 'bar-tier-dim'}"><div class="skill-row-fill" style="width:${val}%"></div></div>
                 <span class="skill-row-val">${val}</span>${deltaBadges}
             </div>`;
         }).join('');
@@ -3198,8 +3090,19 @@ function toggleBaseSpecial() {
     updateAll();
 }
 
+function toggleDetailedSpecial() {
+    _showDetailedSpecial = !_showDetailedSpecial;
+    const btn = document.getElementById('spec-detail-toggle');
+    if (btn) {
+        btn.classList.toggle('spec-detail-toggle-active', _showDetailedSpecial);
+        btn.title = _showDetailedSpecial
+            ? 'Showing DETAILED breakdown — click for simplified view'
+            : 'Showing SIMPLIFIED view — click for detailed breakdown';
+    }
+    updateAll();
+}
+
 function addTrait() {
-    if(mode==='hc' && document.getElementById('trait-list').children.length>=5) return;
     document.getElementById('trait-list').insertAdjacentHTML('beforeend',
         `<div style="display:flex; margin-bottom:2px;"><input type="text" oninput="triggerAutosave()" style="flex:1; background:transparent; border:none; border-bottom:1px solid #444; color:#fff;" placeholder="TRAIT NAME..."><button onclick="this.parentElement.remove();updateAll();triggerAutosave();" style="color:red; background:none; border:none; cursor:pointer;">X</button></div>`);
     updateAll();
@@ -3394,7 +3297,7 @@ function scheduleCloseAC(input) {
 }
 
 // Map perk req abbreviations → special object keys
-const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHR', CHA:'CHR', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK' };
+const REQ_STAT_MAP = { STR:'STR', PER:'PER', END:'END', CHR:'CHA', CHA:'CHA', INT:'INT', AGL:'AGI', AGI:'AGI', LCK:'LCK' };
 const STAT_FULL = { STR:'Strength', PER:'Perception', END:'Endurance', CHR:'Charisma', INT:'Intelligence', AGL:'Agility', LCK:'Luck' };
 
 // Cache for trait/perk/conditional bonus lookups — active only during updateAll()
@@ -3454,6 +3357,9 @@ function refreshSPECIALDisplay() {
                 modEl.style.display = 'none';
             }
         }
+        const rankEl = row.querySelector('.spec-rank-title');
+        if (rankEl) rankEl.textContent = getSpecialRank(key);
+        
         // Update bar fill and tier class
         const barFill = row.querySelector('.spec-bar-fill');
         if (barFill) {
@@ -3728,7 +3634,7 @@ function renderProgression() {
     // Level progression rows (starting traits are managed separately)
     let traitIdx = 0;
     for(let i=2; i<=50; i++) {
-        const isP = mode === 'std' ? (i%2===0) : (i%3===0);
+        const isP = i % 2 === 0;
         const isT = (i>=5 && (i-5)%4===0);
         if(isP) div.insertAdjacentHTML('beforeend', makeProgRow(`LVL ${i} PERK`, false, false));
         if(isT) {
@@ -3757,17 +3663,11 @@ function syncTagLimit() {
     });
     // Guard: add-trait-btn may not exist if traits managed via modal
     const addTraitBtn = document.getElementById('add-trait-btn');
-    if (addTraitBtn) addTraitBtn.disabled = (mode==='hc' && document.getElementById('trait-list').children.length>=5);
 }
 
 function toggleTag(itemEl) {
     const cb = itemEl.querySelector('input[type="checkbox"]');
     if (!cb || cb.disabled) return;
-    if (!cb.checked) {
-        const cbs = Array.from(document.querySelectorAll('#tag-area input'));
-        const count = cbs.filter(c => c.checked).length;
-        if (count >= 3) return;
-    }
     cb.checked = !cb.checked;
     const marker = itemEl.querySelector('.tag-marker');
     if (marker) marker.textContent = cb.checked ? '[X]' : '[ ]';
@@ -3827,7 +3727,9 @@ function collectData() {
         conditionalToggles: conditionalToggles,
         perkWishlist: perkWishlist || [],
         currentBuildName: currentBuildName || 'Current Build',
-        levelUpBonuses: levelUpBonuses || []
+        levelUpBonuses: levelUpBonuses || [],
+        forceEnable: _forceEnable,
+        companions: companions.map(c => ({ name: c.name, butchBonus: c.butchBonus || null }))
     };
 }
 
@@ -3986,12 +3888,19 @@ function hydrate(d) {
     }
     startingTraits = Array.isArray(d.startingTraits) ? d.startingTraits : [];
     skillHistory = Array.isArray(d.skillHistory) ? d.skillHistory : [];
+    companions = Array.isArray(d.companions)
+        ? d.companions.map(c => ({
+            name: c && c.name,
+            butchBonus: (c && (c.butchBonus === 'improved' || c.butchBonus === 'worsened')) ? c.butchBonus : null
+        })).filter(c => COMPANIONS_DATA.some(x => x.name === c.name))
+        : [];
     conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object') ? d.conditionalToggles : {};
     perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist : [];
     currentBuildName = d.currentBuildName || 'Current Build';
     levelUpBonuses = Array.isArray(d.levelUpBonuses) ? d.levelUpBonuses : [];
     setMode(d.mode, true);
     setOrigin(d.origin, true);
+    _forceEnable = !!d.forceEnable;
     const tI = document.querySelectorAll('#tag-area input');
     d.tags.forEach((c, i) => {
         if(tI[i]) {
@@ -4040,6 +3949,7 @@ function hydrate(d) {
     const uA = document.querySelectorAll('.u-armor-check');
     if(d.uniArmor) d.uniArmor.forEach((c, i) => { if(uA[i]) { uA[i].checked = c; updateUniqueMarker(uA[i]); } });
     _hydrating = false;
+    syncForceButtons();
     updateAll();
     reCheckAllPerkRows();
     renderImplants();
@@ -4052,7 +3962,279 @@ function hydrate(d) {
     }
 }
 
+/* ===== BUILD ARCHETYPES SYSTEM ===== */
 
+function openArchetypesModal() {
+    const modal = document.getElementById('archetypes-modal');
+    if (!modal) return;
+    // Reset filters on open
+    Object.keys(_archFilters).forEach(k => _archFilters[k] = '');
+    const search = document.getElementById('arch-search');
+    if (search) {
+        search.value = '';
+        // Auto-focus for immediate typing
+        setTimeout(() => search.focus(), 50);
+    }
+    const perkSearch = document.getElementById('arch-perk-search');
+    if (perkSearch) perkSearch.value = '';
+    const perkResults = document.getElementById('arch-perk-results');
+    if (perkResults) perkResults.style.display = 'none';
+    document.querySelectorAll('.arch-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.val === '');
+    });
+    renderArchetypeGrid();
+    document.getElementById('archetype-detail').style.display = 'none';
+    modal.style.display = 'flex';
+}
+
+function closeArchetypesModal() {
+    const modal = document.getElementById('archetypes-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+let _selectedArchetypeId = null;
+
+const _archFilters = { karma: '', style: '' };
+
+function toggleArchChip(btn) {
+    const filter = btn.dataset.filter;
+    const val    = btn.dataset.val;
+    _archFilters[filter] = _archFilters[filter] === val ? '' : val;
+    // Update active state — only one active per filter group
+    btn.closest('div').querySelectorAll(`.arch-chip[data-filter="${filter}"]`).forEach(c => {
+        c.classList.toggle('active', c.dataset.val === _archFilters[filter] || (c.dataset.val === '' && _archFilters[filter] === ''));
+    });
+    renderArchetypeGrid();
+}
+
+function renderArchPerkSearch() {
+    const q = (document.getElementById('arch-perk-search')?.value || '').trim();
+    const resultsEl = document.getElementById('arch-perk-results');
+    if (!resultsEl) return;
+    if (!q) { resultsEl.style.display = 'none'; return; }
+    const ql = q.toLowerCase();
+    const matches = [];
+    ARCHETYPES_DATA.forEach(a => {
+        const perkMatches = a.perks
+            .filter(p => p && p[0] && p[0].toLowerCase().includes(ql))
+            .map(p => p[0]);
+        if (perkMatches.length) {
+            matches.push({ name: a.name, icon: a.icon, color: a.color, perks: perkMatches });
+        }
+    });
+    if (!matches.length) {
+        resultsEl.style.display = 'block';
+        resultsEl.innerHTML = '<span style="opacity:0.4;">NO BUILDS USE A PERK MATCHING "' + q.toUpperCase() + '"</span>';
+        return;
+    }
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const html = matches.map(m => {
+        const perkList = m.perks.map(p => {
+            const highlighted = p.replace(new RegExp('(' + escaped + ')', 'gi'), '<span style="color:#ffd080;">$1</span>');
+            return '<span style="opacity:0.7;">' + highlighted + '</span>';
+        }).join(', ');
+        return '<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);">'
+            + '<span style="color:' + m.color + ';font-size:1rem;line-height:1;">' + m.icon + '</span>'
+            + '<span style="color:' + m.color + ';font-weight:600;min-width:160px;">' + m.name + '</span>'
+            + '<span>' + perkList + '</span>'
+            + '</div>';
+    }).join('');
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = '<div style="opacity:0.5;margin-bottom:6px;font-size:0.65rem;">BUILDS USING: ' + q.toUpperCase() + ' (' + matches.length + ' FOUND)</div>' + html;
+}
+
+function renderArchetypeGrid() {
+    const grid = document.getElementById('archetype-grid');
+    if (!grid || typeof ARCHETYPES_DATA === 'undefined') return;
+    const SKILLS = ["BARTER","BIG GUNS","ENERGY WEAPONS","EXPLOSIVES","GUNS","LOCKPICK","MEDICINE","MELEE WEAPONS","REPAIR","SCIENCE","SNEAK","SPEECH","SURVIVAL","UNARMED"];
+    const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
+    const filtered = ARCHETYPES_DATA.filter(a => {
+        if (_archFilters.karma  && a.buildKarma !== _archFilters.karma)  return false;
+        if (_archFilters.style) {
+            const tagged = SKILLS.filter((_,i) => a.tags[i]);
+            if (!tagged.includes(_archFilters.style)) return false;
+        }
+        if (q) {
+            const haystack = (a.name + ' ' + a.tagline + ' ' + (a.description||'')).toLowerCase();
+            if (!haystack.includes(q)) return false;
+        }
+        return true;
+    });
+    const countEl = document.getElementById('arch-filter-count');
+    if (countEl) {
+        const total = ARCHETYPES_DATA.length;
+        countEl.textContent = filtered.length === total
+            ? `SHOWING ALL ${total} ARCHETYPES`
+            : `SHOWING ${filtered.length} OF ${total} ARCHETYPES`;
+    }
+    grid.innerHTML = filtered.length ? filtered.map(a => {
+        const isSel = _selectedArchetypeId === a.id;
+        return `<div class="archetype-card${isSel ? ' archetype-selected' : ''}" onclick="selectArchetype('${a.id}')"
+            style="border-color:${isSel ? a.color : 'rgba(255,255,255,0.1)'};">
+            <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};">${a.icon}</div>
+            <div class="archetype-card-body">
+                <div class="archetype-name">${a.name}</div>
+                <div class="archetype-tagline">${a.tagline}</div>
+                <div class="archetype-badges">
+                    <span class="archetype-badge" style="text-transform:capitalize;">${a.buildKarma.replace('-',' ')}</span>
+                </div>
+            </div>
+        </div>`;
+    }).join('') : '<div style="opacity:0.35;font-size:0.7rem;letter-spacing:1px;padding:24px 0;text-align:center;">NO ARCHETYPES MATCH YOUR FILTERS</div>';
+}
+
+function selectArchetype(id) {
+    _selectedArchetypeId = id;
+    renderArchetypeGrid();
+    const a = ARCHETYPES_DATA.find(x => x.id === id);
+    if (!a) return;
+
+    const detail = document.getElementById('archetype-detail');
+    if (!detail) return;
+
+    // Key-based archetypes: decode the key to get full build data for preview
+    let bd = a; // fallback to legacy full-data archetype
+    if (a.key) {
+        const decoded = decodeBuildKey(a.key);
+        if (decoded) bd = decoded;
+    }
+
+    const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+    const taggedSkills = skillNames.filter((_,i) => bd.tags && bd.tags[i]);
+
+    const perkLvls = [];
+    for (let i = 2; i <= (bd.charLevel || 30); i++) {
+        if (i % 2 === 0) perkLvls.push(i);
+    }
+
+    const specHtml = ['STR','PER','END','CHA','INT','AGI','LCK'].map(k => {
+        const v = (bd.special && bd.special[k]) || 0;
+        const bars = Array.from({length:10},(_,i)=>`<span class="aspec-pip${i<v?' aspec-pip-on':''}"></span>`).join('');
+        return `<div class="aspec-row"><span class="aspec-key">${k}</span>${bars}<span class="aspec-num">${v}</span></div>`;
+    }).join('');
+
+    const allPerks = (bd.perks || []).filter(p => p && p[0]);
+    const perksPreview = allPerks.slice(0, 8).map((p, i) =>
+        `<div class="arch-perk-row"><span class="arch-perk-lvl">LVL ${perkLvls[i] || '?'}</span><span class="arch-perk-name">${p[0]}</span></div>`
+    ).join('');
+    const remaining = allPerks.length - 8;
+
+    const traitNames = (bd.startingTraits || []).map(t => t.name).join(', ') || 'None';
+
+    // Description: use archetype meta description first, then decoded notes, then nothing
+    const descText = a.description || (bd.notes ? bd.notes.substring(0, 280) : '');
+
+    detail.style.display = 'block';
+    detail.innerHTML = `
+    <div class="archetype-detail-box" style="border-color:${a.color}44;">
+        <div class="arch-detail-header" style="border-bottom-color:${a.color}33;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                <div class="archetype-card-icon" style="background:${a.color}22;border-color:${a.color}55;color:${a.color};font-size:1.5rem;width:44px;height:44px;">${a.icon}</div>
+                <div>
+                    <div style="font-size:0.95rem;font-weight:bold;letter-spacing:1px;color:var(--pip-color);">${a.name}</div>
+                    <div style="font-size:0.65rem;opacity:0.6;margin-top:2px;">${a.tagline}</div>
+                </div>
+            </div>
+            ${descText ? `<p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;overflow-wrap:break-word;">${descText}</p>` : ''}
+        </div>
+        <div class="arch-detail-cols">
+            <div class="arch-detail-col">
+                <div class="arch-section-label">S.P.E.C.I.A.L.</div>
+                <div class="aspec-grid">${specHtml}</div>
+                <div class="arch-section-label" style="margin-top:12px;">TAGGED SKILLS</div>
+                <div style="font-size:0.72rem;color:var(--pip-color);letter-spacing:0.5px;">${taggedSkills.join(' · ') || 'None'}</div>
+                <div class="arch-section-label" style="margin-top:12px;">STARTING TRAITS</div>
+                <div style="font-size:0.72rem;color:#c8a0ff;letter-spacing:0.5px;">${traitNames}</div>
+            </div>
+            <div class="arch-detail-col">
+                <div class="arch-section-label">SUGGESTED PERK PATH (LVL 2–${perkLvls[Math.min(7, allPerks.length - 1)] || '?'})</div>
+                ${perksPreview}
+                ${remaining > 0 ? `<div style="font-size:0.6rem;opacity:0.4;margin-top:6px;letter-spacing:1px;">+ ${remaining} MORE PERKS LOADED INTO BUILD</div>` : ''}
+            </div>
+        </div>
+        <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="action-btn" onclick="loadArchetypeKey('${a.id}')"
+                style="background:${a.color}22;border-color:${a.color};color:${a.color};font-size:0.72rem;padding:8px 20px;flex:1;letter-spacing:1px;">
+                ◈ LOAD THIS ARCHETYPE
+            </button>
+            <button class="modal-cancel-btn" onclick="closeArchetypesModal()" style="font-size:0.68rem;padding:8px 16px;">CANCEL</button>
+        </div>
+        <div style="font-size:0.58rem;opacity:0.35;margin-top:10px;text-align:center;letter-spacing:1px;">
+            ★ LOADING WILL OVERWRITE YOUR CURRENT BUILD — EXPORT FIRST IF YOU WANT TO KEEP IT
+        </div>
+    </div>`;
+    detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function loadArchetype(id) {
+    const a = ARCHETYPES_DATA.find(x => x.id === id);
+    if (!a) return;
+    if (!confirm('LOAD ARCHETYPE: "' + a.name.toUpperCase() + '"?\n\nThis will overwrite your current build. Export first if you want to keep it.')) return;
+    const buildData = {
+        name: a.name,
+        notes: a.notes || ('Archetype: ' + a.name + ' — ' + a.tagline),
+        mode: a.mode,
+        origin: a.origin,
+        buildKarma: a.buildKarma,
+        special: Object.assign({}, a.special),
+        tags: a.tags.slice(),
+        traits: a.traits ? a.traits.slice() : Array(12).fill(''),
+        startingTraits: a.startingTraits ? a.startingTraits.map(t => ({ name: t.name })) : [],
+        perks: a.perks.slice(),
+        extraPerks: [],
+        weapons: [],
+        armor: [],
+        quests: [],
+        colls: [],
+        uniWpns: a.uniWpns ? a.uniWpns.slice() : [],
+        uniArmor: a.uniArmor ? a.uniArmor.slice() : [],
+        skillPoints: a.skillPoints ? Object.assign({}, a.skillPoints) : Object.fromEntries(skills.map(s => [s, 0])),
+        skillBooksFound: { CW: Object.fromEntries(skills.map(s => [s, []])), MW: Object.fromEntries(skills.map(s => [s, []])) },
+        charLevel: a.charLevel || 1,
+        skillHistory: a.skillHistory ? a.skillHistory.slice() : [],
+        conditionalToggles: {},
+        implantsTaken: a.implantsTaken ? Object.assign({}, a.implantsTaken) : {},
+        rewardPerksList: [],
+        internalizedTraitsList: [],
+        fourthTagSkill: (() => {
+            // Detect 4th tag skill if build has Tag! perk in its perks list
+            const hasTagPerk = a.perks.some(p => p && p[0] && p[0].trim().toUpperCase() === 'TAG!');
+            if (!hasTagPerk) return null;
+            // Starting tags come from a.tags boolean array
+            const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
+            const startingTagged = new Set(skillNames.filter((_, i) => a.tags[i]));
+            // Find any skill in the last skillHistory entry's tagged array that isn't a starting tag
+            const lastEntry = a.skillHistory && a.skillHistory[a.skillHistory.length - 1];
+            if (lastEntry && Array.isArray(lastEntry.tagged)) {
+                const fourth = lastEntry.tagged.find(s => !startingTagged.has(s));
+                if (fourth) return fourth;
+            }
+            return null;
+        })(),
+        perkWishlist: [],
+        currentBuildName: a.name,
+        levelUpBonuses: a.levelUpBonuses ? a.levelUpBonuses.slice() : [],
+        humbledLevel: 0,
+        humbledReductions: {},
+        hasBeenHumbled: false,
+        regionalStorage: { CW:{quests:[],colls:[]}, MW:{quests:[],colls:[]} },
+    };
+    const safe = sanitizeImport(buildData);
+    if (!safe) { alert('ARCHETYPE LOAD ERROR'); return; }
+    closeArchetypesModal();
+    _selectedArchetypeId = null;
+    hydrate(safe);
+    nsAudio.diceRoll();
+    showPerkToast('ARCHETYPE LOADED: ' + a.name.toUpperCase());
+    triggerAutosave();
+    const btn = document.getElementById('tab-btn-prog');
+    if (btn) {
+        btn.style.boxShadow = '0 0 12px var(--pip-color)';
+        btn.style.background = 'var(--pip-color)';
+        btn.style.color = 'black';
+        setTimeout(() => { if (!btn.classList.contains('active')) { btn.style.boxShadow=''; btn.style.background=''; btn.style.color=''; } }, 1200);
+    }
+}
 
 async function purgeMemory() {
     const confirmed = await showConfirmDialog({
@@ -4114,6 +4296,217 @@ async function purgeMemory() {
         showToast('Reset failed - check console for details', 'error');
     }
 }
+/* ═══════════════════════════════════════════════════════════════════════
+   NSB3/NSB5 decoders — used to load archetype builds (stored as NSB3 keys).
+   Encoding removed in favor of JSON export (.nsbuild files).
+═══════════════════════════════════════════════════════════════════════ */
+
+// Shared bit-level I/O class used by NSB3 and NSB5 decoders
+class _BitReader {
+    constructor(b64) { const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); this.bytes = Array.from(s, c => c.charCodeAt(0)); this.pos = 0; this.cur = 0; this.bits = 0; }
+    read(n) { let val = 0, rem = n; while (rem > 0) { if (this.bits === 0) { if (this.pos >= this.bytes.length) return 0; this.cur = this.bytes[this.pos++]; this.bits = 8; } const take = Math.min(this.bits, rem), shift = this.bits - take; val = (val << take) | ((this.cur >>> shift) & ((1 << take) - 1)); this.cur &= (1 << shift) - 1; this.bits -= take; rem -= take; } return val >>> 0; }
+}
+
+const NSB3 = (() => {
+    const BR = _BitReader;
+    const KARMA_LIST = ['very-good','good','neutral','evil','very-evil'];
+    const SKEYS      = sKeys;
+    const SKILLS     = skills;
+    const BONUS_LIST = ['hp','ap','cw'];
+    const CT_KEYS    = [
+        'Claustrophobia','Early Bird','Night Person','Solar Powered','War Child',
+        'Four Eyes','Blind Luck','Impartial Mediation','Confirmed Bachelor','Lady Killer',
+        'Graceful','Ideologue','Twisted',"Breakin' A Sweat",'Masochist','Desert Rose',
+        'Hoarder','Bankrupt','Magnate','Callous',"Assassin's Step",'Polar Personality',
+        'Architect','Alertness','Headless Courier','Irradiated Beauty','Thirsty',
+        'Fight Hungry','Walker Instinct','Boiadero','Wasteland Masquerade',
+        'My Own Master Now','Collective Consciousness'
+    ];
+    const getIdx  = (arr, n) => { if (!n) return 0; const i = arr.findIndex(x => x.name.trim() === (n||'').trim()); return i >= 0 ? i+1 : 0; };
+    const getName = (arr, i) => (i > 0 && i <= arr.length) ? arr[i-1].name : '';
+    const readStr = br => { const len = br.read(10); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
+    const readShortStr = br => { const len = br.read(6); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
+
+    function decode(key) {
+        try {
+            const br = new BR(key.replace(/^NSB3-/,''));
+            br.read(1); // legacy mode byte (retained for save alignment)
+            const mode       = 'std';
+            const origin     = br.read(1)?'MW':'CW';
+            const buildKarma = KARMA_LIST[br.read(3)]||'neutral';
+            const difficulty = br.read(3)+1;
+            const level      = br.read(6)+1;
+            const charName   = readShortStr(br);
+            const notes      = readStr(br);
+            const special = {}; SKEYS.forEach(k=>{ special[k]=br.read(4)+1; });
+            const tags = SKILLS.map(()=>br.read(1)===1);
+            const ftsI = br.read(4);
+            const fourthTagSkill = ftsI>0?(SKILLS[ftsI-1]||null):null;
+            const hasBeenHumbled = br.read(1)===1;
+            const humbledLevel   = br.read(6);
+            const humbledReductions = {}; SKEYS.forEach(k=>{ if(br.read(1)) humbledReductions[k]=1; });
+            const levelUpBonuses = []; for(let i=0;i<level-1;i++) levelUpBonuses.push(BONUS_LIST[br.read(2)]||'ap');
+            const implantsTaken = {};
+            (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp=>{ if(br.read(1)) implantsTaken[imp.name]=true; });
+            const skillPoints={}; SKILLS.forEach(s=>{ skillPoints[s]=br.read(7); });
+            const skillBooksFound={}; SKILLS.forEach(s=>{ skillBooksFound[s]=br.read(4); });
+            const conditionalToggles={}; CT_KEYS.forEach(k=>{ if(br.read(1)) conditionalToggles[k]=true; });
+            const stCount=br.read(3); const startingTraits=[];
+            for(let i=0;i<stCount;i++){ const n=getName(TRAITS_DATA,br.read(7)); if(n) startingTraits.push({name:n}); }
+            const traitCount=br.read(5); const traits=[];
+            for(let i=0;i<traitCount;i++) traits.push(getName(TRAITS_DATA,br.read(7)));
+            const _AS_FROM_CODE = {
+                'as:ap': 'ACTION STAR [+TOTAL AP]',
+                'as:rg': 'ACTION STAR [+AP REGEN]',
+                'as:ct': 'ACTION STAR [-WEAP AP COST]'
+            };
+            const _IT_STATS = new Set(['STR','PER','END','CHA','INT','AGI','LCK']);
+            function _decPerk(name, notes) {
+                if (name === 'Intense Training' && (notes||'').startsWith('it:')) {
+                    const stat = notes.slice(3).toUpperCase();
+                    if (_IT_STATS.has(stat)) return ['Intense Training (+1 ' + stat + ')', ''];
+                }
+                if (_AS_FROM_CODE[notes]) return [_AS_FROM_CODE[notes], ''];
+                return [name, notes];
+            }
+            const perkCount=br.read(6); const perks=[];
+            for(let i=0;i<perkCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); perks.push([n,nt]); }
+            const extraCount=br.read(5); const extraPerks=[];
+            for(let i=0;i<extraCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); extraPerks.push([n,nt]); }
+            const rplCount=br.read(5); const rewardPerksList=[];
+            for(let i=0;i<rplCount;i++){ const n=getName(REWARD_PERKS_DATA,br.read(7)); const notes=readShortStr(br); if(n) rewardPerksList.push({name:n,notes}); }
+            const itlCount=br.read(5); const internalizedTraitsList=[];
+            for(let i=0;i<itlCount;i++){ const n=getName(INTERNALIZED_TRAITS_DATA,br.read(4)); const notes=readShortStr(br); if(n) internalizedTraitsList.push({name:n,notes}); }
+            const shCount=br.read(6); const skillHistory=[];
+            for(let i=0;i<shCount;i++){
+                const entryLevel=br.read(6)+1, pointsTotal=br.read(4);
+                const tagBits=SKILLS.map(()=>br.read(1)===1);
+                const tagged=SKILLS.filter((_,j)=>tagBits[j]);
+                const allocation={},gains={};
+                SKILLS.forEach((s,j)=>{ const a=br.read(4); allocation[s]=a; gains[s]=tagBits[j]?a*2:a; });
+                skillHistory.push({level:entryLevel,pointsTotal,tagged,allocation,gains});
+            }
+            return { name:charName, notes, mode, origin, buildKarma, difficulty, charLevel:level,
+                special, tags, fourthTagSkill, hasBeenHumbled, humbledLevel, humbledReductions,
+                levelUpBonuses, implantsTaken, skillPoints, skillBooksFound, conditionalToggles,
+                startingTraits, traits, perks, extraPerks, rewardPerksList, internalizedTraitsList,
+                perkWishlist:[], currentBuildName:charName||'Loaded Build', skillHistory,
+                regionalStorage:{CW:{quests:[],colls:[]},MW:{quests:[],colls:[]}},
+                weapons:[],armor:[],quests:[],colls:[],uniWpns:[],uniArmor:[] };
+        } catch(e) { console.error('NSB3 decode error:',e); return null; }
+    }
+    return { decode };
+})();
+
+/* ═══════════════════════════════════════════════════════════════════════
+   NSB5 — COMPACT SHARE CODE DECODER
+═══════════════════════════════════════════════════════════════════════ */
+const NSB5 = (() => {
+    const BR = _BitReader;
+    const KARMA_LIST = ['very-good','good','neutral','evil','very-evil'];
+    const SKEYS      = sKeys;
+    const SKILLS     = skills;
+    const BONUS_LIST = ['hp','ap','cw'];
+    const CT_KEYS    = [
+        'Claustrophobia','Early Bird','Night Person','Solar Powered','War Child',
+        'Four Eyes','Blind Luck','Impartial Mediation','Confirmed Bachelor','Lady Killer',
+        'Graceful','Ideologue','Twisted',"Breakin' A Sweat",'Masochist','Desert Rose',
+        'Hoarder','Bankrupt','Magnate','Callous',"Assassin's Step",'Polar Personality',
+        'Architect','Alertness','Headless Courier','Irradiated Beauty','Thirsty',
+        'Fight Hungry','Walker Instinct','Boiadero','Wasteland Masquerade',
+        'My Own Master Now','Collective Consciousness'
+    ];
+    const IT_STATS   = ['STR','PER','END','CHA','INT','AGI','LCK'];
+    const AS_FROM_CODE = {'ap':'ACTION STAR [+TOTAL AP]','rg':'ACTION STAR [+AP REGEN]','ct':'ACTION STAR [-WEAP AP COST]'};
+    const getIdx  = (arr,n) => { if(!n) return 0; const i=arr.findIndex(x=>x.name.trim()===(n||'').trim()); return i>=0?i+1:0; };
+    const getName = (arr,i) => (i>0&&i<=arr.length)?arr[i-1].name:'';
+
+    function decPerk(br) {
+        const idx=br.read(8), name=getName(PERKS_DATA,idx), annType=br.read(2);
+        if(annType===1){ const s=IT_STATS[br.read(3)]||'STR'; return ['Intense Training (+1 '+s+')','']; }
+        if(annType===2){ const c=['ap','rg','ct'][br.read(2)]||'ap'; return [AS_FROM_CODE[c]||name,'']; }
+        return [name,''];
+    }
+
+    function decode(key) {
+        try {
+            // Strip prefix, dashes, convert to lower for base64url
+            const b64 = key.replace(/^NSB5-/i,'').replace(/-/g,'').toLowerCase()
+                           .replace(/[^a-z0-9+/=_]/g,'');
+            // Our toB64 uses - and _ for + and /; uppercase was cosmetic
+            const fixed = b64.replace(/-/g,'+').replace(/_/g,'/');
+            const br=new BR(fixed);
+            br.read(1); // legacy mode byte (retained for save alignment)
+            const mode='std', origin=br.read(1)?'MW':'CW';
+            const buildKarma=KARMA_LIST[br.read(3)]||'neutral';
+            const difficulty=br.read(3)+1, level=br.read(6)+1;
+            const special={}; SKEYS.forEach(k=>{special[k]=br.read(4)+1;});
+            const tags=SKILLS.map(()=>br.read(1)===1);
+            const ftsI=br.read(4); const fourthTagSkill=ftsI>0?(SKILLS[ftsI-1]||null):null;
+            const skillPoints={}; SKILLS.forEach(s=>{skillPoints[s]=br.read(7);});
+            const hasBeenHumbled=br.read(1)===1, humbledLevel=br.read(6);
+            const humbledReductions={}; SKEYS.forEach(k=>{if(br.read(1))humbledReductions[k]=1;});
+            const levelUpBonuses=[]; for(let i=0;i<level-1;i++) levelUpBonuses.push(BONUS_LIST[br.read(2)]||'ap');
+            const implantsTaken={};
+            (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp=>{if(br.read(1))implantsTaken[imp.name]=true;});
+            const conditionalToggles={}; CT_KEYS.forEach(k=>{if(br.read(1))conditionalToggles[k]=true;});
+            const stCount=br.read(3); const startingTraits=[];
+            for(let i=0;i<stCount;i++){const n=getName(TRAITS_DATA,br.read(7));if(n)startingTraits.push({name:n});}
+            const traitCount=br.read(5); const traits=[];
+            for(let i=0;i<traitCount;i++) traits.push(getName(TRAITS_DATA,br.read(7)));
+            const perkCount=br.read(6); const perks=[];
+            for(let i=0;i<perkCount;i++) perks.push(decPerk(br));
+            const extraCount=br.read(5); const extraPerks=[];
+            for(let i=0;i<extraCount;i++) extraPerks.push(decPerk(br));
+            const rplCount=br.read(5); const rewardPerksList=[];
+            for(let i=0;i<rplCount;i++){const n=getName(REWARD_PERKS_DATA,br.read(7));if(n)rewardPerksList.push({name:n,notes:''});}
+            const itlCount=br.read(5); const internalizedTraitsList=[];
+            for(let i=0;i<itlCount;i++){const n=getName(INTERNALIZED_TRAITS_DATA,br.read(4));if(n)internalizedTraitsList.push({name:n,notes:''});}
+            return { name:'', notes:'', mode, origin, buildKarma, difficulty, charLevel:level,
+                special, tags, fourthTagSkill, hasBeenHumbled, humbledLevel, humbledReductions,
+                levelUpBonuses, implantsTaken, skillPoints, skillBooksFound:{}, conditionalToggles,
+                startingTraits, traits, perks, extraPerks, rewardPerksList, internalizedTraitsList,
+                perkWishlist:[], currentBuildName:'Imported Build', skillHistory:[],
+                regionalStorage:{CW:{quests:[],colls:[]},MW:{quests:[],colls:[]}},
+                weapons:[],armor:[],quests:[],colls:[],uniWpns:[],uniArmor:[] };
+        } catch(e) { console.error('NSB5 decode error:',e); return null; }
+    }
+
+    return { decode };
+})();
+
+function decodeBuildKey(key) {
+    try {
+        const k = key.trim();
+        if (k.startsWith('NSB5-')) return NSB5.decode(k);
+        if (k.startsWith('NSB3-')) return NSB3.decode(k);
+        if (k.startsWith('NSB1-')) return JSON.parse(decodeURIComponent(escape(atob(k.slice(5)))));
+        return JSON.parse(decodeURIComponent(escape(atob(k))));
+    } catch(e) { console.error('Build key decode error:',e); return null; }
+}
+
+function addArchetypeKey(keyStr, meta) { ARCHETYPES_DATA.push(Object.assign({},meta,{key:keyStr})); }
+
+function loadArchetypeKey(id) {
+    const a = ARCHETYPES_DATA.find(x=>x.id===id);
+    if (!a) return;
+    if (a.key) {
+        if (!confirm('LOAD ARCHETYPE: "'+a.name.toUpperCase()+'"?\n\nThis will overwrite your current build.')) return;
+        const data=decodeBuildKey(a.key);
+        if (!data){alert('ARCHETYPE KEY DECODE FAILED');return;}
+        const safe=sanitizeImport(data);
+        if (!safe){alert('ARCHETYPE DATA VALIDATION FAILED');return;}
+        closeArchetypesModal(); _selectedArchetypeId=null;
+        hydrate(safe); nsAudio.diceRoll();
+        showPerkToast('ARCHETYPE LOADED: '+a.name.toUpperCase());
+        triggerAutosave();
+        const btn=document.getElementById('tab-btn-prog');
+        if(btn){ btn.style.boxShadow='0 0 12px var(--pip-color)'; btn.style.background='var(--pip-color)'; btn.style.color='black'; setTimeout(()=>{ if(!btn.classList.contains('active')){btn.style.boxShadow='';btn.style.background='';btn.style.color='';} },1200); }
+        return;
+    }
+    loadArchetype(id);
+}
+
 
 
 /* ===== BUILD MANAGEMENT SYSTEM ===== */
@@ -4329,17 +4722,13 @@ function renderWishlist() {
         const statusClass = meets ? 'wishlist-ready' : 'wishlist-not-ready';
         const statusText = meets ? '✓ READY TO TAKE' : '⚠ REQUIREMENTS NOT MET';
         
-        const enc = p.name.replace(/'/g, '&#39;').replace(/"/g, '&quot;');
         return `<div class="wishlist-item ${statusClass}">
             <div class="wishlist-perk-info">
                 <div class="wishlist-perk-name">${p.name}</div>
                 <div class="wishlist-perk-req">${p.req}</div>
                 <div class="wishlist-status">${statusText}</div>
             </div>
-            <div style="display:flex;gap:4px;align-items:center;">
-                <button class="wishlist-graph-btn" onclick="openPerkGraph('${enc}')" title="View perk graph">⊞</button>
-                <button class="wishlist-remove-btn" onclick="togglePerkWishlist('${p.name}')" title="Remove from wishlist">✕</button>
-            </div>
+            <button class="wishlist-remove-btn" onclick="togglePerkWishlist('${p.name}')" title="Remove from wishlist">✕</button>
         </div>`;
     }).join('');
 }
@@ -4388,15 +4777,93 @@ function closeTagModal() {
 }
 
 /* ===== RANDOMIZE BUILD ===== */
-function randomizeBuild() {
-    if (!confirm('RANDOMIZE S.P.E.C.I.A.L., TAGS, AND STARTING TRAITS? (THIS WILL OVERWRITE CURRENT SELECTIONS)')) return;
-    nsAudio.diceRoll();
+/* Vegas-style dice roll: a leather cup rattles, then tips and the dice roll out onto the
+   table. On each roll one of several routines is picked at random (shake, tip, and arc). */
+const DICE_ROLL_VARIANTS = [
+    { shake: 'cupShakeA', toss: 'cupTossA', d1: 'tossA1', d2: 'tossA2', shakeMs: 700, tossMs: 640 },
+    { shake: 'cupShakeB', toss: 'cupTossB', d1: 'tossB1', d2: 'tossB2', shakeMs: 760, tossMs: 720 },
+    { shake: 'cupShakeC', toss: 'cupTossC', d1: 'tossC1', d2: 'tossC2', shakeMs: 840, tossMs: 800 }
+];
+function rollDiceAnimation() {
+    return new Promise((resolve) => {
+        const faces = ['⚀','⚁','⚂','⚃','⚄','⚅'];
+        const pick = () => faces[Math.floor(Math.random() * faces.length)];
+        const v = DICE_ROLL_VARIANTS[Math.floor(Math.random() * DICE_ROLL_VARIANTS.length)];
+        const overlay = document.createElement('div');
+        overlay.className = 'dice-roll-overlay';
+        overlay.innerHTML = `
+            <div class="dice-roll-box">
+                <div class="dice-vault">
+                    <div class="dice-table"></div>
+                    <div class="dice-cup">
+                        <div class="dice-vault-die d1">${pick()}</div>
+                        <div class="dice-vault-die d2">${pick()}</div>
+                    </div>
+                </div>
+                <div class="dice-roll-label">ROLLING THE BONES...</div>
+            </div>
+        `;
+        document.body.appendChild(overlay);
 
-    // ── Step 0: Random name
+        const cup = overlay.querySelector('.dice-cup');
+        const d1 = overlay.querySelector('.d1');
+        const d2 = overlay.querySelector('.d2');
+        const finish = () => {
+            overlay.classList.add('dice-roll-fade');
+            setTimeout(() => { overlay.remove(); resolve(); }, 300);
+        };
+
+        // Respect reduced-motion: roll instantly, no show
+        if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            setTimeout(finish, 60);
+            return;
+        }
+
+        const shakeMs = v.shakeMs + Math.floor(Math.random() * 140);
+        cup.style.animation = `${v.shake} 0.1s linear infinite alternate`;
+        d1.style.animation = 'cupRattle1 0.13s linear infinite alternate';
+        d2.style.animation = 'cupRattle2 0.17s linear infinite alternate';
+        setTimeout(() => {
+            // Tip the cup and release the dice over the rim — they only become visible as they leave
+            cup.style.animation = `${v.toss} ${v.tossMs}ms ease-out forwards`;
+            d1.style.opacity = '1';
+            d2.style.opacity = '1';
+            d1.style.animation = `${v.d1} ${v.tossMs}ms cubic-bezier(.3,.7,.5,1) forwards`;
+            d2.style.animation = `${v.d2} ${v.tossMs}ms cubic-bezier(.3,.7,.5,1) forwards`;
+        }, shakeMs);
+        setTimeout(() => {
+            // Dice stop here — snap their landed values and cue a table clack
+            d1.textContent = pick();
+            d2.textContent = pick();
+            overlay.querySelector('.dice-vault').classList.add('landed');
+            if (nsAudio && typeof nsAudio.clack === 'function') nsAudio.clack();
+            setTimeout(finish, 300);
+        }, shakeMs + v.tossMs + 40);
+    });
+}
+
+async function randomizeBuild() {
+    const confirmed = await showConfirmDialog({
+        title: '🎲 WASTELAND FORTUNA',
+        message: 'Let the dice decide your new destiny?<br><span style="opacity:0.6; font-size:0.85em;">Randomize wasteland, karma, S.P.E.C.I.A.L., tags, and starting traits — this will overwrite your current selections.</span>',
+        confirmText: 'SPIN THE DICE',
+        cancelText: 'BACK OUT'
+    });
+    if (!confirmed) return;
+    nsAudio.diceRoll();
+    await rollDiceAnimation();
+
+    // ── Step 0: Random wasteland (origin)
+    setOrigin(Math.random() < 0.5 ? 'CW' : 'MW', true);
+
+    // ── Step 1: Random karma
+    buildKarma = KARMA_TIERS[Math.floor(Math.random() * KARMA_TIERS.length)].id;
+
+    // ── Step 2: Random name
     const nameInput = document.getElementById('char-name');
     if (nameInput) nameInput.value = getRandomWastelandName();
 
-    // ── Step 1: Randomize SPECIAL — distribute the FULL pool so all points are used
+    // ── Step 3: Randomize SPECIAL — distribute the FULL pool so all points are used
     const pool = getSPECIALPool();
     const newSpecial = { STR:1,PER:1,END:1,CHA:1,INT:1,AGI:1,LCK:1 };
     let remaining = pool; // pool = total SPECIAL to distribute (not extra above baseline)
@@ -4408,7 +4875,7 @@ function randomizeBuild() {
     }
     Object.assign(special, newSpecial);
 
-    // ── Step 2: Randomize 3 Tags
+    // ── Step 4: Randomize 3 Tags
     const shuffledSkills = [...skills].sort(() => Math.random() - 0.5);
     const chosenTags = shuffledSkills.slice(0, 3);
     const cbs = Array.from(document.querySelectorAll('#tag-area input'));
@@ -4419,21 +4886,25 @@ function randomizeBuild() {
         if (marker) marker.textContent = cb.checked ? '[X]' : '[ ]';
     });
 
-    // ── Step 3: Randomize starting traits — SPECIAL is set first so eligibility checks work
+    // ── Step 5: Randomize starting traits — SPECIAL is set first so eligibility checks work
     startingTraits = []; // clear so checkTraitEligible sees a clean slate
-    const eligibleTraits = TRAITS_DATA.filter(t => checkTraitEligible(t));
+    // Evaluate requirements against the freshly rolled SPECIAL only (no stale perk/IT/implant deltas),
+    // and NOT conflicts against traits picked within this roll
+    const chosenNamesSoFar = [];
+    const traitEligible = (t) => checkTraitEligible(t, {
+        stat: (k) => (special[k] ?? 0),
+        chosen: chosenNamesSoFar
+    });
+    const eligibleTraits = TRAITS_DATA.filter(traitEligible);
     const shuffledTraits = [...eligibleTraits].sort(() => Math.random() - 0.5);
     // Pick up to 5 eligible traits, excluding conflicting NOT pairs
     const chosenTraits = [];
     for (const t of shuffledTraits) {
         if (chosenTraits.length >= 5) break;
-        // Temporarily register chosen so NOT checks work
-        const tempNames = chosenTraits.map(x => x.name);
-        const notBlocked = !t.req.split(',').some(p => {
-            const up = p.trim().toUpperCase();
-            return up.startsWith('NOT ') && tempNames.map(n => n.toUpperCase()).includes(up.slice(4).trim());
-        });
-        if (notBlocked && checkTraitEligible(t)) chosenTraits.push(t);
+        if (traitEligible(t)) {
+            chosenTraits.push(t);
+            chosenNamesSoFar.push(t.name.toUpperCase());
+        }
     }
     startingTraits = chosenTraits.map(t => ({ name: t.name }));
     renderStartingTraitsList();
@@ -4445,7 +4916,7 @@ function randomizeBuild() {
     // Flash confirmation
     const banner = document.getElementById('perk-lvlup-banner');
     if (banner) {
-        banner.innerHTML = `<span style="font-size:0.75rem; letter-spacing:1px;">🎲 BUILD RANDOMIZED — REVIEW YOUR S.P.E.C.I.A.L., TAGS &amp; TRAITS</span><button onclick="this.parentElement.style.display='none'" style="margin-left:12px; padding:3px 8px; font-size:0.6rem; background:none; border:1px solid var(--pip-color); color:var(--pip-color); cursor:pointer;">DISMISS</button>`;
+        banner.innerHTML = `<span style="font-size:0.75rem; letter-spacing:1px;">🎲 BUILD RANDOMIZED — REVIEW YOUR WASTELAND, KARMA, S.P.E.C.I.A.L., TAGS &amp; TRAITS</span><button onclick="this.parentElement.style.display='none'" style="margin-left:12px; padding:3px 8px; font-size:0.6rem; background:none; border:1px solid var(--pip-color); color:var(--pip-color); cursor:pointer;">DISMISS</button>`;
         banner.style.display = 'flex';
         setTimeout(() => { banner.style.display = 'none'; }, 5000);
     }
@@ -4481,6 +4952,8 @@ function openTraitPerkPickerModal(traitName) {
     const lvlP = document.getElementById('ppick-sort-lvl');
     if (azP) azP.classList.add('active');
     if (lvlP) lvlP.classList.remove('active');
+    // Sync force button state to the global override
+    syncForceButtons();
     // Set mode flag so renderer knows
     const modal = document.getElementById('perk-picker-modal');
     if (modal) {
@@ -4516,6 +4989,8 @@ function openPerkPickerModal(lvl) {
     const lvlP = document.getElementById('ppick-sort-lvl');
     if (azP) azP.classList.add('active');
     if (lvlP) lvlP.classList.remove('active');
+    // Sync force button state to the global override
+    syncForceButtons();
     // Reset filter state
     _perkPickerShowIneligible = false;
     const toggleBtn = document.getElementById('ppick-toggle-ineligible');
@@ -4558,6 +5033,7 @@ function closePerkPickerModal() {
 function renderPerkPickerGrid() {
     const modal = document.getElementById('perk-picker-modal');
     const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
+    const forceOn = _forceEnable;
     const search = ((document.getElementById('perk-picker-search')||{}).value || '').toLowerCase().trim();
 
     const grid = document.getElementById('perk-picker-grid');
@@ -4611,11 +5087,11 @@ function renderPerkPickerGrid() {
         // Trait mode: show all perks except fully-taken ones
         const available = PERKS_DATA.filter(p => !isFullyTaken(p));
         const eligible = available
-            .filter(p => meetsRequirements(p))
+            .filter(p => forceOn ? true : meetsRequirements(p))
             .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
         const ineligible = available
-            .filter(p => !meetsRequirements(p))
+            .filter(p => !(forceOn ? true : meetsRequirements(p)))
             .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
 
@@ -4625,6 +5101,7 @@ function renderPerkPickerGrid() {
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
             const isElig = i < eligible.length;
+            const isForced = forceOn && !meetsRequirements(p);
             const taken = takenCount(p);
             const lvlNum = perkLevel(p);
             const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
@@ -4633,17 +5110,17 @@ function renderPerkPickerGrid() {
                 : `<span class="pperk-rank-badge">1 RANK</span>`;
             const isWishlisted = isPerkWishlisted(p.name);
             const wishlistBtn = `<button class="pperk-wishlist-btn ${isWishlisted ? 'wishlisted' : ''}" onclick="event.stopPropagation(); togglePerkWishlist('${p.name}')" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">★</button>`;
-            return `<div class="pperk-card pperk-trait-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${isElig ? 'TAKE THIS PERK' : 'REQUIREMENTS NOT MET'}">
+            return `<div class="pperk-card pperk-trait-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${isForced ? 'FORCE TAKE (REQ BYPASSED)' : isElig ? 'TAKE THIS PERK' : 'REQUIREMENTS NOT MET'}">
                 ${wishlistBtn}
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
                     ${lvlBadge}
                     ${rankBadge}
-                    ${!isElig ? '<span class="pperk-inelig-tag">REQ NOT MET</span>' : ''}
+                    ${isForced ? '<span class="pperk-inelig-tag pperk-forced-tag">⚡ FORCED</span>' : (!isElig ? '<span class="pperk-inelig-tag">REQ NOT MET</span>' : '')}
                 </div>
                 <div class="pperk-req">${p.req}</div>
                 <div class="pperk-desc">${p.desc}</div>
-                <button class="pperk-take-btn">${isElig ? '✓ TAKE THIS PERK' : '⚠ REQ NOT MET'}</button>
+                <button class="pperk-take-btn">${isForced ? '⚡ FORCE TAKE' : isElig ? '✓ TAKE THIS PERK' : '⚠ REQ NOT MET'}</button>
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     } else {
@@ -4653,10 +5130,11 @@ function renderPerkPickerGrid() {
         
         let list, ineligibleList = [];
         
-        if (_perkPickerShowIneligible) {
+        if (_perkPickerShowIneligible || forceOn) {
             // Get ineligible perks and filter by block type
             const allIneligible = available.filter(p => !meetsRequirements(p));
             ineligibleList = allIneligible.filter(p => {
+                if (forceOn) return true; // force mode ignores block-type filters
                 const blockType = getBlockType(p);
                 if (blockType === 'level' && !_perkPickerFilters.level) return false;
                 if (blockType === 'stats' && !_perkPickerFilters.stats) return false;
@@ -4690,7 +5168,8 @@ function renderPerkPickerGrid() {
         }
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
-            const isElig = meetsRequirements(p);
+            const natElig = meetsRequirements(p);
+            const isElig = forceOn ? true : natElig;
             const taken = takenCount(p);
             const lvlNum = perkLevel(p);
             const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
@@ -4700,7 +5179,9 @@ function renderPerkPickerGrid() {
             
             // Show what's blocking if ineligible
             let blockInfo = '';
-            if (!isElig && _perkPickerShowIneligible) {
+            if (forceOn && !natElig) {
+                blockInfo = `<span class="pperk-inelig-tag pperk-forced-tag">⚡ FORCED</span>`;
+            } else if (!natElig && _perkPickerShowIneligible) {
                 const blockType = getBlockType(p);
                 const blockLabels = { level: '⏱ LEVEL', stats: '⚡ STATS', skills: '📖 SKILLS' };
                 blockInfo = `<span class="pperk-inelig-tag">${blockLabels[blockType] || 'REQ NOT MET'}</span>`;
@@ -4709,7 +5190,7 @@ function renderPerkPickerGrid() {
             const isWishlisted = isPerkWishlisted(p.name);
             const wishlistBtn = `<button class="pperk-wishlist-btn ${isWishlisted ? 'wishlisted' : ''}" onclick="event.stopPropagation(); togglePerkWishlist('${p.name}')" title="${isWishlisted ? 'Remove from wishlist' : 'Add to wishlist'}">★</button>`;
             
-            return `<div class="pperk-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})">
+            return `<div class="pperk-card ${isElig ? '' : 'pperk-ineligible'}" onclick="takePerkFromModal(${i})" title="${forceOn && !natElig ? 'FORCE TAKE (REQ BYPASSED)' : ''}">
                 ${wishlistBtn}
                 <div class="pperk-card-top">
                     <span class="pperk-name">${p.name}</span>
@@ -4719,7 +5200,7 @@ function renderPerkPickerGrid() {
                 </div>
                 <div class="pperk-req">${p.req}</div>
                 <div class="pperk-desc">${p.desc}</div>
-                <button class="pperk-take-btn">${isElig ? '✓ TAKE THIS PERK' : '⚠ REQ NOT MET'}</button>
+                <button class="pperk-take-btn">${forceOn && !natElig ? '⚡ FORCE TAKE' : isElig ? '✓ TAKE THIS PERK' : '⚠ REQ NOT MET'}</button>
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     }
@@ -4741,6 +5222,10 @@ function togglePerkPickerIneligible() {
     renderPerkPickerGrid();
 }
 
+function togglePerkPickerForce() {
+    toggleForceEnable();
+}
+
 function togglePerkPickerFilter(type, enabled) {
     _perkPickerFilters[type] = enabled;
     renderPerkPickerGrid();
@@ -4754,10 +5239,38 @@ function setTraitPickerSort(mode) {
     renderTraitGrid(search);
 }
 
+function toggleTraitPickerForce() {
+    toggleForceEnable();
+}
+
+/* Global FORCE ENABLE override — applies to the perk picker, trait picker, and the
+ * main ALL PERKS / TRAITS tabs. Stays on until toggled off, so force-taken perks
+ * and traits survive reloads. */
+function syncForceButtons() {
+    ['tpick-force', 'ppick-force', 'force-main-perks', 'force-main-traits'].forEach(id => {
+        const b = document.getElementById(id);
+        if (b) b.classList.toggle('active', _forceEnable);
+    });
+}
+
+function toggleForceEnable() {
+    setForceEnable(!_forceEnable);
+}
+
+function setForceEnable(on) {
+    _forceEnable = on;
+    syncForceButtons();
+    showToast(on ? '⚡ FORCE ENABLE ON — trait/perk requirements are ignored' : 'FORCE ENABLE OFF', 'info', 2600);
+    const search = (document.getElementById('trait-modal-search') || {}).value || '';
+    renderTraitGrid(search);
+    renderPerkPickerGrid();
+    renderAllPerks();
+}
+
 function takePerkFromModal(idx) {
     const perk = _perkPickerList[idx];
     if (!perk) return;
-    if (!meetsRequirements(perk)) return;
+    if (!_forceEnable && !meetsRequirements(perk)) return;
 
     const modal = document.getElementById('perk-picker-modal');
     const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
@@ -4832,7 +5345,7 @@ function stickyNoteClick() {
     if (_stickyClicks >= 5) {
         _stickyActive = true;
         if (hint) hint.style.display = 'none';
-        // Stop HC flicker, then shake + fall
+        // Stop flicker, then shake + fall
         note.classList.add('sticky-falling');
         note.style.animation = 'stickyShake 0.5s ease, stickyFall 0.6s 0.5s ease forwards';
         setTimeout(() => {
@@ -4872,6 +5385,32 @@ function hasMagneticPersonalityPerk() {
         if ((inp.value || '').trim().toUpperCase() === 'MAGNETIC PERSONALITY') return true;
     }
     return false;
+}
+
+function openSpecialInfoModal(k) {
+    const info = SPECIAL_INFO[k];
+    if (!info) return;
+    const val = special[k];
+    const modal = document.getElementById('special-info-modal');
+    const title = document.getElementById('sinfo-title');
+    const valEl = document.getElementById('sinfo-val');
+    const effects = document.getElementById('sinfo-effects');
+    const extra = document.getElementById('sinfo-extra');
+
+    if (title) { title.textContent = info.label; title.style.color = info.color; }
+    if (valEl) { valEl.textContent = val; valEl.style.color = info.color; }
+    if (effects) {
+        effects.innerHTML = info.effects.map(e => `<div class="sinfo-effect-row">▸ ${e}</div>`).join('');
+    }
+    if (extra) {
+        extra.innerHTML = info.extra ? info.extra(val) : '';
+    }
+    if (modal) modal.style.display = 'flex';
+}
+
+function closeSpecialInfoModal() {
+    const modal = document.getElementById('special-info-modal');
+    if (modal) modal.style.display = 'none';
 }
 
 /* ===== TRAIT DETAIL MODAL ===== */
@@ -4978,12 +5517,9 @@ let hasBeenHumbled = false;
 
 function setCustomTheme(name, skipSave) {
     _activeCustomTheme = name || '';
-    // Remove all theme-* classes, then re-apply origin + custom + hc
-    const isHC = document.body.classList.contains('mode-hc');
     const originClass = (origin === 'MW') ? 'theme-mw' : 'theme-cw';
     document.body.className = originClass;
     if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
-    if (isHC) document.body.classList.add('mode-hc');
     if (!skipSave) localStorage.setItem('NS_CustomTheme', _activeCustomTheme);
     // Update selector button states
     document.querySelectorAll('.theme-btn').forEach(btn => {
@@ -5005,7 +5541,6 @@ function setCustomTheme(name, skipSave) {
     if (!skipSave) {
         nsAudio.playThemeJingle(_activeCustomTheme);
     }
-    renderKarmaSelector();
     // Sync HUD THEME panel tile highlight + button state
     document.querySelectorAll('.hud-theme-tile').forEach(tile => {
         tile.classList.toggle('active-tile', (tile.dataset.theme || '') === _activeCustomTheme);
@@ -5067,14 +5602,12 @@ function setKarma(k) {
 function renderKarmaSelector() {
     const el = document.getElementById('karma-selector');
     if (!el) return;
-    const themeKey = _activeCustomTheme || (origin === 'MW' ? 'mw' : 'cw');
-    const icon = KARMA_ICONS_BY_THEME[themeKey] || KARMA_ICONS_BY_THEME.cw;
     el.innerHTML = KARMA_TIERS.map(t =>
         `<button class="karma-btn${buildKarma === t.id ? ' karma-active' : ''}"
             data-karma="${t.id}"
             style="--kc:${t.color}"
             onclick="setKarma('${t.id}')"
-            title="${t.label}">${icon[t.id]} ${t.label}</button>`
+            title="${t.label}">${t.label}</button>`
     ).join('');
 }
 
@@ -5099,13 +5632,11 @@ function closeHumbledModal() {
 function renderHumbledPicker() {
     const grid = document.getElementById('humbled-special-grid');
     if (!grid) return;
-    const stats = ['STR','PER','END','CHR','INT','AGI','LCK'];
+    const stats = ['STR','PER','END','CHA','INT','AGI','LCK'];
     grid.innerHTML = stats.map(s => {
         const picked = _humbledPickedStats.includes(s);
-        const full = _humbledPickedStats.length >= 4;
         const cur = special[s] || 5;
-        const extra = picked ? ' humbled-stat-picked' : (full ? ' humbled-stat-disabled' : '');
-        return `<button class="humbled-stat-btn${extra}"
+        return `<button class="humbled-stat-btn${picked ? ' humbled-stat-picked' : ''}"
             onclick="toggleHumbledStat('${s}')"
             title="${s}: ${cur} → ${cur - 1}">
             <span class="hs-name">${s}</span>
@@ -5159,15 +5690,9 @@ function renderHumbledBanner() {
     if (!hasBeenHumbled) { el.style.display = 'none'; return; }
     const stats = Object.keys(humbledReductions);
     const reachedOld = charLevel >= humbledLevel;
-    const modeLabel = (mode === 'hc') ? 'HARDERCORE' : 'STANDARD';
-    let perkRule;
-    if (reachedOld) {
-        perkRule = 'PERK PENALTY LIFTED — NORMAL RATES RESTORED';
-    } else if (mode === 'hc') {
-        perkRule = `NO NEW PERKS UNTIL LVL ${humbledLevel}`;
-    } else {
-        perkRule = `PERKS EVERY 4 LEVELS UNTIL LVL ${humbledLevel} (CURRENTLY LVL ${charLevel})`;
-    }
+    const perkRule = reachedOld
+        ? 'PERK PENALTY LIFTED — NORMAL RATES RESTORED'
+        : `PERKS EVERY 4 LEVELS UNTIL LVL ${humbledLevel} (CURRENTLY LVL ${charLevel})`;
     el.style.display = 'flex';
     el.innerHTML = `
         <span class="hb-icon">☣</span>
@@ -5181,7 +5706,7 @@ function renderHumbledBanner() {
 
 /* ===== AUDIO SYSTEM ===== */
 const nsAudio = (() => {
-    let ctx = null, muted = false, crtNode = null, hcAlertNode = null;
+    let ctx = null, muted = false, crtNode = null;
 
     function getCtx() {
         if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -5469,57 +5994,11 @@ const nsAudio = (() => {
         stopCRT() {
             try { if (crtNode) { crtNode.stop(); crtNode = null; } } catch(e) { crtNode = null; }
         },
-        // Replaces the harsh sawtooth claxon with a low ominous DEFCON-style pulse:
-        // slow sine wobble at ~195Hz with a 0.5Hz heartbeat volume envelope
-        startHCAlert() {
-            if (hcAlertNode) return;
-            try {
-                const c = getCtx();
-                const osc = c.createOscillator();
-                const lfo = c.createOscillator();
-                const lfoGain = c.createGain();
-                const masterGain = c.createGain();
-                const filter = c.createBiquadFilter();
-                const pulseOsc = c.createOscillator();
-                const pulseGain = c.createGain();
-
-                osc.type = 'sine';
-                osc.frequency.setValueAtTime(195, c.currentTime);
-                lfo.type = 'sine'; lfo.frequency.value = 0.7;
-                lfoGain.gain.value = 10;
-                lfo.connect(lfoGain); lfoGain.connect(osc.frequency);
-
-                filter.type = 'lowpass'; filter.frequency.value = 600; filter.Q.value = 1.5;
-                masterGain.gain.setValueAtTime(0.008, c.currentTime);
-
-                pulseOsc.type = 'sine'; pulseOsc.frequency.value = 0.5;
-                pulseGain.gain.value = 0.006;
-                pulseOsc.connect(pulseGain); pulseGain.connect(masterGain.gain);
-
-                osc.connect(filter); filter.connect(masterGain); masterGain.connect(c.destination);
-                osc.start(); lfo.start(); pulseOsc.start();
-                hcAlertNode = { osc, lfo, pulseOsc };
-            } catch(e) {}
-        },
-        stopHCAlert() {
-            try {
-                if (hcAlertNode) {
-                    hcAlertNode.osc.stop();
-                    hcAlertNode.lfo.stop();
-                    hcAlertNode.pulseOsc.stop();
-                    hcAlertNode = null;
-                }
-            } catch(e) { hcAlertNode = null; }
-        },
-        updateModeSound(isHC) {
-            if (isHC) { this.stopCRT(); this.startHCAlert(); }
-            else { this.stopHCAlert(); this.startCRT(); }
-        },
         isMuted() { return muted; },
         toggleMute() {
             muted = !muted;
-            if (muted) { this.stopCRT(); this.stopHCAlert(); }
-            else { this.startCRT(); if (mode === 'hc') this.startHCAlert(); }
+            if (muted) { this.stopCRT(); }
+            else { this.startCRT(); }
             const btn = document.getElementById('ns-mute-btn');
             if (btn) btn.textContent = muted ? '🔇 MUTED' : '🔊 SFX';
             return muted;
@@ -5624,7 +6103,7 @@ function showToast(message, type = 'info', duration = 3000) {
     // Sound feedback only for success/error
     if (type === 'success' || type === 'error') {
         try {
-            nsAudio.play('click');
+            nsAudio.click();
         } catch(e) {
             // Ignore audio errors
         }
@@ -5687,6 +6166,11 @@ window.onload = () => {
     document.getElementById('tag-area').innerHTML = skills.map(s => `<div class="grid-item" onclick="toggleTag(this)"><input type="checkbox"><span class="tag-marker">[ ]</span><span>${s}</span></div>`).join('');
     renderUniques();
     renderUniqueArmor();
+    applyUniquesVisibility();
+    // Re-apply filter button highlight after render
+    document.querySelectorAll('#uni-filter-bar .uni-filter-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tag === uniFilter);
+    });
     
     const saved = localStorage.getItem('Nuclear_Sunset_Permanent_Vault');
     if (saved) {
@@ -5716,110 +6200,8 @@ window.onload = () => {
         toastContainer.innerHTML = '';
     }
     
-    initHoverPreviews();
+    showTab('ov');
 };
-
-/* ═══════════════════════════════════════════════
-   HOVER PREVIEW (tooltip on hold)
-═══════════════════════════════════════════════ */
-let _hoverTimer = null;
-let _hoverTarget = null;
-const HOVER_DELAY = 1200;
-
-function initHoverPreviews() {
-    const specList = document.getElementById('special-list');
-    const skillList = document.getElementById('skill-list');
-    if (specList) { specList.addEventListener('mouseover', onSpecHover); specList.addEventListener('mouseout', onHoverEnd); }
-    if (skillList) { skillList.addEventListener('mouseover', onSkillHover); skillList.addEventListener('mouseout', onHoverEnd); }
-}
-
-function showTooltip(html, cx, cy) {
-    let tip = document.getElementById('hover-preview');
-    if (!tip) { tip = document.createElement('div'); tip.id = 'hover-preview'; document.body.appendChild(tip); }
-    tip.innerHTML = html;
-    tip.style.display = 'block';
-    let l = cx + 18, t = cy + 18;
-    const r = tip.getBoundingClientRect();
-    if (l + r.width > window.innerWidth - 10) l = cx - r.width - 10;
-    if (t + r.height > window.innerHeight - 10) t = cy - r.height - 10;
-    tip.style.left = l + 'px';
-    tip.style.top = t + 'px';
-}
-
-function hideTooltip() { const tip = document.getElementById('hover-preview'); if (tip) tip.style.display = 'none'; }
-
-function onSpecHover(e) {
-    const btn = e.target.closest('.spec-info-btn');
-    if (!btn || btn === _hoverTarget) return;
-    _hoverTarget = btn;
-    clearTimeout(_hoverTimer);
-    _hoverTimer = setTimeout(() => {
-        const row = btn.closest('.special-row');
-        if (!row) return;
-        const key = row.dataset.key;
-        const info = SPECIAL_INFO[key];
-        if (!info) return;
-        const val = special[key];
-        const hd = -(humbledReductions[key] || 0);
-        let html = `<div style="color:${info.color};font-weight:bold;font-size:0.85rem;margin-bottom:6px;">${key} — ${info.label} <span style="opacity:0.5;font-weight:normal;">[${val}]</span></div>`;
-        if (hd) {
-            html += `<div style="color:#ff8060;font-size:0.72rem;margin-bottom:4px;">⚠ HEAD TRAUMA −1 (effective: ${val + hd})</div>`;
-        }
-        html += `<div style="opacity:0.85;">${info.effects.map(e => `<div style="margin-bottom:2px;">▸ ${e}</div>`).join('')}</div>`;
-        if (info.extra) {
-            const extraHtml = info.extra(val);
-            html += `<div style="margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,0.1);font-size:0.7rem;">${extraHtml}</div>`;
-        }
-        showTooltip(html, e.clientX, e.clientY);
-    }, HOVER_DELAY);
-}
-
-function onSkillHover(e) {
-    const nameEl = e.target.closest('.skill-row-name');
-    if (!nameEl || nameEl === _hoverTarget) return;
-    _hoverTarget = nameEl;
-    clearTimeout(_hoverTimer);
-    _hoverTimer = setTimeout(() => {
-        const row = nameEl.closest('.skill-row');
-        if (!row) return;
-        const skill = row.dataset.skill;
-        const val = row.querySelector('.skill-row-val')?.textContent || '?';
-        const isTagged = row.classList.contains('skill-row-tagged');
-        const isFourthTag = row.classList.contains('skill-row-tag4');
-        const base = skillBase(skill);
-        const spent = skillPoints[skill] || 0;
-        const tagged = new Set(document.querySelectorAll('#tag-area input:checked')).has(skill);
-        const tDelta = skillDelta[skill] || 0;
-        const pDelta = perkSkillDelta[skill] || 0;
-        const cDelta = condSkillDelta[skill] || 0;
-        const bDelta = bookBonus(skill);
-        
-        let html = `<div style="font-weight:bold;font-size:0.85rem;margin-bottom:4px;color:var(--pip-color);">${skill} <span style="opacity:0.5;font-weight:normal;">[${val}]</span></div>`;
-        if (isFourthTag) html += `<div style="color:#ffd080;font-size:0.68rem;margin-bottom:4px;">✦ TAG! (FOURTH TAG)</div>`;
-        else if (isTagged) html += `<div style="color:#ffd080;font-size:0.68rem;margin-bottom:4px;">★ TAGGED (×2)</div>`;
-        
-        const parts = [];
-        parts.push(`BASE: ${base}`);
-        if (isTagged) parts.push(`TAG: ×${isFourthTag ? 3 : 2}`);
-        if (spent) parts.push(`LVL: +${spent}`);
-        if (tDelta) parts.push(`TRAIT: ${tDelta > 0 ? '+' : ''}${tDelta}`);
-        if (pDelta) parts.push(`PERK: ${pDelta > 0 ? '+' : ''}${pDelta}`);
-        if (cDelta) parts.push(`COND: ${cDelta > 0 ? '+' : ''}${cDelta}`);
-        if (bDelta) parts.push(`BOOK: +${bDelta}`);
-        html += `<div style="opacity:0.65;font-size:0.68rem;line-height:1.6;">${parts.join('<br>')}</div>`;
-        
-        showTooltip(html, e.clientX, e.clientY);
-    }, HOVER_DELAY);
-}
-
-function onHoverEnd(e) {
-    const target = e.target.closest('.skill-row-name, .spec-info-btn');
-    if (!target || target !== _hoverTarget) return;
-    if (target.contains(e.relatedTarget)) return;
-    _hoverTarget = null;
-    clearTimeout(_hoverTimer);
-    hideTooltip();
-}
 
 /* ═══════════════════════════════════════════════
    COLLAPSIBLE SECTIONS
@@ -5936,6 +6318,7 @@ function closeAnyOpenModal() {
     const modals = [
         'trait-modal',
         'implant-modal',
+        'archetypes-modal',
         'lvlup-modal',
         'perk-picker-modal',
         'reward-perk-modal',
@@ -5943,6 +6326,7 @@ function closeAnyOpenModal() {
         'it-modal',
         'perk-zoom-modal',
         'trait-detail-modal',
+        'special-info-modal',
         'humbled-modal',
         'builds-manager-modal',
         'tag-modal',

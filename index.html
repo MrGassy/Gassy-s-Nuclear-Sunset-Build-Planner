@@ -21,6 +21,61 @@
     </div>
 </div>
 
+<!-- ARCHETYPES MODAL -->
+<div class="modal-overlay" id="archetypes-modal" style="display:none;">
+    <div class="modal-box" style="max-width:860px; width:96vw; max-height:90vh; overflow-y:auto; padding:0;">
+        <div style="padding:22px 24px 14px; border-bottom:1px solid rgba(255,255,255,0.07); position:sticky; top:0; background:var(--pip-bg); z-index:1;">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                <h2 style="font-size:1rem; letter-spacing:2px; margin:0;">◈ BUILD ARCHETYPES</h2>
+                <button class="modal-cancel-btn" onclick="closeArchetypesModal()" style="padding:4px 14px;">✕ CLOSE</button>
+            </div>
+            <div style="font-size:0.62rem; opacity:0.5; letter-spacing:1px; line-height:1.6; word-break:break-word;">SELECT A STARTING TEMPLATE — LOADS SPECIAL, TAGS, TRAITS &amp; PERK SUGGESTIONS &nbsp;|&nbsp; ALL VALUES CAN BE FREELY EDITED AFTER LOADING</div>
+        </div>
+        <div style="padding:18px 20px;">
+            <!-- FILTER BAR -->
+            <div id="arch-filter-bar">
+                <input type="text" id="arch-search" class="pip-search" placeholder="SEARCH BY NAME OR TAGLINE..." oninput="renderArchetypeGrid()">
+                <input type="text" id="arch-perk-search" class="pip-search" placeholder="SEARCH BUILDS BY PERK NAME..." oninput="renderArchPerkSearch()" style="margin-top:6px;">
+                <div id="arch-perk-results" style="display:none; margin-top:8px; padding:10px 12px; background:rgba(0,0,0,0.3); border:1px solid rgba(255,255,255,0.1); font-size:0.7rem; letter-spacing:0.5px;"></div>
+                <div class="arch-filter-grid">
+
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">KARMA</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="karma" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="very-good" onclick="toggleArchChip(this)">V. GOOD</button>
+                            <button class="arch-chip" data-filter="karma" data-val="good" onclick="toggleArchChip(this)">GOOD</button>
+                            <button class="arch-chip" data-filter="karma" data-val="neutral" onclick="toggleArchChip(this)">NEUTRAL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="evil" onclick="toggleArchChip(this)">EVIL</button>
+                            <button class="arch-chip" data-filter="karma" data-val="very-evil" onclick="toggleArchChip(this)">V. EVIL</button>
+                        </div>
+                    </div>
+
+                    <div class="arch-filter-row">
+                        <span class="arch-filter-label">STYLE</span>
+                        <div class="arch-chip-group">
+                            <button class="arch-chip active" data-filter="style" data-val="" onclick="toggleArchChip(this)">ALL</button>
+                            <button class="arch-chip" data-filter="style" data-val="GUNS" onclick="toggleArchChip(this)">GUNS</button>
+                            <button class="arch-chip" data-filter="style" data-val="ENERGY WEAPONS" onclick="toggleArchChip(this)">ENERGY</button>
+                            <button class="arch-chip" data-filter="style" data-val="MELEE WEAPONS" onclick="toggleArchChip(this)">MELEE</button>
+                            <button class="arch-chip" data-filter="style" data-val="UNARMED" onclick="toggleArchChip(this)">UNARMED</button>
+                            <button class="arch-chip" data-filter="style" data-val="EXPLOSIVES" onclick="toggleArchChip(this)">EXPLOSIVES</button>
+                            <button class="arch-chip" data-filter="style" data-val="SNEAK" onclick="toggleArchChip(this)">SNEAK</button>
+                            <button class="arch-chip" data-filter="style" data-val="SPEECH" onclick="toggleArchChip(this)">SPEECH</button>
+                            <button class="arch-chip" data-filter="style" data-val="SCIENCE" onclick="toggleArchChip(this)">SCIENCE</button>
+                            <button class="arch-chip" data-filter="style" data-val="SURVIVAL" onclick="toggleArchChip(this)">SURVIVAL</button>
+                            <button class="arch-chip" data-filter="style" data-val="MEDICINE" onclick="toggleArchChip(this)">MEDICINE</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="arch-filter-count"></div>
+            </div>
+            <div id="archetype-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:12px; margin-bottom:18px;"></div>
+            <div id="archetype-detail" style="display:none;"></div>
+        </div>
+    </div>
+</div>
+
 <!-- LEVEL UP MODAL -->
 <div class="modal-overlay" id="lvlup-modal">
     <div class="modal-box lvlup-box">
@@ -79,6 +134,10 @@
         <span class="picker-sort-label">SORT:</span>
         <button class="picker-sort-btn active" id="tpick-sort-az"  onclick="setTraitPickerSort('az')">A–Z</button>
         <button class="picker-sort-btn"         id="tpick-sort-req" onclick="setTraitPickerSort('req')">BY REQUIREMENT</button>
+      </div>
+      <div class="picker-sort-row">
+        <span class="picker-sort-label">VIEW:</span>
+        <button class="picker-sort-btn" id="tpick-force" onclick="toggleTraitPickerForce()" title="Allow taking any trait regardless of SPECIAL/level requirements">⚡ FORCE ENABLE</button>
       </div>
     </div>
     <div id="trait-modal-grid" class="perk-picker-grid ptrait-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
@@ -151,7 +210,7 @@
           <option value="STR">STR</option>
           <option value="PER">PER</option>
           <option value="END">END</option>
-          <option value="CHR">CHR</option>
+          <option value="CHA">CHA</option>
           <option value="INT">INT</option>
           <option value="AGI">AGI</option>
           <option value="LCK">LCK</option>
@@ -260,7 +319,7 @@
         <div style="margin-bottom:12px;">
             <label style="font-size:0.72rem; color:rgba(255,255,255,0.7); display:block; margin-bottom:6px;">ROLLBACK TO LEVEL:</label>
             <input type="number" id="rollback-level-input" min="1" max="1" value="1" 
-                style="width:100%; padding:8px; background:rgba(0,0,0,0.3); border:1px solid rgba(100,255,100,0.3); color:var(--pip-color); font-family:inherit; font-size:0.9rem;">
+                style="width:100%; padding:8px; background:rgba(0,0,0,0.3); border:1px solid rgba(var(--pip-rgb),0.3); color:var(--pip-color); font-family:inherit; font-size:0.9rem;">
         </div>
         <div style="display:flex; gap:10px; justify-content:flex-end;">
             <button class="action-btn" onclick="closeLevelRollbackModal()">CANCEL</button>
@@ -302,30 +361,12 @@
       </div>
       <button onclick="const m=document.getElementById('perk-zoom-modal');m.style.display='none';const b=m.querySelector('.perk-zoom-box');if(b)b.removeAttribute('data-type');" style="flex-shrink:0; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.75rem;">✕</button>
     </div>
-    <div id="perk-zoom-desc" style="font-size:0.88rem; line-height:1.8; color:rgba(220,255,220,0.92); border-top:1px solid rgba(40,255,40,0.15); padding-top:12px; margin-top:4px;"></div>
+    <div id="perk-zoom-desc" style="font-size:0.88rem; line-height:1.8; color:rgba(220,255,220,0.92); border-top:1px solid rgba(var(--pip-rgb),0.15); padding-top:12px; margin-top:4px;"></div>
     
     <!-- Action buttons for perks only -->
-    <div id="perk-zoom-actions" style="display:none; margin-top:16px; padding-top:12px; border-top:1px solid rgba(100,255,100,0.15); display:flex; gap:8px;">
+    <div id="perk-zoom-actions" style="display:none; margin-top:16px; padding-top:12px; border-top:1px solid rgba(var(--pip-rgb),0.15); display:flex; gap:8px;">
       <button id="perk-zoom-take-btn" class="action-btn" style="flex:1;">+ ADD TO BUILD</button>
       <button id="perk-zoom-wishlist-btn" class="action-btn perk-wishlist-action">★ WISHLIST</button>
-    </div>
-  </div>
-</div>
-
-<div class="modal-overlay" id="perk-graph-modal" style="display:none; align-items:center; justify-content:center;">
-  <div class="modal-box" style="max-width:840px; width:94vw; background:rgba(0,0,0,0.92); border:1px solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.3); padding:16px;">
-    <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px; gap:12px;">
-      <div>
-        <div id="perk-graph-name" style="font-size:1.1rem; font-weight:bold; color:var(--pip-color); letter-spacing:0.08em;"></div>
-        <div id="perk-graph-req" style="font-size:0.78rem; color:#ffd060; letter-spacing:0.06em; font-weight:bold; opacity:0.8; margin-top:4px;"></div>
-      </div>
-      <div style="display:flex; gap:6px;">
-        <button id="perk-graph-refresh" title="Recentre graph" style="background:none; border:1px solid rgba(var(--tc-r),var(--tc-g),var(--tc-b),0.3); color:var(--pip-color); padding:3px 8px; cursor:pointer; font-size:0.82rem;">⟲</button>
-        <button onclick="document.getElementById('perk-graph-modal').style.display='none'" style="background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:3px 10px; cursor:pointer; font-size:0.82rem;">✕</button>
-      </div>
-    </div>
-    <div id="perk-graph-container" style="width:100%; overflow:auto; min-height:320px; max-height:70vh; display:flex; align-items:center; justify-content:center;">
-      <div style="color:rgba(255,255,255,0.3); font-size:0.75rem;">Loading graph...</div>
     </div>
   </div>
 </div>
@@ -340,7 +381,7 @@
       </div>
       <button class="lvlup-close" onclick="closePerkPickerModal()">✕</button>
     </div>
-    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(100,255,100,0.15); display:flex; flex-direction:column; gap:6px;">
+    <div style="padding:8px 16px 6px; flex-shrink:0; border-bottom:1px solid rgba(var(--pip-rgb),0.15); display:flex; flex-direction:column; gap:6px;">
       <input type="text" id="perk-picker-search" class="pip-search" placeholder="SEARCH PERKS BY NAME OR EFFECT..."
         oninput="renderPerkPickerGrid()" style="width:100%; box-sizing:border-box;">
       <div class="picker-sort-row">
@@ -351,6 +392,7 @@
       <div class="picker-sort-row" id="ppick-filter-controls">
         <span class="picker-sort-label">VIEW:</span>
         <button class="picker-sort-btn" id="ppick-toggle-ineligible" onclick="togglePerkPickerIneligible()">SHOW INELIGIBLE</button>
+        <button class="picker-sort-btn" id="ppick-force" onclick="togglePerkPickerForce()" title="Allow taking any perk regardless of SPECIAL/level requirements">⚡ FORCE ENABLE</button>
         <div id="ppick-filter-options" style="display:none; margin-left:auto; gap:6px; align-items:center;">
           <span style="font-size:0.6rem; opacity:0.6;">FILTER:</span>
           <label style="font-size:0.65rem; display:flex; align-items:center; gap:3px; cursor:pointer;">
@@ -369,7 +411,7 @@
       </div>
     </div>
     <div id="perk-picker-grid" class="perk-picker-grid" style="flex:1; overflow-y:auto; padding:12px 16px;"></div>
-    <div style="padding:10px 16px; border-top:1px solid rgba(100,255,100,0.15); flex-shrink:0; display:flex; justify-content:flex-end;">
+    <div style="padding:10px 16px; border-top:1px solid rgba(var(--pip-rgb),0.15); flex-shrink:0; display:flex; justify-content:flex-end;">
       <button class="action-btn" style="opacity:0.7;" onclick="closePerkPickerModal()">SKIP FOR NOW →</button>
     </div>
   </div>
@@ -387,7 +429,7 @@
             <span id="builds-count-display">0 saved builds</span> • Saved builds persist even when you reset/nuke
         </div>
         <div id="builds-list" style="max-height:400px; overflow-y:auto; margin-bottom:12px;"></div>
-        <div style="display:flex; gap:10px; justify-content:space-between; padding-top:10px; border-top:1px solid rgba(100,255,100,0.15); flex-wrap:wrap;">
+        <div style="display:flex; gap:10px; justify-content:space-between; padding-top:10px; border-top:1px solid rgba(var(--pip-rgb),0.15); flex-wrap:wrap;">
             <button class="action-btn" onclick="saveCurrentBuild()" style="border-color:#60d0ff; color:#60d0ff;">💾 SAVE CURRENT BUILD</button>
             <div style="display:flex; gap:10px;">
                 <button class="action-btn" onclick="clearAllSavedBuilds()" style="border-color:rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); font-size:0.7rem;">🗑️ CLEAR ALL</button>
@@ -405,10 +447,60 @@
             Track perks you want to take in future levels
         </div>
         <div id="wishlist-container" style="max-height:450px; overflow-y:auto; margin-bottom:12px;"></div>
-        <div style="display:flex; gap:10px; justify-content:flex-end; padding-top:10px; border-top:1px solid rgba(100,255,100,0.15);">
+        <div style="display:flex; gap:10px; justify-content:flex-end; padding-top:10px; border-top:1px solid rgba(var(--pip-rgb),0.15);">
             <button class="action-btn" onclick="closeWishlist()">CLOSE</button>
         </div>
     </div>
+</div>
+
+<!-- COMPANION RECRUITMENT MODAL -->
+<div id="companion-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
+    <div class="modal-box" style="max-width:680px; width:95vw; max-height:85vh;">
+        <div class="modal-title" style="color:#ffd888;">👥 COMPANION RECRUITMENT</div>
+        <div id="companion-capacity" style="font-size:0.75em; color:var(--pip-color); margin:8px 0 10px;"></div>
+        <div id="companion-controls" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+            <input id="companion-search" type="text" placeholder="SEARCH PARTNERS..." oninput="renderCompanionModal()" style="flex:1; min-width:150px; background:rgba(0,0,0,0.35); border:1px solid rgba(255,216,136,0.3); color:#ffd888; padding:6px 9px; font-family:inherit; font-size:0.78rem; outline:none;">
+            <div class="toggle-group" id="companion-origin-filter">
+                <button class="active" data-origin="ALL" onclick="setCompanionOriginFilter('ALL')">ALL</button>
+                <button data-origin="CW" onclick="setCompanionOriginFilter('CW')">CAPITAL</button>
+                <button data-origin="MW" onclick="setCompanionOriginFilter('MW')">MOJAVE</button>
+            </div>
+        </div>
+        <div id="companion-container" style="max-height:430px; overflow-y:auto; margin-bottom:12px; padding-right:4px;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; padding-top:10px; border-top:1px solid rgba(var(--pip-rgb),0.15);">
+            <button class="action-btn" onclick="closeCompanionModal()">CLOSE</button>
+        </div>
+    </div>
+</div>
+
+<!-- BUTCH COMPANION DISPOSITION MODAL -->
+<div id="butch-modal" class="modal-overlay" style="display:none; align-items:center; justify-content:center;">
+    <div class="modal-box" style="max-width:520px; width:92vw;">
+        <div class="modal-title" style="color:#ffd888;">🐍 BUTCH — TUNNEL SNAKES FOREVER</div>
+        <div style="font-size:0.75em; color:rgba(255,255,255,0.65); margin:8px 0 16px;">
+            After a month with you, Butch's disposition will shift based on the karmic actions you perform. Which way are you leaning?
+        </div>
+        <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+            <button class="action-btn" onclick="confirmButchBonus('improved')">✦ IMPROVED — -75% ENEMY CRIT. CHANCE</button>
+            <button class="action-btn" onclick="confirmButchBonus('worsened')">☠ WORSENED — +50% CRIT. DAMAGE</button>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; padding-top:12px; border-top:1px solid rgba(var(--pip-rgb),0.15); margin-top:12px;">
+            <button class="action-btn" onclick="cancelButchChoice()">CANCEL</button>
+        </div>
+    </div>
+</div>
+
+<!-- SPECIAL INFO MODAL -->
+<div class="modal-overlay" id="special-info-modal" style="display:none; align-items:center; justify-content:center;">
+  <div class="modal-box" style="max-width:460px; width:92vw; position:relative;">
+    <button onclick="closeSpecialInfoModal()" style="position:absolute; top:10px; right:12px; background:none; border:1px solid rgba(255,80,80,0.4); color:rgba(255,80,80,0.8); padding:2px 9px; cursor:pointer; font-size:0.75rem; font-family:inherit;">✕</button>
+    <div style="display:flex; align-items:baseline; gap:12px; margin-bottom:14px;">
+      <span id="sinfo-title" style="font-size:1.1rem; font-weight:bold; letter-spacing:0.12em;"></span>
+      <span id="sinfo-val" style="font-size:2rem; font-weight:bold; line-height:1;"></span>
+    </div>
+    <div id="sinfo-effects" style="margin-bottom:12px;"></div>
+    <div id="sinfo-extra"></div>
+  </div>
 </div>
 
 <!-- TRAIT DETAIL MODAL -->
@@ -456,7 +548,6 @@
             <div class="os-title">☢ NUCLEAR SUNSET <span class="os-title-sub">// TTW BUILD PLANNER</span></div>
             <div class="settings-block">
                 <div class="toggle-group"><button id="btn-cw" class="active" onclick="setOrigin('CW')">CAPITAL</button><button id="btn-mw" onclick="setOrigin('MW')">MOJAVE</button></div>
-                <div class="toggle-group"><button id="m-std" class="active" onclick="setMode('std')">STANDARD</button><button id="m-hc" onclick="setMode('hc')">HARDERCORE</button></div>
                 <button id="undo-btn" onclick="undoLastAction()" title="NOTHING TO UNDO" disabled>↩ UNDO</button>
                 <button onclick="purgeMemory()" class="nuke-btn" title="RESET CURRENT BUILD (Saved builds in Build Manager will be preserved)">☢</button>
             </div>
@@ -481,6 +572,9 @@
                     <span class="section-label">S.P.E.C.I.A.L.</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    <button id="spec-detail-toggle" class="spec-detail-toggle-btn" onclick="toggleDetailedSpecial()" title="Toggle between simplified view (total bonuses) and detailed view (breakdown by source)">
+                        DETAILED
+                    </button>
                     <button id="spec-base-toggle" class="spec-base-toggle-btn" onclick="toggleBaseSpecial()" title="Toggle between full SPECIAL (with all bonuses) and base-only (allocated points before any IT / implants / traits / perks)">
                         BASE
                     </button>
@@ -498,8 +592,6 @@
     </section>
 
     <section class="main-panel">
-        <!-- HARDERCORE ALERT + FACTION QUOTE (moved from header) -->
-        <div class="hc-alert-bar" id="hc-banner">⚠ HARDERCORE_OVERRIDE_ACTIVE — SYSTEM INTEGRITY COMPROMISED ⚠</div>
         <div id="faction-quote-bar" style="display:none;" class="faction-quote-bar"></div>
         <div class="tab-nav">
             <button onclick="showTab('ov')" id="tab-btn-ov" class="active">🧑 OVERVIEW</button>
@@ -524,6 +616,9 @@
             <!-- CHAR BANNER -->
             <div class="char-banner">
                 <div id="ov-name" class="char-banner-name">NO_ID</div>
+                <div class="char-banner-meta">
+                    <div id="ov-spec" class="char-banner-spec"></div>
+                </div>
             </div>
 
             <!-- BUILD FEATURES BAR -->
@@ -534,53 +629,36 @@
                 <button class="feature-btn" onclick="openWishlist()" title="VIEW YOUR WISHLISTED PERKS">
                     ★ WISHLIST <span id="wishlist-count" class="wishlist-count-badge">0</span>
                 </button>
+                <button class="feature-btn" onclick="openCompanionModal()" title="RECRUIT COMPANIONS — GATED BY YOUR PERMANENT CHARISMA">
+                    👥 COMPANIONS <span id="companion-count" class="wishlist-count-badge">0</span>
+                </button>
             </div>
 
-            <!-- DASHBOARD: 3 columns -->
-            <div class="dashboard-cols">
+            <!-- MAIN CHAR SHEET: 3 columns -->
+            <div class="char-sheet-cols">
 
-                <!-- COL 1: TAGS + GEAR -->
-                <div class="dash-col">
+                <!-- COL 1: TAGS -->
+                <div class="char-sheet-col">
                     <div class="cs-header">
                         <span class="cs-label">TAGS</span>
                         <span class="cs-sublabel">MAX 3</span>
                     </div>
                     <div id="tag-area" class="tag-grid"></div>
-                    <div class="dash-divider"></div>
-                    <div class="cs-header">
-                        <span class="cs-label">GEAR</span>
-                    </div>
-                    <div id="ov-gear" style="font-size:0.75rem;"></div>
                 </div>
 
-                <!-- COL 2: TRAITS + IMPLANTS + PERK LOG + ACTIVE EFFECTS -->
-                <div class="dash-col">
+                <!-- COL 2: TRAITS -->
+                <div class="char-sheet-col">
                     <div class="cs-header">
-                        <span class="cs-label" id="trait-header">TRAITS <span id="hc-trait-counter" class="hc-trait-counter">0/5</span></span>
-                        <button class="cs-add-btn cs-start-trait-btn" title="ADD A STARTING TRAIT TO YOUR CHARACTER" onclick="openStartingTraitModal()">◈ ADD</button>
+                        <span class="cs-label" id="trait-header">TRAITS</span>
+                        <button class="cs-add-btn cs-start-trait-btn" title="ADD A STARTING TRAIT TO YOUR CHARACTER" onclick="openStartingTraitModal()">◈ ADD STARTING TRAIT</button>
                     </div>
-                    <div id="hc-trait-limit-warning" style="display:none; background:rgba(255,0,0,0.1); border-left:3px solid rgba(255,0,0,0.7); color:#ff6060; padding:5px 10px; font-size:0.72rem; margin-bottom:6px; letter-spacing:0.05em;">⚠ HARDERCORE LIMIT — MAX 5 STARTING TRAITS</div>
                     <div id="trait-list" style="display:none;"></div>
-                    <div id="ov-traits" style="font-size:0.75rem;"></div>
-                    <div class="dash-divider"></div>
-                    <div class="cs-header">
-                        <span class="cs-label">IMPLANTS</span>
-                    </div>
-                    <div id="ov-implants" style="font-size:0.75rem;"></div>
-                    <div class="dash-divider"></div>
-                    <div class="cs-header">
-                        <span class="cs-label">PERK &amp; TRAIT LOG</span>
-                    </div>
-                    <div id="ov-perks" style="font-size:0.75rem;"></div>
-                    <div class="dash-divider"></div>
-                    <div class="cs-header">
-                        <span class="cs-label">ACTIVE EFFECTS</span>
-                    </div>
-                    <div id="ov-active-effects" style="font-size:0.75rem;"></div>
+                    <div id="ov-traits-inline"></div>
+                    <div id="ov-traits-empty" style="font-size:0.58rem; color:rgba(255,255,255,0.2); padding:4px 0; letter-spacing:0.04em; display:none;">NO TRAITS SELECTED</div>
                 </div>
 
-                <!-- COL 3: SKILLS -->
-                <div class="dash-col dash-col-skills">
+                <!-- COL 3: SKILLS + LVL UP -->
+                <div class="char-sheet-col char-sheet-skills-col">
                     <div class="cs-header">
                         <span class="cs-label">SKILLS</span>
                         <button id="lvlup-open-btn" class="lvlup-open-btn lvlup-btn-locked" onclick="openLevelUpModal()">
@@ -588,13 +666,25 @@
                             <span id="lvlup-pts-preview" class="lvlup-pts-preview"></span>
                         </button>
                         <button id="rollback-btn" class="rollback-btn" onclick="openLevelRollbackModal()" title="ROLLBACK TO PREVIOUS LEVEL" style="display:none;">↶ ROLLBACK</button>
-                        <button id="transit-btn" class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT">&#x2622; TRANSIT</button>
+                        <button id="transit-btn" class="transit-btn" onclick="openHumbledModal()" title="WASTELAND TRANSIT — TRIGGERS HEAD TRAUMA DEBUFF (FIRST TIME ONLY)">&#x2622; TRANSIT</button>
                     </div>
                     <div id="lvlup-not-ready" style="display:none;font-size:0.65rem;color:#ff6060;margin-bottom:6px;padding:4px 8px;border:1px solid rgba(255,80,80,0.4);background:rgba(255,0,0,0.06);">⚠ SELECT 3 TAGS TO UNLOCK</div>
                     <div id="skill-list" class="skill-list-2col"></div>
                     <div id="ov-levelup-bonuses" class="levelup-bonuses-display" style="display:none; margin-top:10px;"></div>
                 </div>
 
+            </div>
+
+            <!-- SUMMARY CARDS -->
+            <div class="ov-grid" style="margin-top:16px;">
+                <div>
+                    <div class="ov-card"><span class="ov-sub">GEAR_LIST</span><div id="ov-gear"></div></div>
+                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TAGS_ACTIVE</span><div id="ov-tags"></div></div>
+                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub">TRAITS_ACTIVE</span><div id="ov-traits"></div></div>
+                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub" style="color:#7ecfff;">IMPLANTS</span><div id="ov-implants" style="font-size:0.65rem; color:#7ecfff;"></div></div>
+                    <div class="ov-card" style="margin-top:8px;"><span class="ov-sub" style="color:#ffd888;">COMPANIONS</span><div id="ov-companions" style="font-size:0.75rem; color:#ffd888;"></div></div>
+                </div>
+                <div class="ov-card"><span class="ov-sub">PERK &amp; TRAIT LOG</span><div id="ov-perks"></div></div>
             </div>
         </div>
 
@@ -645,6 +735,7 @@
             <div class="perks-controls">
                 <input type="text" id="perk-search-bar" class="pip-search" placeholder="SEARCH ALL PERKS..." oninput="renderAllPerks()" style="margin-bottom:0; flex:1;">
                 <button id="toggle-eligible" class="sort-btn" onclick="toggleEligibleFilter()" title="Show only perks you currently qualify for">ELIGIBLE ONLY</button>
+                <button id="force-main-perks" class="sort-btn" onclick="toggleForceEnable()" title="Allow taking ANY perk regardless of requirements">⚡ FORCE ENABLE</button>
             </div>
             <div class="perks-controls" style="margin-bottom:10px;">
                 <span style="font-size:0.65rem; font-weight:bold; opacity:0.7; margin-right:5px;">SORT:</span>
@@ -714,6 +805,16 @@
             <div class="uni-section-header">
                 <h2>⚔ UNIQUE WEAPONS</h2>
                 <button class="uni-toggle-all-btn" id="wpn-toggle-btn" onclick="toggleAllInContainer('unique-weapon-checklist',this)">▼ COLLAPSE ALL</button>
+            </div>
+            <div class="uni-filter-bar" id="uni-filter-bar">
+                <button class="uni-filter-btn active" data-tag="ALL" onclick="setUniquesFilter('ALL')">ALL</button>
+                <button class="uni-filter-btn" data-tag="FO3" onclick="setUniquesFilter('FO3')">FO3</button>
+                <button class="uni-filter-btn" data-tag="FNV" onclick="setUniquesFilter('FNV')">FNV</button>
+                <button class="uni-filter-btn" data-tag="HH" onclick="setUniquesFilter('HH')">HH</button>
+                <button class="uni-filter-btn" data-tag="GRA" onclick="setUniquesFilter('GRA')">GRA</button>
+                <button class="uni-filter-btn" data-tag="OWB" onclick="setUniquesFilter('OWB')">OWB</button>
+                <button class="uni-filter-btn" data-tag="LR" onclick="setUniquesFilter('LR')">LR</button>
+                <button class="uni-filter-btn" data-tag="DM" onclick="setUniquesFilter('DM')">DM</button>
             </div>
             <input type="text" id="uni-search-bar" class="pip-search" placeholder="SEARCH UNIQUE WEAPONS..." oninput="searchUniques()">
             <div id="unique-weapon-checklist"></div>
@@ -789,25 +890,12 @@
             </div>
         </div>
         <textarea id="user-notes" placeholder="--- INPUT LOG DATA ---"></textarea>
+            <button onclick="openArchetypesModal()" class="randomize-btn" style="margin-bottom:5px;" title="Load a curated starting build">◈ ARCHETYPES</button>
             <button onclick="randomizeBuild()" class="randomize-btn">🎲 RANDOMIZE BUILD</button>
         <div id="sync-status" style="font-size:0.6rem; text-align:right; opacity:0.6; margin-top:5px;">SYSTEM_SYNCED</div>
         
         <div class="credits-box">
-            <div id="sticky-note-stack" style="position:relative; margin-bottom:10px;">
-                <div class="sticky-note doomsday-note" id="doomsday-note">
-                    !! CLASSIFIED !!<br>
-                    DOOMSDAY PROTOCOL — CODENAME: HARDESTCORE<br><br>
-                    IF YOU ARE READING THIS, THE UNTHINKABLE HAS OCCURRED.<br>
-                    VAULT-TEC CONTINGENCY ALPHA HAS BEEN TRIGGERED.<br>
-                    GOD HELP THE WASTELAND.<br>
-                    — DIRECTOR BREKKER, VAULT-TEC OVERSIGHT
-                </div>
-                <div class="sticky-note" id="sysop-note" onclick="stickyNoteClick()" title="(click me...)" style="display:block; background:#ff4; color:#000; cursor:pointer; position:relative; z-index:2;">
-                    !! STICKY NOTE !!<br>9:13AM, October 23, 2077,
-                    HARDERCORE.EXE HAS BEEN ACTIVATED! GOD HELP US ALL! F.A.O FINALCATALYST - VAULT-TEC R&D
-                    <span id="sticky-click-hint" style="display:block; font-size:0.6rem; opacity:0.4; margin-top:6px; text-align:right; font-weight:normal;">(click)</span>
-                </div>
-            </div>
+
             <b>SOURCE: <a href="https://nuclearsunset.com" target="_blank" style="color:inherit;">NUCLEARSUNSET.COM</a></b><br>
             TEAM: DARKSOLARLEGEND, ORGASMICSNEEZE, DOKTORAKCEL, LIME, FINALCATALYST &amp; THE BOOHER.
             <div style="font-size: 0.65rem; border-top:1px dotted var(--pip-color); margin-top:5px; padding-top:4px;"><b>CREATED AND MAINTAINED BY GASSY</b></div>
