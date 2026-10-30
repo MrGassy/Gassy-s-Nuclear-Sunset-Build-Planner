@@ -122,7 +122,7 @@ select option { background: #000; color: var(--pip-color); }
 
     /* Grid → single column */
     .grid-tidy { grid-template-columns: 1fr; }
-    .ov-grid, .gear-split-grid { grid-template-columns: 1fr; }
+.ov-grid, .gear-split-grid { grid-template-columns: 1fr; }
 
     /* Progression cards */
     .prog-card-header { flex-wrap: wrap; gap: 6px; }
@@ -196,12 +196,6 @@ header::before {
     display: flex;
     align-items: center;
     white-space: nowrap;
-}
-.os-title-sub {
-    font-size: 0.72rem;
-    opacity: 0.45;
-    letter-spacing: 2px;
-    margin-left: 8px;
 }
 .settings-block { 
     display: flex; 
@@ -319,6 +313,47 @@ section {
     position: relative;
     z-index: 1;
 }
+.notes-toggle-btn {
+    font-size: 0.58rem;
+    padding: 4px 8px;
+    border: 1px solid var(--pip-border);
+    color: var(--pip-color);
+    opacity: 0.55;
+    cursor: pointer;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+.notes-toggle-btn:hover {
+    opacity: 1;
+    background: rgba(var(--pip-rgb),0.08);
+}
+body.notes-collapsed .wrapper {
+    grid-template-columns: var(--left-w) 1fr 0px;
+}
+body.notes-collapsed .right-panel {
+    display: none;
+}
+.notes-restore-btn {
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 999;
+    padding: 16px 7px;
+    background: var(--pip-bg-3);
+    border: 1px solid var(--pip-border);
+    border-right: none;
+    color: var(--pip-color);
+    font-size: 0.58rem;
+    letter-spacing: 1.5px;
+    cursor: pointer;
+    opacity: 0.5;
+    writing-mode: vertical-rl;
+}
+.notes-restore-btn:hover {
+    opacity: 1;
+    background: rgba(var(--pip-rgb),0.08);
+}
 .right-panel .grid-tidy {
     margin-bottom: 10px;
 }
@@ -435,7 +470,7 @@ h2::before {
 }
 
 /* --- OVERVIEW & GRID UTILITIES --- */
-.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.ov-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 .gear-split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
 @media (max-width: 1000px) { .ov-grid, .gear-split-grid { grid-template-columns: 1fr; } }
@@ -452,6 +487,31 @@ h2::before {
     padding-bottom: 5px; text-align: center;
 }
 .ov-entry { font-size: 0.9rem; padding: 3px 2px; display: flex; justify-content: space-between; align-items: center; color: var(--text-mid); line-height: 1.4; overflow-wrap: break-word; word-break: break-word; }
+/* PERK & TRAIT LOG — 2 vertical columns: first column fills top-to-bottom, then the second (reads vertically) */
+#ov-perks {
+    column-count: 2;
+    column-gap: 18px;
+    column-rule: 1px solid rgba(255,255,255,0.06);
+}
+#ov-perks > .ov-entry {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+}
+@media (max-width: 1000px) {
+    #ov-perks { column-count: 1; column-rule: none; }
+}
+/* PERK & TRAIT LOG — every column on the same type size (nested icons/annotations keep their own scale) */
+#ov-perks .ov-entry > span:first-child,
+#ov-perks .ov-entry > span:last-child { font-size: 0.9rem; }
+/* Overview IMPLANTS — 2 columns like the perk log */
+#ov-implants {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2px 12px;
+}
+@media (max-width: 1000px) {
+    #ov-implants { grid-template-columns: 1fr; }
+}
 .ov-entry-clickable {
     cursor: pointer;
     border-radius: 2px;
@@ -465,6 +525,43 @@ h2::before {
 .ov-entry-clickable:hover > span:first-child {
     text-decoration: underline;
     text-underline-offset: 2px;
+}
+
+/* Companions card sits left of the level-up bonuses inside the skills column */
+.companions-lvlup-wrap {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+.companions-card {
+    flex: 0 0 230px;
+    min-width: 0;
+    margin-bottom: 0;
+}
+.companions-card .ov-sub {
+    font-size: 0.78rem;
+    margin-bottom: 4px;
+    padding-bottom: 4px;
+}
+/* No companion capacity available — grey out like there's no power */
+.companions-card.companions-off {
+    filter: grayscale(1) brightness(0.55);
+    opacity: 0.5;
+    border-color: #2a2a2a !important;
+    box-shadow: none !important;
+    pointer-events: none;
+}
+.companions-card.companions-off .ov-sub {
+    color: #555 !important;
+}
+.companions-lvlup-wrap #ov-levelup-bonuses {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-top: 0;
+}
+@media (max-width: 1200px) {
+    .companions-lvlup-wrap { flex-direction: column; }
+    .companions-card { flex: 1 1 auto; width: 100%; }
 }
 
 /* --- PROGRESSION TAB --- */
@@ -1013,7 +1110,7 @@ h2::before {
 .modal-cancel-btn:hover { background: var(--danger-red) !important; color: black; border-color: var(--danger-red) !important; border-bottom-color: var(--danger-red) !important; }
 
 /* --- OTHER GEAR / MISC --- */
-.gear-card { border: 1px solid rgba(255,255,255,0.07); padding: 10px 12px; margin-bottom: 8px; background: rgba(255,255,255,0.015); position: relative; }
+.gear-card { border: 1px solid rgba(var(--pip-rgb),0.12); background: rgba(var(--pip-rgb),0.015); position: relative; }
 .action-btn { 
     width: 100%; height: 34px; border: 1px solid var(--pip-color) !important; 
     color: var(--pip-color); cursor: pointer; font-weight: bold; 
@@ -1027,7 +1124,6 @@ h2::before {
     width: 100%; background: rgba(0,0,0,0.35); 
     border: 1px solid rgba(255,255,255,0.1) !important; 
     border-bottom: 1px solid rgba(255,255,255,0.1) !important;
-    font-size: 0.82rem;
     color: var(--pip-color); padding: 9px 12px; margin-bottom: 10px; 
     font-size: 1.0rem; font-weight: bold; letter-spacing: 0.5px; transition: border-color 0.15s;
 }
@@ -1461,8 +1557,7 @@ button,
 .gear-card,
 .prog-row,
 .trait-grid-item,
-.perk-card,
-.arch-chip {
+.perk-card {
     transition: all 0.15s ease;
 }
 
@@ -1597,6 +1692,24 @@ button,
     line-height: 1.6;
     margin-bottom: 20px;
     color: rgba(255,255,255,0.8);
+}
+
+.confirm-dialog-input {
+    width: 100%;
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    border: 1px solid rgba(var(--pip-rgb),0.4) !important;
+    border-bottom: 1px solid rgba(var(--pip-rgb),0.4) !important;
+    color: var(--pip-color) !important;
+    background: rgba(0,0,0,0.35);
+}
+
+.confirm-dialog-input:focus {
+    outline: none;
+    border-bottom-color: var(--pip-color) !important;
+    box-shadow: 0 4px 12px rgba(var(--pip-rgb),0.15);
 }
 
 .confirm-dialog-actions {
@@ -1950,9 +2063,9 @@ button,
     display: flex;
     align-items: center;
     gap: 16px;
-    padding: 10px 0 12px;
+    padding: 8px 0 6px;
     border-bottom: 2px solid var(--pip-color);
-    margin-bottom: 16px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
 }
 .char-banner-name {
@@ -1975,17 +2088,17 @@ button,
     align-items: center;
     gap: 1px;
     border: 1px solid var(--pip-border);
-    padding: 4px 6px;
-    min-width: 34px;
+    padding: 3px 5px;
+    min-width: 30px;
     background: rgba(255,255,255,0.02);
 }
 .char-banner-stat-key {
-    font-size: 0.72rem;
+    font-size: 0.68rem;
     opacity: 0.5;
     letter-spacing: 1px;
 }
 .char-banner-stat-val {
-    font-size: 1.35rem;
+    font-size: 1.1rem;
     font-weight: bold;
     color: var(--pip-color);
     line-height: 1;
@@ -2176,6 +2289,44 @@ button,
     opacity: 0.35;
     cursor: not-allowed;
 }
+.tag-grid .grid-item.creation-locked {
+    opacity: 0.5;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.tag-grid .grid-item.creation-locked:hover {
+    border-color: rgba(255,255,255,0.07);
+    background: transparent;
+}
+
+/* Creation lock indicator note (SPECIAL / TAGS / TRAITS headers) */
+.creation-lock-note {
+    font-size: 0.58rem;
+    letter-spacing: 1px;
+    color: rgba(255,200,80,0.9);
+    border: 1px solid rgba(255,200,80,0.45);
+    background: rgba(255,200,80,0.08);
+    padding: 1px 6px;
+    border-radius: 2px;
+    margin-left: 6px;
+    white-space: nowrap;
+}
+
+/* Locked SPECIAL rows and starting-trait chips */
+.special-row.creation-locked .special-btn {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+.special-row.creation-locked .special-btn:hover:not(:disabled) {
+    background: none;
+    color: var(--pip-color);
+}
+.st-tag-chip.creation-locked {
+    opacity: 0.55;
+}
+.st-tag-chip.creation-locked .st-tag-remove {
+    display: none;
+}
 
 /* Trait list in overview */
 #trait-list > div {
@@ -2192,7 +2343,7 @@ button,
 }
 .skill-list-2col .skill-row {
     grid-template-columns: 1fr 54px 32px;
-    font-size: 0.86rem;
+    font-size: 0.84rem;
     padding: 5px 4px;
 }
 .skill-list-2col .skill-row-bar { height: 6px; }
@@ -2249,14 +2400,14 @@ button,
 .trait-card.ineligible { opacity:0.5; }
 .trait-card.taken { background: rgba(0,255,100,0.08); border-color:rgba(0,255,100,0.5); }
 .trait-card-header { display:flex; align-items:center; gap:8px; margin-bottom:4px; }
-.trait-card-name { font-size: 0.97rem; font-weight:bold; color:#c8ffd4; letter-spacing:0.06em; flex:1; }
+.trait-card-name { font-size: 0.95rem; font-weight:bold; color:#c8ffd4; letter-spacing:0.06em; flex:1; }
 .trait-badge { font-size: 0.76rem; padding:2px 6px; border-radius:2px; letter-spacing:0.08em; }
 .elig-badge { background:rgba(0,255,100,0.15); color:#00ff64; border:1px solid rgba(0,255,100,0.3); }
 .inelig-badge { background:rgba(255,80,80,0.1); color:#ff8080; border:1px solid rgba(255,80,80,0.2); }
 .taken-badge { background:rgba(0,200,255,0.1); color:#80e0ff; border:1px solid rgba(0,200,255,0.3); }
 .trait-req { font-size: 0.82rem; color:#aaa; margin-bottom:4px; letter-spacing:0.04em; }
 .trait-card-desc { font-size: 0.85rem; color:#bbb; line-height:1.55; }
-.trait-slot-name { font-size: 0.97rem; color:#c8ffd4; padding:6px 10px; letter-spacing:0.04em; }
+.trait-slot-name { font-size: 0.95rem; color:#c8ffd4; padding:6px 10px; letter-spacing:0.04em; }
 .trait-slot-row .prog-card-header { border-bottom:1px solid rgba(0,255,100,0.1); }
 /* ══════════════════════════════════════════════
    REDESIGNED LOADOUT TAB
@@ -2264,36 +2415,89 @@ button,
 
 /* Tab-level header with stat counts */
 .gear-tab-header {
-    padding: 10px 0 14px;
+    padding: 10px 0 16px;
     border-bottom: 1px solid rgba(255,255,255,0.07);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
-.gear-stat-bar {
+.gear-tab-title-row {
     display: flex;
     align-items: center;
     gap: 10px;
+    margin-bottom: 12px;
+}
+.gear-tab-title-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 8px rgba(var(--pip-rgb),0.35));
+}
+.gear-tab-title-block {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+.gear-tab-title {
+    font-size: 1.15rem;
+    font-weight: bold;
+    letter-spacing: 4px;
+    color: var(--pip-color);
+    text-shadow: 0 0 8px rgba(var(--pip-rgb),0.4);
+}
+.gear-tab-subtitle {
+    font-size: 0.62rem;
+    opacity: 0.45;
+    letter-spacing: 1.5px;
+}
+.gear-stat-bar {
+    display: flex;
+    gap: 10px;
 }
 .gear-stat-item {
+    flex: 1;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 12px;
+    padding: 10px 14px;
+    border: 1px solid rgba(var(--pip-rgb),0.16);
+    background: linear-gradient(180deg, rgba(var(--pip-rgb),0.05), rgba(var(--pip-rgb),0.015));
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.gear-stat-item::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--pip-color), rgba(var(--pip-rgb),0.05));
+    opacity: 0.8;
+}
+.gear-stat-item:hover {
+    border-color: rgba(var(--pip-rgb),0.35);
+    box-shadow: 0 0 12px rgba(var(--pip-rgb),0.12);
+}
+.gear-stat-icon {
+    font-size: 1.3rem;
+    line-height: 1;
+    opacity: 0.85;
+}
+.gear-stat-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
 }
 .gear-stat-label {
-    font-size: 0.72rem;
-    opacity: 0.5;
-    letter-spacing: 2px;
+    font-size: 0.6rem;
+    opacity: 0.55;
+    letter-spacing: 2.5px;
+    font-weight: bold;
 }
 .gear-stat-val {
-    font-size: 1.55rem;
+    font-size: 1.7rem;
     font-weight: bold;
     color: var(--pip-color);
     line-height: 1;
     font-variant-numeric: tabular-nums;
-}
-.gear-stat-sep {
-    opacity: 0.2;
-    font-size: 1.35rem;
-    margin: 0 4px;
+    text-shadow: 0 0 10px rgba(var(--pip-rgb),0.35);
 }
 
 /* Section wrapper */
@@ -2306,49 +2510,63 @@ button,
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 8px 0 10px;
-    border-bottom: 2px solid var(--pip-color);
+    padding: 9px 12px;
+    border: 1px solid rgba(var(--pip-rgb),0.14);
+    border-left: 3px solid var(--pip-color);
+    background: linear-gradient(90deg, rgba(var(--pip-rgb),0.06), rgba(var(--pip-rgb),0.01));
     margin-bottom: 10px;
 }
 .gear-section-icon {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     line-height: 1;
 }
 .gear-section-title {
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: bold;
     letter-spacing: 3px;
     color: var(--pip-color);
-    flex: 1;
+}
+.gear-section-sub {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-size: 0.62rem;
+    opacity: 0.45;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 .gear-add-btn {
-    font-size: 0.82rem;
-    background: none;
+    font-size: 0.74rem;
+    background: rgba(var(--pip-rgb),0.08);
     border: 1px solid var(--pip-color);
     color: var(--pip-color);
-    padding: 4px 12px;
+    padding: 5px 12px;
     cursor: pointer;
-    letter-spacing: 1.5px;
-    transition: background 0.15s, color 0.15s;
+    letter-spacing: 1px;
+    font-weight: bold;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s, box-shadow 0.15s;
 }
 .gear-add-btn:hover {
     background: var(--pip-color);
     color: #000;
+    box-shadow: 0 0 12px rgba(var(--pip-rgb),0.35);
 }
 
 /* Gear card redesign */
-.gear-list { display: flex; flex-direction: column; gap: 8px; }
+.gear-list { display: flex; flex-direction: column; gap: 10px; }
 
 .gear-card {
-    border: 1px solid rgba(255,255,255,0.1);
-    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(var(--pip-rgb),0.12);
+    background: linear-gradient(180deg, rgba(var(--pip-rgb),0.035), rgba(var(--pip-rgb),0.012));
     position: relative;
     overflow: hidden;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 .gear-card:hover {
-    border-color: rgba(255,255,255,0.2);
-    background: rgba(255,255,255,0.03);
+    border-color: rgba(var(--pip-rgb),0.3);
+    box-shadow: 0 0 14px rgba(var(--pip-rgb),0.1);
 }
 
 .gear-card-topbar {
@@ -2356,21 +2574,32 @@ button,
     align-items: center;
     justify-content: space-between;
     padding: 6px 10px;
-    background: rgba(255,255,255,0.03);
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    background: rgba(0,0,0,0.22);
+    border-bottom: 1px solid rgba(var(--pip-rgb),0.08);
 }
 .gear-card-type-badge {
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     font-weight: bold;
     letter-spacing: 2px;
     color: var(--pip-color);
-    opacity: 0.85;
+    opacity: 0.9;
+    padding: 2px 8px;
+    border: 1px solid rgba(var(--pip-rgb),0.25);
+    background: rgba(var(--pip-rgb),0.07);
 }
 .gear-card-type-badge.armor-badge {
     color: #80d8ff;
+    border-color: rgba(128,216,255,0.3);
+    background: rgba(128,216,255,0.07);
+}
+.gear-card-type-badge.weapon-class-badge {
+    color: #ffd166;
+    border-color: rgba(255,209,102,0.3);
+    background: rgba(255,209,102,0.07);
+    text-shadow: 0 0 6px rgba(255,209,102,0.35);
 }
 .gear-card-remove {
-    font-size: 0.76rem;
+    font-size: 0.7rem;
     background: none;
     border: 1px solid rgba(255,60,60,0.3);
     color: rgba(255,80,80,0.7);
@@ -2391,6 +2620,9 @@ button,
     flex-direction: column;
     gap: 8px;
 }
+.gear-field-primary {
+    padding: 2px 2px 4px;
+}
 .gear-field-primary .gear-field-input {
     font-size: 1.0rem;
     font-weight: bold;
@@ -2409,34 +2641,40 @@ button,
     gap: 3px;
 }
 .gear-field-label {
-    font-size: 0.78rem;
-    letter-spacing: 2px;
-    opacity: 0.4;
+    display: block;
+    text-align: left;
+    color: rgba(180,255,180,0.55);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    opacity: 0.5;
     font-weight: bold;
+    margin-bottom: 2px;
 }
 .gear-field-input {
-    background: transparent;
-    border: none;
-    border-bottom: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(var(--pip-rgb),0.12);
+    border-bottom: 1px solid rgba(var(--pip-rgb),0.22);
     color: rgba(255,255,255,0.8);
-    font-size: 0.95rem;
-    padding: 3px 0;
+    font-size: 0.9rem;
+    padding: 5px 8px;
     width: 100%;
     letter-spacing: 0.5px;
     font-family: inherit;
-    transition: border-color 0.15s;
+    transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 .gear-field-input:focus {
     outline: none;
-    border-bottom-color: var(--pip-color);
+    border-color: var(--pip-color);
+    background: rgba(0,0,0,0.3);
+    box-shadow: 0 0 8px rgba(var(--pip-rgb),0.15);
 }
 .gear-field-input::placeholder { opacity: 0.25; }
 .gear-field-select {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(var(--pip-rgb),0.14);
     color: rgba(255,255,255,0.8);
     font-size: 0.8rem;
-    padding: 3px 6px;
+    padding: 4px 6px;
     width: 100%;
     font-family: inherit;
     letter-spacing: 1px;
@@ -2447,12 +2685,26 @@ button,
 
 /* Empty state */
 .gear-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     text-align: center;
-    font-size: 0.78rem;
+    font-size: 0.76rem;
     letter-spacing: 2px;
-    opacity: 0.25;
-    padding: 24px 0;
-    border: 1px dashed rgba(255,255,255,0.08);
+    opacity: 0.35;
+    color: rgba(var(--pip-rgb),0.75);
+    border: 1px dashed rgba(var(--pip-rgb),0.14);
+    background: rgba(var(--pip-rgb),0.015);
+    padding: 26px 0;
+}
+.gear-empty-icon { font-size: 1rem; opacity: 0.7; }
+
+@media (max-width: 768px) {
+    .gear-stat-bar { flex-direction: column; gap: 8px; }
+    .gear-stat-item { padding: 8px 12px; }
+    .gear-tab-title { font-size: 1rem; }
+    .gear-section-sub { display: none; }
 }
 
 /* Overview traits inline styling */
@@ -2460,8 +2712,8 @@ button,
     display: flex;
     align-items: center;
     gap: 6px;
-    padding: 3px 2px;
-    font-size: 0.87rem;
+    padding: 4px 2px;
+    font-size: 0.92rem;
     border-bottom: 1px dotted rgba(200,255,200,0.1);
     color: #c8ffd4;
 }
@@ -2469,6 +2721,19 @@ button,
     color: var(--pip-color);
     font-size: 0.75rem;
     opacity: 0.7;
+}
+.ov-trait-clickable {
+    cursor: pointer;
+    border-radius: 2px;
+    padding-left: 4px;
+    margin-left: -4px;
+    transition: background 0.12s;
+}
+.ov-trait-clickable:hover {
+    background: rgba(200,255,212,0.08);
+}
+.ov-trait-clickable:hover > span:not(.ov-trait-dot) {
+    color: #fff;
 }
 
 /* ══════════════════════════════════════════════
@@ -2561,7 +2826,7 @@ button,
     letter-spacing: 1px;
 }
 .trait-slot-name {
-    font-size: 0.97rem !important;
+    font-size: 0.95rem !important;
     color: #c8ffd4 !important;
     letter-spacing: 0.04em;
 }
@@ -3041,7 +3306,7 @@ button,
 
 .pperk-name {
     color: var(--pip-color);
-    font-size: 1.0rem;
+    font-size: 0.95rem;
     font-weight: bold;
     letter-spacing: 0.08em;
     flex: 1;
@@ -3109,6 +3374,42 @@ button,
 .psbtn-implant:hover { background: rgba(128,216,255,0.1); }
 .psbtn-gear { color: #80ffd8; border-color: rgba(100,255,200,0.5); }
 .psbtn-gear:hover { background: rgba(100,255,200,0.1); }
+/* ===== GEAR EFFECTS BANNER ===== */
+.gear-effects-section {
+    margin-top: 18px;
+    border-top: 1px solid rgba(var(--pip-rgb,100,200,100),0.12);
+    padding-top: 10px;
+}
+.gear-effects-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0 0 8px;
+}
+.gear-effects-icon { font-size: 1rem; }
+.gear-effects-title {
+    font-size: 0.83rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--pip-color);
+}
+.gear-effects-sub {
+    font-size: 0.72rem;
+    opacity: 0.4;
+    letter-spacing: 1px;
+    flex: 1;
+}
+.gear-effects-add-btn {
+    font-size: 0.82rem;
+    background: none;
+    border: 1px solid currentColor;
+    color: #80ffd8;
+    padding: 3px 10px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    opacity: 0.7;
+    border-radius: 2px;
+}
 .gear-effects-add-btn:hover { opacity: 1 !important; background: rgba(100,255,200,0.08); }
 
 /* ===== SKILL LOG ===== */
@@ -3203,7 +3504,7 @@ button,
     padding: 6px 8px;
     color: rgba(255,255,255,0.55);
     text-align: center;
-    font-size: 0.76rem;
+    font-size: 0.75rem;
     white-space: nowrap;
     min-width: 44px;
 }
@@ -3243,7 +3544,7 @@ button,
     font-size: 0.80rem;
 }
 .skilllog-zero { color: rgba(255,255,255,0.14); font-size: 0.62rem; }
-.skilllog-gain { color: #80ffb0; font-weight: bold; }
+.skilllog-gain { color: #80ffb0; font-weight: bold; background: rgba(128,255,176, calc(var(--heat, 0) * 0.32)); }
 .skilllog-tagged { color: #ffd080; }
 .skilllog-star { font-size: 0.55rem; margin-left: 1px; vertical-align: super; opacity: 0.8; }
 .skilllog-total-cell {
@@ -3261,7 +3562,7 @@ button,
     border-left: 1px solid rgba(255,255,255,0.08);
     color: rgba(255,255,255,0.65);
     font-weight: bold;
-    font-size: 0.82rem;
+    font-size: 0.80rem;
 }
 .skilllog-pts-row td { border-top: 1px solid rgba(var(--pip-rgb),0.1); }
 .skilllog-budget-label { font-size: 0.55rem !important; letter-spacing: 1px; opacity: 0.38; padding: 4px 10px !important; }
@@ -3483,6 +3784,11 @@ button,
     color: rgba(200,255,212,0.6) !important;
 }
 
+/* Companion zoom modal — gold tint */
+.companion-zoom-box {
+    border-color: rgba(255,216,136,0.45) !important;
+}
+
 /* tab-nav alignment */
 .tab-nav button { text-align: center; }
 
@@ -3513,16 +3819,6 @@ button,
     font-size: 0.9rem !important;
 }
 #perk-zoom-req { color: #ffd060 !important; }
-
-/* gear card labels center */
-.gear-field-label { 
-    display: block; 
-    text-align: center;
-    color: rgba(180,255,180,0.55);
-    font-size: 0.74rem;
-    letter-spacing: 0.08em;
-    margin-bottom: 2px;
-}
 
 /* Perk card desc text - more readable */
 .pperk-desc {
@@ -3669,10 +3965,11 @@ button,
 .gear-skill-type-select {
     width: 100%;
     font-size: 0.7rem !important;
-    padding: 2px 4px;
-    background: transparent;
-    border-bottom: 1px solid rgba(255,255,255,0.12) !important;
+    padding: 4px 6px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid rgba(var(--pip-rgb),0.14) !important;
     color: var(--pip-color);
+    letter-spacing: 1px;
 }
 .gear-str-req-input, .gear-skill-req-input {
     text-align: center;
@@ -3918,23 +4215,7 @@ button,
 }
 /* NS default */
 .theme-btn[data-theme=""].active-theme      { background: #28ff28 !important; border-color: #28ff28 !important; }
-.tbtn-bos.active-theme                      { background: #60a8f0 !important; border-color: #60a8f0 !important; }
-.tbtn-enc.active-theme                      { background: #c8d8ec !important; border-color: #c8d8ec !important; }
-.tbtn-v21.active-theme                      { background: #ff2880 !important; border-color: #ff2880 !important; color: #fff !important; }
-.tbtn-leg.active-theme                      { background: #cc2800 !important; border-color: #cc2800 !important; color: #fff !important; }
-.tbtn-ncr.active-theme                      { background: #c8a840 !important; border-color: #c8a840 !important; }
-/* Hover accent hints */
-.tbtn-bos:hover  { color: #60a8f0 !important; border-color: #60a8f0 !important; border-bottom-color: #60a8f0 !important; }
-.tbtn-enc:hover  { color: #c8d8ec !important; border-color: #c8d8ec !important; border-bottom-color: #c8d8ec !important; }
-.tbtn-v21:hover  { color: #ff2880 !important; border-color: #ff2880 !important; border-bottom-color: #ff2880 !important; }
-.tbtn-leg:hover  { color: #cc2800 !important; border-color: #cc2800 !important; border-bottom-color: #cc2800 !important; }
-.tbtn-ncr:hover  { color: #c8a840 !important; border-color: #c8a840 !important; border-bottom-color: #c8a840 !important; }
-.tbtn-hou.active-theme                      { background: #c060ff !important; border-color: #c060ff !important; color: #fff !important; }
-.tbtn-shi.active-theme                      { background: #38c8a8 !important; border-color: #38c8a8 !important; }
-.tbtn-vtc.active-theme                      { background: #ffd000 !important; border-color: #ffd000 !important; }
-.tbtn-hou:hover  { color: #c060ff !important; border-color: #c060ff !important; border-bottom-color: #c060ff !important; }
-.tbtn-shi:hover  { color: #38c8a8 !important; border-color: #38c8a8 !important; border-bottom-color: #38c8a8 !important; }
-.tbtn-vtc:hover  { color: #ffd000 !important; border-color: #ffd000 !important; border-bottom-color: #ffd000 !important; }
+
 
 
 /* ═════════════════════════════════════════════════════════════════
@@ -4209,7 +4490,7 @@ button,
 
 /* ═══ UNIQUES FILTER BAR ═══ */
 .uni-filter-bar { display:flex; gap:4px; padding:8px 16px; flex-wrap:wrap; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.08); margin-bottom:4px; }
-.uni-filter-btn { font-family:inherit; font-size:0.68rem; letter-spacing:0.12em; text-transform:uppercase; cursor:pointer; padding:3px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.2); color:var(--pip-color); border-radius:2px; opacity:0.5; transition:opacity 0.15s,background 0.15s,border-color 0.15s; }
+.uni-filter-btn { font-family:inherit; font-size:0.72rem; letter-spacing:0.1em; text-transform:uppercase; cursor:pointer; padding:4px 10px; background:transparent; border:1px solid rgba(var(--pip-rgb,100,200,100),0.2); color:var(--pip-color); border-radius:2px; opacity:0.5; transition:opacity 0.15s,background 0.15s,border-color 0.15s; }
 .uni-filter-btn:hover { opacity:0.8; border-color:rgba(var(--pip-rgb,100,200,100),0.4); }
 .uni-filter-btn.active { opacity:1; background:rgba(var(--pip-rgb,100,200,100),0.15); border-color:var(--pip-color); }
 
@@ -4220,11 +4501,11 @@ button,
 .books-sub { font-size: 0.78rem; opacity:0.7; letter-spacing:0.07em; margin-bottom:6px; line-height:1.6; }
 .books-ideologue-active { color:#ffd060; margin-left:8px; letter-spacing:0.1em; }
 .books-count { font-size:0.74rem; letter-spacing:0.14em; color:var(--pip-color); opacity:0.8; }
-.books-empty { padding:40px 20px; text-align:center; opacity:0.4; font-size:0.85rem; letter-spacing:0.1em; }
+.books-empty { padding:40px 20px; text-align:center; opacity:0.4; font-size:0.78rem; letter-spacing:0.1em; }
 .books-checklist { display:flex; flex-direction:column; gap:12px; }
 .book-section { border:1px solid rgba(var(--pip-rgb,100,200,100),0.18); border-radius:3px; background:rgba(0,0,0,0.2); overflow:hidden; }
 .book-section .header-row { padding:10px 12px; cursor:pointer; user-select:none; }
-.book-section .header-row h2 { font-size:0.85rem; }
+.book-section .header-row h2 { font-size:0.9rem; }
 .book-section-skill-inline { font-size:0.7rem; opacity:0.5; letter-spacing:0.15em; text-transform:uppercase; font-weight:normal; }
 .book-copy-item { display:flex; align-items:flex-start; gap:8px; padding:7px 12px; cursor:pointer; transition:background 0.12s; border-bottom:1px solid rgba(var(--pip-rgb,100,200,100),0.06); line-height:1.4; user-select:none; }
 .book-copy-item:last-child { border-bottom:none; }
@@ -4300,106 +4581,6 @@ body.theme-enclave .tab-nav button.active {
     color: #d8e8f8;
 }
 
-/* ── Brotherhood of Steel — Cold Power-Armour Blue ─────────────
-   "Ad Victoriam. Knowledge is power."
-   Icy steel blue HUD. Dark navy chassis. Military hardtech.
-   Circuit-board grid with structural corner rivets.
-──────────────────────────────────────────────────────────────── */
-body.theme-bos {
-    --pip-color:  #4090e0;
-    --pip-bg:     #010306;
-    --pip-bg-2:   #010610;
-    --pip-bg-3:   #020a1a;
-    --pip-border: #0a1e40;
-    --glow-sm:    0 0 8px  rgba(64,144,224,.35);
-    --glow-md:    0 0 20px rgba(64,144,224,.26);
-    --glow-lg:    0 0 40px rgba(64,144,224,.18);
-    --tc-r: 64; --tc-g: 144; --tc-b: 224;
-    --pip-rgb: 64, 144, 224;
-}
-body.theme-bos {
-    background-image:
-        /* power armour plating — heavy hexagonal armour tiles */
-        repeating-linear-gradient(30deg, transparent, transparent 22px,
-            rgba(64,144,224,.020) 22px, rgba(64,144,224,.020) 24px),
-        repeating-linear-gradient(-30deg, transparent, transparent 22px,
-            rgba(64,144,224,.020) 22px, rgba(64,144,224,.020) 24px),
-        repeating-linear-gradient(90deg, transparent, transparent 22px,
-            rgba(64,144,224,.010) 22px, rgba(64,144,224,.010) 23px),
-        /* heavy top vignette — bunker depth */
-        radial-gradient(ellipse at 50% 0%, rgba(2,12,40,.82) 0%, transparent 65%),
-        radial-gradient(ellipse at 50% 100%, rgba(1,6,20,.50) 0%, transparent 55%);
-}
-body.theme-bos header {
-    background: linear-gradient(180deg, #04122a 0%, #010306 100%);
-    border-bottom: 3px solid rgba(64,144,224,.70);
-    border-top: 1px solid rgba(64,144,224,.18);
-    box-shadow: 0 0 32px rgba(64,144,224,.22), inset 0 -2px 0 rgba(64,144,224,.28);
-}
-body.theme-bos .os-title {
-    color: #4090e0;
-    text-shadow: 0 0 12px rgba(64,144,224,.60), 0 0 28px rgba(64,144,224,.25);
-    letter-spacing: 0.18em;
-}
-body.theme-bos .tab-nav button.active {
-    background: rgba(64,144,224,.14);
-    border-color: rgba(64,144,224,.70);
-    color: #80b8f8;
-}
-body.theme-bos h2 {
-    border-left: 3px solid rgba(64,144,224,.60);
-    padding-left: 8px;
-}
-
-/* ── Mr. House / New Vegas — Neon Strip Luxury ─────────────────
-   "The House always wins."
-   Deep midnight with electric violet neon. Vegas Strip at night.
-   Art deco geometry, casino shimmer, pure decadence.
-──────────────────────────────────────────────────────────────── */
-body.theme-house {
-    --pip-color:  #b030ff;
-    --pip-bg:     #020008;
-    --pip-bg-2:   #050014;
-    --pip-bg-3:   #08001e;
-    --pip-border: #280048;
-    --glow-sm:    0 0 8px  rgba(176,48,255,.38);
-    --glow-md:    0 0 24px rgba(176,48,255,.28);
-    --glow-lg:    0 0 50px rgba(176,48,255,.18);
-    --tc-r: 176; --tc-g: 48; --tc-b: 255;
-    --pip-rgb: 176, 48, 255;
-    --accent-gold: #e8c040;
-}
-body.theme-house {
-    background-image:
-        /* skyscraper window grid — New Vegas towers */
-        repeating-linear-gradient(90deg, transparent, transparent 28px,
-            rgba(176,48,255,.022) 28px, rgba(176,48,255,.022) 30px),
-        repeating-linear-gradient(0deg, transparent, transparent 20px,
-            rgba(176,48,255,.016) 20px, rgba(176,48,255,.016) 21px),
-        /* gold pin-stripe accent */
-        repeating-linear-gradient(90deg, transparent, transparent 140px,
-            rgba(232,192,64,.012) 140px, rgba(232,192,64,.012) 141px),
-        /* deep upper vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(60,0,120,.75) 0%, transparent 65%),
-        radial-gradient(ellipse at 50% 100%, rgba(30,0,80,.35) 0%, transparent 60%);
-}
-body.theme-house header {
-    background: linear-gradient(180deg, #12002e 0%, #020008 100%);
-    border-bottom: 2px solid rgba(176,48,255,.75);
-    box-shadow: 0 0 40px rgba(176,48,255,.32), 0 0 10px rgba(232,192,64,.10), inset 0 -1px 0 rgba(176,48,255,.30);
-}
-body.theme-house .os-title {
-    color: #b030ff;
-    text-shadow: 0 0 16px rgba(176,48,255,.65), 0 0 36px rgba(176,48,255,.32);
-    letter-spacing: 0.2em;
-}
-body.theme-house .tab-nav button.active {
-    background: linear-gradient(135deg, #7010b0 0%, #b030ff 100%);
-    color: #fff;
-    font-weight: bold;
-}
-
-
 /* ── The Shi — Eastern Steel & Jade ─────────────────────────
    "The Emperor's calculations are absolute."
    Cold steel-gray with jade-teal accent. Eastern precision.
@@ -4443,55 +4624,6 @@ body.theme-shi h2 {
     border-left: 3px solid #38c8a8;
     padding-left: 8px;
 }
-
-
-/* ── Vault-Tec — Retro-Futurist Gleam ────────────────────────
-   "Revolutionizing safety for an uncertain future!"
-   Vault-Boy Blue + Yellow. Glossy 1950s plastic. Optimistic!
-──────────────────────────────────────────────────────────────── */
-body.theme-vaulttec {
-    --pip-color:  #ffd000;
-    --pip-bg:     #001a30;
-    --pip-bg-2:   #002040;
-    --pip-bg-3:   #002850;
-    --pip-border: #004070;
-    --glow-sm:    0 0 8px  rgba(255,208,0,.30);
-    --glow-md:    0 0 20px rgba(255,208,0,.24);
-    --glow-lg:    0 0 40px rgba(255,208,0,.16);
-    --tc-r: 255; --tc-g: 208; --tc-b: 0;
-    --pip-rgb: 255, 208, 0;
-    --vault-blue: #1066b8;
-}
-body.theme-vaulttec {
-    background-image:
-        /* retro-futurist hexagon/circle tech pattern */
-        radial-gradient(circle at 50% 50%, transparent 30%, rgba(16,102,184,.04) 30%,
-            rgba(16,102,184,.04) 31%, transparent 31%) center / 40px 40px,
-        repeating-linear-gradient(0deg, transparent, transparent 40px,
-            rgba(255,208,0,.018) 40px, rgba(255,208,0,.018) 41px),
-        radial-gradient(ellipse at 50% 0%, rgba(16,60,120,.70) 0%, #001a30 100%);
-}
-body.theme-vaulttec header {
-    background: linear-gradient(180deg, #1066b8 0%, #0a4080 30%, #001a30 100%);
-    border-bottom: 3px solid #ffd000;
-    box-shadow: 0 0 30px rgba(16,102,184,.4), 0 3px 0 #ffd000;
-}
-body.theme-vaulttec .os-title {
-    color: #ffd000;
-    text-shadow: 0 0 10px rgba(255,208,0,.5), 0 2px 0 rgba(0,0,0,.6);
-    letter-spacing: 0.2em;
-}
-body.theme-vaulttec .tab-nav button.active {
-    background: linear-gradient(135deg, #ffd000 0%, #ffec60 100%);
-    color: #001a30;
-    font-weight: bold;
-}
-body.theme-vaulttec section {
-    background: linear-gradient(160deg, #002850 0%, #001a30 60%);
-    border-color: rgba(16,102,184,.45) !important;
-}
-body.theme-vaulttec .perk-card { border-left-color: rgba(16,102,184,.6); }
-body.theme-vaulttec .perk-card:hover { border-left-color: #ffd000; }
 
 
 /* ── Nuka-Cola — Atomic Refreshment ───────────────────────────────
@@ -4560,78 +4692,6 @@ body.theme-nukacola .perk-card {
 body.theme-nukacola .perk-card:hover { 
     border-left-color: #ff3030;
     background: rgba(255,48,48,.06);
-}
-
-/* ── Sierra Madre — Begin Again ───────────────────────────────────
-   "Begin again. Let go."
-   Ghostly red mist. Tarnished gold. Casino of the damned.
-   Holographic shimmer — the Cloud never leaves you.
-──────────────────────────────────────────────────────────────── */
-body.theme-sierramadre {
-    --pip-color:  #d4a050;
-    --pip-bg:     #060400;
-    --pip-bg-2:   #0e0900;
-    --pip-bg-3:   #160e00;
-    --pip-border: #3e2a00;
-    --glow-sm:    0 0 10px rgba(212,160,80,.28);
-    --glow-md:    0 0 24px rgba(212,160,80,.20);
-    --glow-lg:    0 0 48px rgba(212,160,80,.12);
-    --tc-r: 212; --tc-g: 160; --tc-b: 80;
-    --pip-rgb: 212, 160, 80;
-    --accent-cloud: #a06840;
-    --cloud-dust: rgba(255,220,160,.04);
-}
-body.theme-sierramadre {
-    background-image:
-        /* art-deco etching — faded Casino Grande grandeur */
-        repeating-linear-gradient(45deg, transparent, transparent 60px,
-            rgba(212,160,80,.010) 60px, rgba(212,160,80,.010) 62px),
-        repeating-linear-gradient(-45deg, transparent, transparent 60px,
-            rgba(212,160,80,.010) 60px, rgba(212,160,80,.010) 62px),
-        /* the Cloud — drifting dust wisps */
-        radial-gradient(ellipse at 20% 15%, rgba(180,120,40,.10) 0%, transparent 45%),
-        radial-gradient(ellipse at 80% 70%, rgba(160,104,64,.08) 0%, transparent 45%),
-        radial-gradient(ellipse at 55% 45%, rgba(200,140,60,.05) 0%, transparent 35%),
-        /* deep amber vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(80,50,0,.85) 0%, #060400 80%);
-}
-body.theme-sierramadre header {
-    background: linear-gradient(180deg, #3a2200 0%, #1a0e00 50%, #060400 100%);
-    border-bottom: 2px solid rgba(212,160,80,.58);
-    border-top: 1px solid rgba(212,160,80,.22);
-    box-shadow: 0 0 28px rgba(212,160,80,.18), inset 0 -1px 0 rgba(212,160,80,.14);
-}
-body.theme-sierramadre .os-title {
-    color: #d4a050;
-    text-shadow: 0 0 12px rgba(212,160,80,.50), 0 0 28px rgba(212,160,80,.22);
-    letter-spacing: 0.30em;
-}
-body.theme-sierramadre .tab-nav button.active {
-    background: rgba(212,160,80,.10);
-    border-color: rgba(212,160,80,.65);
-    color: #e0b870;
-    box-shadow: 0 0 10px rgba(212,160,80,.28);
-}
-body.theme-sierramadre h2 {
-    border-left: 2px solid rgba(212,160,80,.50);
-    padding-left: 8px;
-}
-body.theme-sierramadre section {
-    background: linear-gradient(160deg, #1e0c06 0%, #0a0402 60%);
-    border-color: rgba(255,96,64,.30) !important;
-}
-body.theme-sierramadre h2 {
-    background: rgba(255,96,64,.06);
-    border-left: 3px solid rgba(255,96,64,.50);
-    color: #ff8060;
-}
-body.theme-sierramadre .perk-card { 
-    border-left-color: rgba(255,96,64,.35);
-    background: rgba(200,152,72,.015);
-}
-body.theme-sierramadre .perk-card:hover { 
-    border-left-color: #ff6040;
-    background: rgba(255,96,64,.08);
 }
 
 /* Include all new themes in the structural override block */
@@ -4826,6 +4886,25 @@ body.theme-sierramadre {
     transition: transform 0.2s, background 0.2s;
 }
 .cond-toggle-hint { font-size: 0.78rem; opacity: 0.5; }
+/* On/off state word — makes the switch read as a control, not decoration */
+.cond-toggle-state {
+    font-family: monospace;
+    font-size: 0.7rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    border-radius: 2px;
+    padding: 1px 4px;
+    line-height: 1.2;
+    transition: color 0.2s, background 0.2s;
+}
+.cond-toggle-state.off {
+    color: rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.06);
+}
+.cond-toggle-state.on {
+    color: rgba(var(--pip-rgb,57,255,14), 0.95);
+    background: rgba(var(--pip-rgb,57,255,14), 0.12);
+}
 /* Context label shown beside the toggle (e.g. "INDOORS", "IN COMBAT") */
 .cond-toggle-ctx-label {
     font-size: 0.75rem;
@@ -4884,6 +4963,37 @@ body.theme-sierramadre {
 .st-tag-chip.cond-active {
     border-color: rgba(57,255,14,.4);
     background: rgba(57,255,14,.06);
+}
+/* Chip context — make the conditional toggle read as a clear control */
+.st-tag-chip .cond-toggle-wrap {
+    gap: 5px;
+    margin: 0;
+    padding: 2px 6px;
+    border: 1px solid rgba(var(--pip-rgb,100,200,100), 0.2);
+    border-radius: 3px;
+    background: rgba(0,0,0,0.25);
+}
+.st-tag-chip .cond-toggle-track {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+}
+.st-tag-chip .cond-toggle-track .cond-toggle-thumb {
+    width: 14px;
+    height: 14px;
+    top: 2px;
+    left: 2px;
+}
+.st-tag-chip .cond-toggle-input:checked + .cond-toggle-track .cond-toggle-thumb {
+    transform: translateX(18px);
+}
+.st-tag-chip .cond-toggle-hint {
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+.st-tag-chip.cond-active .cond-toggle-wrap {
+    border-color: rgba(var(--pip-rgb,57,255,14), 0.5);
+    box-shadow: 0 0 8px rgba(var(--pip-rgb,57,255,14), 0.15);
 }
 /* Modified SPECIAL badge */
 .spec-mod-badge {
@@ -5058,6 +5168,71 @@ body.theme-sierramadre {
     border-top: 2px solid var(--pip-color);
 }
 
+/* ── Mobile MORE sheet (extra tabs) ── */
+.mobile-more-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 650;
+    background: rgba(0,0,0,0.65);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+.mobile-more-sheet {
+    width: 100%;
+    max-width: 100vw;
+    background: var(--pip-bg-2, #0a100a);
+    border-top: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.3);
+    box-shadow: 0 -4px 20px rgba(0,0,0,.5);
+    padding: 14px 12px calc(14px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.mobile-more-title {
+    font-size: 0.72rem;
+    letter-spacing: 2px;
+    opacity: 0.5;
+    padding: 2px 6px 8px;
+    border-bottom: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.15);
+    margin-bottom: 4px;
+}
+.mobile-more-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    padding: 10px 12px;
+    background: transparent;
+    border: 1px solid rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.18);
+    color: var(--pip-color);
+    font-family: var(--font-main);
+    font-size: 0.85rem;
+    letter-spacing: 1px;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s, border-color 0.12s;
+}
+.mobile-more-item:nth-child(even) { background: rgba(255,255,255,0.02); }
+.mobile-more-item:hover,
+.mobile-more-item.mobile-nav-active {
+    background: rgba(var(--tc-r,40),var(--tc-g,255),var(--tc-b,40),.12);
+    border-color: var(--pip-color);
+}
+.mobile-more-close {
+    margin-top: 6px;
+    padding: 10px 12px;
+    background: none;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.7);
+    font-family: var(--font-main);
+    font-size: 0.75rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+}
+
 /* ── Desktop > 1200px — 3-column optimized ── */
 @media (min-width: 1201px) {
     .wrapper {
@@ -5217,20 +5392,6 @@ body.theme-sierramadre {
         .mobile-nav-btn span { display: none; }
     }
 }
-
-/* ── New theme button styles ── */
-/* ── New faction theme button colours ───────────────────────── */
-.tbtn-house.active-theme  { background:#c8a030 !important; border-color:#c8a030 !important; color:#000 !important; }
-.tbtn-unity.active-theme  { background:#8aff6a !important; border-color:#8aff6a !important; color:#000 !important; }
-.tbtn-shi.active-theme    { background:#e83030 !important; border-color:#e83030 !important; }
-.tbtn-khans.active-theme  { background:#cc2020 !important; border-color:#cc2020 !important; }
-.tbtn-vtec.active-theme   { background:#ffd000 !important; border-color:#ffd000 !important; color:#001a30 !important; }
-
-.tbtn-house:hover  { color:#c8a030 !important; border-color:#c8a030 !important; border-bottom-color:#c8a030 !important; }
-.tbtn-unity:hover  { color:#8aff6a !important; border-color:#8aff6a !important; border-bottom-color:#8aff6a !important; }
-.tbtn-shi:hover    { color:#e83030 !important; border-color:#e83030 !important; border-bottom-color:#e83030 !important; }
-.tbtn-khans:hover  { color:#cc2020 !important; border-color:#cc2020 !important; border-bottom-color:#cc2020 !important; }
-.tbtn-vtec:hover   { color:#ffd000 !important; border-color:#ffd000 !important; border-bottom-color:#ffd000 !important; }
 
 /* ══════════════════════════════════════════════════════════════════
    HUD THEME PANEL (notes section dropdown)
@@ -5451,10 +5612,10 @@ body.theme-vaulttec .left-panel::before {
     white-space: nowrap;
 }
 .picker-sort-btn {
-    font-size: 0.75rem;
+    font-size: 0.82rem;
     font-weight: bold;
-    letter-spacing: 0.1em;
-    padding: 3px 10px;
+    letter-spacing: 1px;
+    padding: 5px 10px;
     border: 1px solid rgba(255,255,255,0.15);
     border-bottom: 1px solid rgba(255,255,255,0.15) !important;
     background: rgba(255,255,255,0.03);
@@ -5502,6 +5663,18 @@ body.theme-vaulttec .left-panel::before {
     font-size: 0.7rem;
     margin-right: 6px;
     vertical-align: middle;
+}
+
+/* Perk rank numerals in the PERK & TRAIT LOG (I, II, III...) */
+.ov-rank {
+    display: inline-block;
+    font-size: 0.62rem;
+    font-weight: bold;
+    letter-spacing: 0.08em;
+    color: #ffd060;
+    margin-left: 6px;
+    vertical-align: middle;
+    opacity: 0.9;
 }
 
 .ov-req-met {
@@ -5582,15 +5755,15 @@ body.theme-vaulttec .left-panel::before {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    padding: 12px 0;
-    margin-bottom: 12px;
+    padding: 8px 0;
+    margin-bottom: 6px;
     border-bottom: 1px solid rgba(100, 255, 100, 0.15);
 }
 
 .feature-btn {
     flex: 1;
     min-width: 140px;
-    padding: 8px 12px;
+    padding: 6px 10px;
     font-size: 0.80rem;
     font-weight: bold;
     letter-spacing: 0.5px;
@@ -5893,89 +6066,6 @@ body.theme-vaulttec .left-panel::before {
     letter-spacing: 0.5px;
     text-transform: uppercase;
 }
-/* ── Archetype filter bar ───────────────────────────────────────── */
-#arch-filter-bar {
-    margin-bottom: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-#arch-search.pip-search {
-    width: 100%;
-    box-sizing: border-box;
-    font-size: 0.82rem;
-}
-.arch-filter-grid {
-    display: flex;
-    flex-direction: column;
-    gap: 0;
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 4px;
-    overflow: hidden;
-}
-.arch-filter-row {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    align-items: center;
-    min-height: 32px;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-}
-.arch-filter-row:last-child { border-bottom: none; }
-.arch-filter-label {
-    font-size: 0.68rem;
-    letter-spacing: 1px;
-    opacity: 0.4;
-    white-space: nowrap;
-    text-transform: uppercase;
-    padding: 0 10px;
-    border-right: 1px solid rgba(255,255,255,0.06);
-    align-self: stretch;
-    display: flex;
-    align-items: center;
-    background: rgba(255,255,255,0.02);
-}
-.arch-chip-group {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    padding: 6px 10px;
-}
-.arch-chip {
-    font-family: inherit;
-    font-size: 0.69rem;
-    letter-spacing: 0.5px;
-    padding: 2px 8px;
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 2px;
-    background: transparent;
-    color: rgba(255,255,255,0.4);
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: background 0.12s, color 0.12s, border-color 0.12s;
-    white-space: nowrap;
-    line-height: 1.6;
-}
-.arch-chip:hover {
-    background: rgba(255,255,255,0.07);
-    color: rgba(255,255,255,0.8);
-    border-color: rgba(255,255,255,0.30);
-}
-.arch-chip.active {
-    background: var(--pip-color);
-    color: #000;
-    border-color: var(--pip-color);
-    font-weight: bold;
-}
-.arch-chip-stars {
-    letter-spacing: 1px;
-}
-#arch-filter-count {
-    font-size: 0.57rem;
-    opacity: 0.35;
-    letter-spacing: 1px;
-    padding-left: 2px;
-}
-
 .archetype-detail-box {
     border: 1px solid rgba(255,255,255,0.12);
     border-radius: 8px;
@@ -6087,7 +6177,7 @@ body.theme-vaulttec .left-panel::before {
 #tab-uni.tab-content.scroll-v,
 #tab-skilllog.tab-content.scroll-v,
 #tab-books.tab-content.scroll-v {
-    padding: 14px 16px;
+    padding: 8px 16px;
 }
 
 /* Karma selector gets proper spacing in new left panel */
@@ -6251,127 +6341,11 @@ body.theme-vaulttec .left-panel::before {
 .archetype-card {
     border-radius: 0 !important;
 }
-.arch-chip {
-    border-radius: 0 !important;
-}
 
 /* Modals — sharper */
 .modal-box {
     border-radius: 0 !important;
 }
-
-
-/* ── Old World Blues — Big Mountain Science Lab ─────────────────
-   "Why do I forget things? Oh, it's my brain. Never mind."
-   Bright electric cyan on near-black. Retro-futurist mad science.
-   Tesla coil rings, laboratory tile grid, humming neon tubes.
-──────────────────────────────────────────────────────────────── */
-body.theme-owb {
-    --pip-color:  #00e8d8;
-    --pip-bg:     #000a0c;
-    --pip-bg-2:   #001418;
-    --pip-bg-3:   #001e24;
-    --pip-border: #003c44;
-    --glow-sm:    0 0 8px  rgba(0,232,216,.38);
-    --glow-md:    0 0 22px rgba(0,232,216,.28);
-    --glow-lg:    0 0 48px rgba(0,232,216,.18);
-    --tc-r: 0; --tc-g: 232; --tc-b: 216;
-    --accent-white: #e0fffc;
-}
-body.theme-owb {
-    background-image:
-        /* laboratory tile grid — clean Big Mountain research floor */
-        repeating-linear-gradient(90deg, transparent, transparent 36px,
-            rgba(0,232,216,.022) 36px, rgba(0,232,216,.022) 38px),
-        repeating-linear-gradient(0deg, transparent, transparent 36px,
-            rgba(0,232,216,.022) 36px, rgba(0,232,216,.022) 37px),
-        /* tesla coil ring pulse — concentric glow rings */
-        radial-gradient(ellipse at 50% 50%, rgba(0,232,216,.04) 0%, transparent 35%),
-        radial-gradient(ellipse at 50% 50%, rgba(0,232,216,.025) 0%, transparent 55%),
-        /* deep science-bay vignette */
-        radial-gradient(ellipse at 50% 0%, rgba(0,60,80,.85) 0%, #000a0c 80%);
-}
-body.theme-owb header {
-    background: linear-gradient(180deg, #003040 0%, #001420 50%, #000a0c 100%);
-    border-bottom: 2px solid rgba(0,232,216,.75);
-    border-top: 1px solid rgba(0,232,216,.22);
-    box-shadow: 0 0 36px rgba(0,232,216,.28), inset 0 -1px 0 rgba(0,232,216,.30);
-}
-body.theme-owb .os-title {
-    color: #00e8d8;
-    text-shadow: 0 0 14px rgba(0,232,216,.70), 0 0 32px rgba(0,232,216,.35);
-    letter-spacing: 0.22em;
-}
-body.theme-owb .tab-nav button.active {
-    background: rgba(0,232,216,.14);
-    border-color: rgba(0,232,216,.70);
-    color: #80fff8;
-}
-body.theme-owb h2 {
-    border-left: 3px solid rgba(0,232,216,.60);
-    padding-left: 8px;
-}
-body.theme-owb .plab-trait { color: #80fff8; }
-
-
-/* ── The Pitt — Steel Mill Inferno ─────────────────────────────
-   "Welcome to the Pitt. Now get back to work."
-   Molten slag orange on soot-black. Industrial horror. Furnace heat.
-   Corrugated steel plate texture, heat-bleed vignette.
-──────────────────────────────────────────────────────────────── */
-body.theme-pitt {
-    --pip-color:  #e06020;
-    --pip-bg:     #060200;
-    --pip-bg-2:   #0e0500;
-    --pip-bg-3:   #180800;
-    --pip-border: #4a1800;
-    --glow-sm:    0 0 8px  rgba(224,96,32,.38);
-    --glow-md:    0 0 22px rgba(224,96,32,.28);
-    --glow-lg:    0 0 50px rgba(224,96,32,.18);
-    --tc-r: 224; --tc-g: 96; --tc-b: 32;
-    --accent-slag: #ff8030;
-}
-body.theme-pitt {
-    background-image:
-        /* corrugated steel plate — horizontal ridges */
-        repeating-linear-gradient(0deg, transparent, transparent 4px,
-            rgba(224,96,32,.012) 4px, rgba(224,96,32,.012) 5px),
-        repeating-linear-gradient(0deg, transparent, transparent 12px,
-            rgba(0,0,0,.08) 12px, rgba(0,0,0,.08) 14px),
-        /* riveted vertical seams — steel plate joins */
-        repeating-linear-gradient(90deg, transparent, transparent 64px,
-            rgba(224,96,32,.018) 64px, rgba(224,96,32,.018) 66px),
-        /* furnace heat bloom from below */
-        radial-gradient(ellipse at 50% 110%, rgba(255,80,0,.35) 0%, rgba(180,40,0,.15) 30%, transparent 65%),
-        /* soot vignette top */
-        radial-gradient(ellipse at 50% 0%, rgba(30,10,0,.90) 0%, #060200 75%);
-}
-body.theme-pitt header {
-    background: linear-gradient(180deg, #2a0e00 0%, #100400 50%, #060200 100%);
-    border-bottom: 3px solid rgba(224,96,32,.72);
-    border-top: 1px solid rgba(255,128,48,.18);
-    box-shadow: 0 0 32px rgba(224,96,32,.28), inset 0 -2px 0 rgba(224,96,32,.22);
-}
-body.theme-pitt .os-title {
-    color: #e06020;
-    text-shadow: 0 0 14px rgba(224,96,32,.65), 0 0 32px rgba(224,96,32,.28);
-    letter-spacing: 0.20em;
-}
-body.theme-pitt .tab-nav button.active {
-    background: rgba(224,96,32,.12);
-    border-color: rgba(224,96,32,.68);
-    color: #ff8848;
-}
-body.theme-pitt h2 {
-    border-left: 3px solid rgba(224,96,32,.58);
-    padding-left: 8px;
-}
-body.theme-pitt section {
-    background: linear-gradient(160deg, #180800 0%, #060200 60%) !important;
-}
-body.theme-pitt .plab-trait { color: #ff9050; }
-body.theme-pitt .skill-delta-badge.sdelta-pos,
-body.theme-pitt .spec-delta-badge.sdelta-pos { color: #e06020; border-color: rgba(224,96,32,.40); }
 
 
 /* ── Point Lookout — Chesapeake Swamp ──────────────────────────
@@ -6389,6 +6363,7 @@ body.theme-lookout {
     --glow-md:    0 0 20px rgba(88,192,64,.24);
     --glow-lg:    0 0 44px rgba(88,192,64,.14);
     --tc-r: 88; --tc-g: 192; --tc-b: 64;
+    --pip-rgb: 88, 192, 64;
     --accent-fog: rgba(160,220,100,.06);
 }
 body.theme-lookout {
@@ -6449,6 +6424,7 @@ body.theme-tlane {
     --glow-md:    0 0 16px rgba(24,112,200,.14);
     --glow-lg:    0 0 32px rgba(24,112,200,.08);
     --tc-r: 24; --tc-g: 112; --tc-b: 200;
+    --pip-rgb: 24, 112, 200;
     --accent-red: #d03030;
     --accent-cream: #fff8e8;
 }
@@ -6837,6 +6813,8 @@ body.theme-vaulttec section {
     background: linear-gradient(160deg, #003268 0%, #00224a 60%) !important;
     border-color: rgba(0,80,144,.55) !important;
 }
+body.theme-vaulttec .perk-card { border-left-color: rgba(16,102,184,.6); }
+body.theme-vaulttec .perk-card:hover { border-left-color: #ffd000; }
 body.theme-vaulttec .plab-trait { color: #ffe055; }
 /* ── 2. Brotherhood of Steel ─────────────────────────────────────
    Cold military hardware. Steel blue on deep navy-black.
@@ -7132,6 +7110,23 @@ body.theme-sierramadre .tab-nav button.active {
 body.theme-sierramadre h2 {
     border-left: 2px solid rgba(200,144,64,.50);
     padding-left: 8px;
+}
+body.theme-sierramadre section {
+    background: linear-gradient(160deg, #1e0c06 0%, #0a0402 60%);
+    border-color: rgba(255,96,64,.30) !important;
+}
+body.theme-sierramadre h2 {
+    background: rgba(255,96,64,.06);
+    border-left: 3px solid rgba(255,96,64,.50);
+    color: #ff8060;
+}
+body.theme-sierramadre .perk-card {
+    border-left-color: rgba(255,96,64,.35);
+    background: rgba(200,152,72,.015);
+}
+body.theme-sierramadre .perk-card:hover {
+    border-left-color: #ff6040;
+    background: rgba(255,96,64,.08);
 }
 body.theme-sierramadre .plab-trait { color: #deb050; }
 
@@ -7466,7 +7461,9 @@ button, input { transition: all 0.15s ease; }
 .companion-panel-icon { font-size: 1.15rem; line-height: 1.3; }
 .companion-panel-body { flex: 1; min-width: 0; }
 .companion-panel-name { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: bold; color: #ffd888; }
-.companion-panel-desc { font-size: 0.72rem; color: rgba(255,255,255,0.6); line-height: 1.45; margin-top: 2px; white-space: pre-line; }
+/* Compact companions card: icon + name only; click name for popup */
+.companion-name-btn { cursor: pointer; }
+.companion-name-btn:hover { text-decoration: underline; text-underline-offset: 2px; }
 .companion-remove-btn {
     background: none; border: 1px solid rgba(255,80,80,0.4); color: rgba(255,80,80,0.8);
     font-size: 0.7rem; padding: 1px 6px; cursor: pointer; line-height: 1.3;

@@ -34,6 +34,13 @@ let mode = 'std', origin = 'CW', special = { STR: 5, PER: 5, END: 5, CHA: 5, INT
 let currentSort = 'az';
 let skillPoints = { BARTER:0,'BIG GUNS':0,'ENERGY WEAPONS':0,EXPLOSIVES:0,GUNS:0,LOCKPICK:0,MEDICINE:0,'MELEE WEAPONS':0,REPAIR:0,SCIENCE:0,SNEAK:0,SPEECH:0,SURVIVAL:0,UNARMED:0 };
 let charLevel = 1;
+// Creation choices (SPECIAL, starting traits, tagged skills) lock once the
+// character levels up for the first time. Lock is derived from level so that
+// a ROLLBACK back to level 1 re-enables editing.
+function isCreationLocked() { return charLevel > 1; }
+// Starting traits stay editable even after level-up (SPECIAL and tagged
+// skills remain gated by isCreationLocked).
+function isTraitsLocked() { return false; }
 let companions = []; // [{ name, butchBonus: 'improved' | 'worsened' | null }]
 let levelUpBonuses = []; // Tracks level-up bonus choices: 'hp', 'ap', or 'cw' for each level
 let showEligibleOnly = false;
@@ -103,6 +110,29 @@ function getTaggedSkills() {
     if (_fourthTagSkill && !t.has(_fourthTagSkill)) t.add(_fourthTagSkill);
     return t;
 }
+/* Level at which Tag! is taken in the current progression (null if absent). */
+function tagPerkLevel() {
+    let lvl = null;
+    document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)').forEach(row => {
+        if (lvl !== null) return;
+        const name = (row.querySelector('.prog-name-input')?.value || '').trim();
+        if (!/^tag!/i.test(name)) return;
+        const tag = row.querySelector('.lvl-tag');
+        const m = tag && tag.textContent.match(/\d+/);
+        if (m) lvl = parseInt(m[0], 10);
+    });
+    return lvl;
+}
+/* Tags in force for the level being built right now. The fourth tag only counts
+   from the level AFTER Tag! is taken: that level's points are spent before the
+   perk is picked (confirmLevelUp runs before the perk prompt), so pre-perk rows
+   must never record a tagged x2 on it. */
+function getLevelUpTaggedSkills() {
+    const t = getTaggedSkills();
+    const tl = tagPerkLevel();
+    if (_fourthTagSkill && tl !== null && (charLevel + 1) <= tl) t.delete(_fourthTagSkill);
+    return t;
+}
 function skillTotal(s) {
     const c = getCachedBonuses();
     const _td = (c.trait.skillDelta[s]||0);
@@ -123,9 +153,17 @@ function skillBaseForEligibility(s) {
 }
 // GECK wiki formula: Floor(Min(INT,9) * 0.5 + 10)
 // This equals 10 + floor(INT/2), capped at INT 9 = 14 pts
-function pointsPerLevel() {
-    const int = Math.max(1, special.INT || 1);
-    const base = Math.floor(Math.min(int, 9) * 0.5 + 10);
+// Rule A: For an ODD effective INT, the per-level point total alternates with the
+//         level being reached (even/odd). Odd levels use the value of INT-1, even
+//         levels use the value of INT+1 (e.g. effective INT 5: level 1 = INT4 pts,
+//         level 2 = INT6 pts, repeating). Even effective INT stays flat as before.
+function pointsPerLevel(atLevel) {
+    // Use effective INT (base + trait/perk/conditional/gear) so +INT modifiers affect skill points
+    const int = Math.max(1, effectiveSpecial('INT') || 1);
+    const eff = (int % 2 === 1)
+        ? ((atLevel % 2 === 1) ? Math.max(1, int - 1) : int + 1)
+        : int;
+    const base = Math.floor(Math.min(eff, 9) * 0.5 + 10);
     // Architect toggle: +floor(INT/2) when indoors
     const { skillPtsPerLevel } = getCachedBonuses().cond;
     // Ideologue trait: +1 skill point per level
@@ -287,24 +325,112 @@ let startingTraits = []; // free-form list of starting traits
 let conditionalToggles = {}; // e.g. { "Alertness": true, "Night Person": false }
 
 function setConditionalToggle(name, val) {
+    if (isKarmaDrivenConditional(name)) return;  // karma-driven → auto-applied, never stored manually
     conditionalToggles[name] = !!val;
     updateAll();          // full re-render so skills, SPECIAL badges, and overview all sync
+    syncProgToggleStates(); // prog/extra rows persist in the DOM, so sync their checkboxes/highlight
     triggerAutosave();
 }
 
+function syncProgToggleStates() {
+    document.querySelectorAll('#prog-list .prog-row, #level-up-traits-list .prog-row, #extra-perk-list .prog-row, #starting-traits-list .st-tag-chip').forEach(row => {
+        const ni = row.querySelector('.prog-name-input');
+        let base = '';
+        if (ni) {
+            base = ni.value.trim().replace(/\s*[\[(].*?[\])]$/, '').trim();
+        } else {
+            base = (row.getAttribute('data-chosen') || '').trim();
+        }
+        if (!base) return;
+        const isCond = (CONDITIONAL_PERK_NAMES && CONDITIONAL_PERK_NAMES.has(base)) ||
+                       (TRAIT_CONDITIONAL_NAMES && TRAIT_CONDITIONAL_NAMES.has(base));
+        if (!isCond) return;
+        const active = isConditionalActive(base);
+        const cb = row.querySelector('.cond-toggle-input');
+        if (cb) cb.checked = active;
+        row.classList.toggle('cond-active', active);
+        const st = row.querySelector('.cond-toggle-state');
+        if (st) {
+            st.textContent = active ? 'ON' : 'OFF';
+            st.classList.toggle('on', active);
+            st.classList.toggle('off', !active);
+        }
+    });
+}
+
+/* Karma-driven conditional traits/perks (e.g. Twisted, Devil's Advocate, Non Ducor,
+ * Duco) have no manual toggle: the effect auto-applies from the karma selected on
+ * the planner.  CTB entry shape: { karma: ['evil','very-evil'], special/skills: ... }
+ */
+function isKarmaActive(tiers) {
+    return Array.isArray(tiers) && tiers.includes(buildKarma);
+}
+
+function isKarmaDrivenConditional(name) {
+    const b = CONDITIONAL_TOGGLE_BONUSES && CONDITIONAL_TOGGLE_BONUSES[name];
+    return !!(b && b.karma);
+}
+
 function isConditionalActive(name) {
+    // Level-parity traits (e.g. Polar Personality) are locked to the current
+    // character level — even = ON (SOCIALS), odd = OFF (COMBAT) — no checkbox.
+    if (CONDITIONAL_TOGGLE_BONUSES[name] && CONDITIONAL_TOGGLE_BONUSES[name].parity) {
+        return typeof charLevel === 'number' && charLevel % 2 === 0;
+    }
+    // Karma-driven traits/perks follow the build's karma automatically — no checkbox.
+    if (isKarmaDrivenConditional(name)) {
+        return isKarmaActive(CONDITIONAL_TOGGLE_BONUSES[name].karma);
+    }
     return !!conditionalToggles[name];
+}
+
+/* Whether the character currently holds a trait (starting or level-up slot). */
+function characterHasTrait(name) {
+    if (Array.isArray(startingTraits)) {
+        for (const t of startingTraits) {
+            if (t && (t.name === name || t === name)) return true;
+        }
+    }
+    const rows = document.querySelectorAll('#level-up-traits-list .trait-slot-row');
+    for (const row of rows) {
+        if ((row.getAttribute('data-chosen') || '').trim() === name) return true;
+    }
+    return false;
+}
+
+/* Whether the character holds a trait/perk anywhere (starting, level-up, reward,
+ * extra/internalized-grant) — scans the same DOM rows the cond toggles render in.
+ */
+function characterHasName(name) {
+    if (Array.isArray(startingTraits)) {
+        for (const t of startingTraits) {
+            if (t && (t.name === name || t === name)) return true;
+        }
+    }
+    const rows = document.querySelectorAll('#prog-list .prog-row, #level-up-traits-list .prog-row, #extra-perk-list .prog-row, #reward-perks-list .prog-row, #starting-traits-list .st-tag-chip');
+    for (const row of rows) {
+        const ni = row.querySelector('.prog-name-input');
+        let base = '';
+        if (ni) {
+            base = ni.value.trim().replace(/\s*[\[(].*?[\])]$/, '').trim();
+        } else {
+            base = (row.getAttribute('data-chosen') || '').trim();
+        }
+        if (base === name) return true;
+    }
+    return false;
 }
 
 /* Returns only conditional toggle bonuses for currently toggled-on items */
 function getConditionalToggleDelta() {
     const specDelta = {};
     const skillDelta = {};
+    const paritySkillDelta = {};
     let skillPtsPerLevel = 0;
     for (const [name, isOn] of Object.entries(conditionalToggles)) {
         if (!isOn) continue;
         const bonus = CONDITIONAL_TOGGLE_BONUSES[name];
-        if (!bonus) continue;
+        if (!bonus || bonus.karma) continue;   // karma-driven handled below (auto)
         if (bonus.special) {
             for (const [k, v] of Object.entries(bonus.special)) {
                 specDelta[k] = (specDelta[k] || 0) + v;
@@ -320,7 +446,41 @@ function getConditionalToggleDelta() {
             skillPtsPerLevel += Math.floor((special.INT || 1) / 2);
         }
     }
-    return { specDelta, skillDelta, skillPtsPerLevel };
+    // Level-parity traits: the side is derived from the current character level
+    // and behaves like a toggle for DISPLAY only. The same swing is also returned
+    // separately as paritySkillDelta so level-up caps can exclude it — the ledger
+    // stays identical on both sides of the split.
+    for (const [name, bonus] of Object.entries(CONDITIONAL_TOGGLE_BONUSES)) {
+        if (!bonus || !bonus.parity) continue;
+        if (!characterHasTrait(name)) continue;
+        const even = typeof charLevel === 'number' && charLevel % 2 === 0;
+        const side = even ? (bonus.on || {}) : (bonus.off || {});
+        for (const [k, v] of Object.entries(side.skills || {})) {
+            skillDelta[k] = (skillDelta[k] || 0) + v;
+            paritySkillDelta[k] = (paritySkillDelta[k] || 0) + v;
+        }
+    }
+    // Karma-driven traits/perks: the effect auto-applies for the karma selected
+    // on the planner (display only — never counted in perk/trait eligibility).
+    for (const [name, bonus] of Object.entries(CONDITIONAL_TOGGLE_BONUSES)) {
+        if (!bonus || !bonus.karma) continue;
+        if (!characterHasName(name)) continue;
+        if (!isKarmaActive(bonus.karma)) continue;
+        if (bonus.special) {
+            for (const [k, v] of Object.entries(bonus.special)) {
+                specDelta[k] = (specDelta[k] || 0) + v;
+            }
+        }
+        if (bonus.skills) {
+            for (const [k, v] of Object.entries(bonus.skills)) {
+                skillDelta[k] = (skillDelta[k] || 0) + v;
+            }
+        }
+        if (bonus.skillPtsPerLevel) {
+            skillPtsPerLevel += Math.floor((special.INT || 1) / 2);
+        }
+    }
+    return { specDelta, skillDelta, skillPtsPerLevel, paritySkillDelta };
 }
 
 /* ===== GEAR EFFECTS ===== */
@@ -519,7 +679,10 @@ function checkTraitEligible(trait, opts) {
 function openTraitModal(slotId) {
     _traitSlotId = slotId;
     // If this isn't a level-up call, clear the level picker state
-    if (slotId !== '__levelup__') _traitPickerLevel = null;
+    if (slotId !== '__levelup__') {
+        const lvlM = /^trait-slot-lvl-(\d+)$/.exec(slotId || '');
+        _traitPickerLevel = lvlM ? parseInt(lvlM[1]) : null;
+    }
     const titleEl = document.getElementById('trait-picker-title');
     if (titleEl) {
         if (_traitPickerLevel) {
@@ -589,6 +752,8 @@ let _traitPickerList  = [];
 let _traitPickerSort  = 'az';   // 'az' | 'req'
 
 function renderTraitGrid(search) {
+    beginBonusCache();
+    try {
     const container = document.getElementById('trait-modal-grid');
     if (!container) return;
     const q = (search || '').toLowerCase();
@@ -617,7 +782,7 @@ function renderTraitGrid(search) {
     // Pre-compute eligibility once per trait — checkTraitEligible does DOM reads internally
     // (it calls getChosenTraitNames and effectiveSpecial), so caching avoids doing that
     // work O(n) times during sort, O(n) times for the count, and O(n) times for HTML build.
-    const natMap = new Map(filtered.map(t => [t.name, checkTraitEligible(t)]));
+    const natMap = new Map(filtered.map(t => [t.name, checkTraitEligible(t, { chosen: chosenUp })]));
     const eligMap = new Map(filtered.map(t => [t.name, _forceEnable ? true : natMap.get(t.name)]));
 
     // Sort: eligible group first, then ineligible — within each group apply chosen sort
@@ -669,6 +834,7 @@ function renderTraitGrid(search) {
             <button class="ptrait-take-btn">${btnLabel}</button>
         </div>`;
     }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO TRAITS FOUND</div>';
+    } finally { endBonusCache(); }
 }
 
 function selectTraitByIndex(i) {
@@ -678,24 +844,56 @@ function selectTraitByIndex(i) {
     selectTraitForSlot(t.name);
 }
 
+/* ===== LEVEL-UP TRAIT SLOT HELPERS =====
+ * Level-up trait slots exist at LVL 5, 9, 13, ... 49 (12 possible levels) but only
+ * a row is rendered once a trait has actually been taken at that level — the list
+ * is never pre-populated with empty slots.
+ */
+const LEVEL_UP_TRAIT_LEVELS = Array.from({ length: 12 }, (_, i) => 5 + i * 4);
+
+function nextOpenLevelUpSlot() {
+    for (const lvl of LEVEL_UP_TRAIT_LEVELS) {
+        const slotId = 'trait-slot-lvl-' + lvl;
+        const row = document.getElementById(slotId);
+        if (!row || !(row.getAttribute('data-chosen') || '').trim()) return slotId;
+    }
+    return null;
+}
+
+function ensureTraitSlotRow(slotId) {
+    const list = document.getElementById('level-up-traits-list');
+    if (!list || document.getElementById(slotId)) return;
+    const lvlM = /^trait-slot-lvl-(\d+)$/.exec(slotId || '');
+    if (!lvlM) return;
+    const lvl = parseInt(lvlM[1]);
+    const tmp = document.createElement('div');
+    tmp.innerHTML = makeTraitRow(slotId, `LVL ${lvl} TRAIT`, '');
+    const row = tmp.firstElementChild;
+    // Insert in level order so the list stays chronological
+    const existing = Array.from(list.querySelectorAll('.trait-slot-row'));
+    let anchor = null;
+    for (const r of existing) {
+        const m = /^trait-slot-lvl-(\d+)$/.exec(r.id || '');
+        if (m && parseInt(m[1]) > lvl) { anchor = r; break; }
+    }
+    if (anchor) list.insertBefore(row, anchor);
+    else list.appendChild(row);
+}
+
 function selectTraitForSlot(traitName) {
     // Starting trait mode
     if (_traitSlotId === '__starting__') { addStartingTrait(traitName); return; }
     if (!_traitSlotId) {
-        // Called from view-all mode — find first empty trait slot
-        const emptySlot = Array.from(document.querySelectorAll('.trait-slot-row')).find(r => !(r.getAttribute('data-chosen') || '').trim());
-        if (!emptySlot) { closeTraitModal(); return; }
-        _traitSlotId = emptySlot.id;
+        // Called from view-all mode — target the next un-taken level-up slot
+        _traitSlotId = nextOpenLevelUpSlot();
+        if (!_traitSlotId) { closeTraitModal(); return; }
     }
+    ensureTraitSlotRow(_traitSlotId);
     const row = document.getElementById(_traitSlotId);
     if (!row) { closeTraitModal(); return; }
     row.setAttribute('data-chosen', traitName);
-    const nameEl = row.querySelector('.trait-slot-name');
-    const btn = row.querySelector('.trait-slot-btn');
-    const clearBtn = row.querySelector('.trait-slot-clear');
-    if (nameEl) nameEl.textContent = traitName;
-    if (btn) btn.textContent = 'CHANGE';
-    if (clearBtn) clearBtn.style.display = 'inline-block';
+    // Rebuild the row in place so conditional traits get their ⚡ toggle rendered
+    rerenderTraitSlot(_traitSlotId);
     closeTraitModal();
     updateAll();
     triggerAutosave();
@@ -706,10 +904,11 @@ function clearTraitSlot(slotId) {
     const row = document.getElementById(slotId);
     if (!row) return;
     pushUndoState();   // make clear undoable, consistent with selectTraitForSlot
-    row.setAttribute('data-chosen', '');
-    row.querySelector('.trait-slot-name').textContent = 'NONE SELECTED';
-    row.querySelector('.trait-slot-btn').textContent = 'SELECT';
-    row.querySelector('.trait-slot-clear').style.display = 'none';
+    const name = (row.getAttribute('data-chosen') || '').trim();
+    // Purge any conditional toggle state for the cleared trait
+    if (name && conditionalToggles) delete conditionalToggles[name];
+    // Rows are only shown for taken traits — clearing removes the row entirely
+    row.remove();
     updateAll();       // re-render skills/SPECIAL so trait bonuses are immediately removed
     triggerAutosave();
 }
@@ -744,7 +943,27 @@ const COND_TOGGLE_LABELS = {
     "Ascetic":           "IN COMBAT",
     "Vain":              "> 90% HP",
     "Patriot":           "INT ≤ 4",
+    "Boiadero":          "HOLDING CIGS",
+    "Clothes Make The Courier": "WEARING CLOTHES",
+    "Headless Courier":    "NO HEADGEAR",
+    "Gun Guru":          "AT RELOADING BENCH",
+    "Hardy":             "HUNGRY",
+    "Wolf In Sheep's Clothing": "DISGUISED",
+    "Devil's Advocate":  "VERY EVIL",
+    "Gallows Humor":     "POST-KILL 30S",
+    "(Inexplicable) Feminist Agenda": "TALKING TO WOMEN",
+    "Prohibition":       "UNDER ALCOHOL",
+    "Atom Bomb Baby":    "ARMORED",
     "Non Ducor, Duco":   "GOOD KARMA",
+    "Alertness":                   "CROUCHED & STILL",
+    "Irradiated Beauty":           "≥250 RADS",
+    "Thirsty":                     "DEHYDRATED",
+    "Fight Hungry":                "STARVING",
+    "Walker Instinct":             "OUTDOORS",
+    "Wasteland Masquerade":        "DISGUISED",
+    "My Own Master Now":           "FACTION HATED",
+    "Collective Consciousness":    "FACTION LIKED",
+    "Avant Apocalypse":            "RAIDER ARMOR",
 };
 
 /* ===== CONDITIONAL TOGGLE HTML HELPER =====
@@ -759,16 +978,42 @@ const COND_TOGGLE_LABELS = {
  *                                 (pass 'trait-row-toggle' from makeTraitRow only)
  */
 function makeCondToggleHtml(name, ctxLabel, isActive, extraClass) {
-    const safeName  = name.replace(/'/g, "\\'");
+    // Level-parity traits render a read-only live indicator instead of a checkbox.
+    const bonus = CONDITIONAL_TOGGLE_BONUSES[name];
     const wrapClass = extraClass ? `cond-toggle-wrap ${extraClass}` : 'cond-toggle-wrap';
-    // Only the trait-row variant uses an extra title attribute on the hint icon
     const hintExtra = extraClass ? ` title="${ctxLabel}"` : '';
+    if (bonus && bonus.parity) {
+        const even = typeof charLevel === 'number' && charLevel % 2 === 0;
+        const sideLabel = even ? 'EVEN · SOCIALS' : 'ODD · COMBAT';
+        const state = even ? 'ON' : 'OFF';
+        return `<span class="${wrapClass}" title="Level-locked (display only — never affects eligibility)">
+            <label class="cond-toggle-lbl"><span class="cond-toggle-static">${sideLabel}</span></label>
+            <span class="cond-toggle-state ${state === 'ON' ? 'on' : 'off'}">${state}</span>
+            <span class="cond-toggle-hint"${hintExtra}>⚡</span>
+            <span class="cond-toggle-ctx-label">${ctxLabel}</span>
+        </span>`;
+    }
+    // Karma-driven traits/perks render a read-only indicator locked to the build's
+    // karma — the effect auto-applies; there is no manual checkbox.
+    if (bonus && bonus.karma) {
+        const active = isKarmaActive(bonus.karma);
+        const state = active ? 'ON' : 'OFF';
+        return `<span class="${wrapClass}" title="Karma-locked (display only — never affects eligibility)">
+            <label class="cond-toggle-lbl"><span class="cond-toggle-static">${ctxLabel}</span></label>
+            <span class="cond-toggle-state ${state === 'ON' ? 'on' : 'off'}">${state}</span>
+            <span class="cond-toggle-hint"${hintExtra}>⚡</span>
+            <span class="cond-toggle-ctx-label">KARMA-LOCKED</span>
+        </span>`;
+    }
+    const safeName  = name.replace(/'/g, "\\'");
+    // Only the trait-row variant uses an extra title attribute on the hint icon
     return `<span class="${wrapClass}" title="Toggle: ${ctxLabel} (display only — never affects eligibility)">
             <label class="cond-toggle-lbl">
                 <input type="checkbox" class="cond-toggle-input" ${isActive ? 'checked' : ''}
                     onchange="setConditionalToggle('${safeName}', this.checked)">
                 <span class="cond-toggle-track"><span class="cond-toggle-thumb"></span></span>
             </label>
+            <span class="cond-toggle-state ${isActive ? 'on' : 'off'}">${isActive ? 'ON' : 'OFF'}</span>
             <span class="cond-toggle-hint"${hintExtra}>⚡</span>
             <span class="cond-toggle-ctx-label">${ctxLabel}</span>
         </span>`;
@@ -799,6 +1044,21 @@ function makeTraitRow(slotId, levelLabel, chosenName) {
             ${toggleHtml}
         </div>
     </div>`;
+}
+
+/* ===== LEVEL-UP TRAIT SLOT RE-RENDER =====
+ * Rebuilds a single level-up trait slot row in place so a conditional trait's
+ * ⚡ toggle appears immediately after it is chosen, cleared, or restored from
+ * a saved build. Conditional bonuses are display-only and never affect
+ * perk/trait eligibility (see effectiveSpecial / skillBaseForEligibility).
+ */
+function rerenderTraitSlot(slotId) {
+    const row = document.getElementById(slotId);
+    if (!row) return;
+    const name = (row.getAttribute('data-chosen') || '').trim();
+    const lvlM = /^trait-slot-lvl-(\d+)$/.exec(slotId || '');
+    const lvlLabel = lvlM ? `LVL ${lvlM[1]} TRAIT` : '';
+    row.outerHTML = makeTraitRow(slotId, lvlLabel, name);
 }
 
 /* ===== IMPLANTS ===== */
@@ -1110,7 +1370,9 @@ function renderSkillLog() {
             const wasTagged = entry.tagged && entry.tagged.includes(s);
             rowTotal += gain;
             if (gain === 0) return `<td class="skilllog-cell skilllog-zero">—</td>`;
-            return `<td class="skilllog-cell skilllog-gain${wasTagged ? ' skilllog-tagged' : ''}" title="${wasTagged ? '★ Tagged — 2 pts gained per 1 spent' : `+${gain} pts`}">+${gain}${wasTagged ? '<span class="skilllog-star">★</span>' : ''}</td>`;
+            // Heat bar: intensity scales with share of that level's point budget spent
+            const heat = Math.min(1, gain / Math.max(1, entry.pointsTotal || 1));
+            return `<td class="skilllog-cell skilllog-gain${wasTagged ? ' skilllog-tagged' : ''}" style="--heat:${heat.toFixed(2)}" title="${wasTagged ? '★ Tagged — 2 pts gained per 1 spent' : `+${gain} pts`}">+${gain}${wasTagged ? '<span class="skilllog-star">★</span>' : ''}</td>`;
         }).join('');
         const tagMark = isTagged ? '<span class="skilllog-name-star">★</span>' : '';
         return `<tr class="skilllog-row${isTagged ? ' skilllog-row-tagged' : ''}">
@@ -1147,8 +1409,24 @@ function renderSkillLog() {
 function renderStartingTraitsList() {
     const container = document.getElementById('starting-traits-list');
     if (!container) return;
+    const locked = isTraitsLocked();
     const addBtn = document.querySelector('.cs-start-trait-btn');
-    if (addBtn) { addBtn.style.opacity = ''; addBtn.title = 'ADD STARTING TRAIT'; }
+    if (addBtn) {
+        if (locked) {
+            addBtn.style.opacity = '0.3';
+            addBtn.style.pointerEvents = 'none';
+            addBtn.title = 'LOCKED AFTER FIRST LEVEL-UP';
+        } else {
+            addBtn.style.opacity = '';
+            addBtn.style.pointerEvents = '';
+            addBtn.title = 'ADD STARTING TRAIT';
+        }
+    }
+    const progAddBtn = document.querySelector('.psbtn-trait');
+    if (progAddBtn) {
+        if (locked) { progAddBtn.disabled = true; progAddBtn.style.opacity = '0.3'; progAddBtn.title = 'LOCKED AFTER FIRST LEVEL-UP'; }
+        else { progAddBtn.disabled = false; progAddBtn.style.opacity = ''; progAddBtn.title = ''; }
+    }
     if (startingTraits.length === 0) {
         container.innerHTML = '<div style="font-size:0.58rem; opacity:0.3; padding:6px 0; letter-spacing:1px;">NO STARTING TRAITS SELECTED</div>';
         return;
@@ -1159,16 +1437,17 @@ function renderStartingTraitsList() {
         const ctxLabel = isConditional ? (COND_TOGGLE_LABELS[t.name] || 'ACTIVE') : '';
         const toggleHtml = isConditional ? makeCondToggleHtml(t.name, ctxLabel, isActive) : '';
         return `
-        <div class="st-tag-chip ${isActive ? 'cond-active' : ''}">
+        <div class="st-tag-chip ${isActive ? 'cond-active' : ''} ${locked ? 'creation-locked' : ''}">
             <span class="st-tag-name" onclick="openTraitDetailModal('${t.name}', {type:'starting', idx:${idx}})" style="cursor:pointer;">${t.name}${isConditional ? ' <span class="cond-icon">⚡</span>' : ''}</span>
             ${toggleHtml}
             <button class="st-tag-detail-btn" onclick="openTraitDetailModal('${t.name}', {type:'starting', idx:${idx}})" title="View / Remove">?</button>
-            <button class="st-tag-remove" onclick="removeStartingTrait(${idx})" title="Remove trait">✕</button>
+            ${locked ? '' : `<button class="st-tag-remove" onclick="removeStartingTrait(${idx})" title="Remove trait">✕</button>`}
         </div>`;
     }).join('');
 }
 
 function addStartingTrait(name) {
+    if (isTraitsLocked()) { closeTraitModal(); showToast('STARTING TRAITS CANNOT CHANGE.', 3200); return; }
     if (startingTraits.some(t => t.name === name)) { closeTraitModal(); return; }
     startingTraits.push({ name });
     renderStartingTraitsList();
@@ -1179,6 +1458,9 @@ function addStartingTrait(name) {
 }
 
 function removeStartingTrait(idx) {
+    if (isTraitsLocked()) { showToast('STARTING TRAITS CANNOT CHANGE.', 3200); return; }
+    const name = startingTraits[idx] && startingTraits[idx].name;
+    if (name) delete conditionalToggles[name];
     startingTraits.splice(idx, 1);
     renderStartingTraitsList();
     updateAll();
@@ -1186,6 +1468,7 @@ function removeStartingTrait(idx) {
 }
 
 function openStartingTraitModal() {
+    if (isTraitsLocked()) { showToast('STARTING TRAITS CANNOT CHANGE.', 3200); return; }
     _traitSlotId = '__starting__';
     syncForceButtons();
     document.getElementById('trait-modal').style.display = 'flex';
@@ -1272,8 +1555,11 @@ function addRewardPerk(name) {
 }
 
 function removeRewardPerk(idx) {
+    const name = rewardPerksList[idx] && rewardPerksList[idx].name;
+    if (name) delete conditionalToggles[name];
     rewardPerksList.splice(idx, 1);
     renderRewardPerksList();
+    updateAll();
     triggerAutosave();
 }
 
@@ -1392,6 +1678,11 @@ function sanitizeImport(d) {
     clean.implantsTaken = (d.implantsTaken && typeof d.implantsTaken === 'object') ? Object.fromEntries(Object.entries(d.implantsTaken).filter(([k,v]) => typeof k === 'string' && typeof v === 'boolean')) : {};
     clean.rewardPerksList = Array.isArray(d.rewardPerksList) ? d.rewardPerksList.slice(0,100).map(rp => ({ name: sanitizeStr(rp.name||''), notes: sanitizeStr(rp.notes||'') })) : [];
     clean.internalizedTraitsList = Array.isArray(d.internalizedTraitsList) ? d.internalizedTraitsList.slice(0,50).map(it => ({ name: sanitizeStr(it.name||''), notes: sanitizeStr(it.notes||'') })) : [];
+    clean.gearEffectsList = Array.isArray(d.gearEffectsList) ? d.gearEffectsList.slice(0, 200).map(ge =>
+        (ge && typeof ge === 'object')
+            ? { name: sanitizeStr(ge.name || ''), effect: sanitizeStr(ge.effect || ''), notes: sanitizeStr(ge.notes || ''), toggled: ge.toggled !== false }
+            : { name: '', effect: '', notes: '', toggled: true }
+    ).filter(ge => ge.name && ge.effect) : [];
     clean.perks = Array.isArray(d.perks) ? d.perks.map(arr =>
         Array.isArray(arr) ? arr.map(v => sanitizeStr(v || '')) : ['', '']
     ) : [];
@@ -1474,7 +1765,7 @@ function sanitizeImport(d) {
     clean.currentBuildName = sanitizeStr(d.currentBuildName || 'Current Build');
     clean.buildKarma = ['very-good','good','neutral','evil','very-evil'].includes(d.buildKarma) ? d.buildKarma : 'neutral';
     clean.conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object')
-        ? Object.fromEntries(Object.entries(d.conditionalToggles).filter(([k,v]) => typeof k === 'string' && typeof v === 'boolean'))
+        ? Object.fromEntries(Object.entries(d.conditionalToggles).filter(([k,v]) => typeof k === 'string' && typeof v === 'boolean' && !isKarmaDrivenConditional(k)))
         : {};
     clean.humbledLevel = (typeof d.humbledLevel === 'number' && d.humbledLevel >= 0) ? Math.floor(d.humbledLevel) : 0;
     clean.humbledReductions = (d.humbledReductions && typeof d.humbledReductions === 'object')
@@ -1498,15 +1789,28 @@ function sanitizeImport(d) {
 }
 
 /* ===== TAB CONTROLLER ===== */
+const MORE_TABS = ['coll', 'uni', 'books', 'skilllog'];
+
 function showTab(t) {
+    const tabEl = document.getElementById('tab-' + t);
+    if (!tabEl) return;
     document.querySelectorAll('.tab-content').forEach(c => c.style.display='none');
     document.querySelectorAll('.tab-nav button').forEach(b => b.classList.remove('active'));
-    document.getElementById('tab-'+t).style.display='block';
-    document.getElementById('tab-btn-'+t).classList.add('active');
+    tabEl.style.display='block';
+    const tabBtn = document.getElementById('tab-btn-' + t);
+    if (tabBtn) tabBtn.classList.add('active');
+    // Close mobile MORE sheet if a tab was chosen from it
+    const moreSheet = document.getElementById('mobile-more-sheet');
+    if (moreSheet) moreSheet.style.display = 'none';
     // Sync mobile bottom nav
     document.querySelectorAll('.mobile-nav-btn').forEach(b => {
         b.classList.toggle('mobile-nav-active', b.dataset.tab === t);
     });
+    // Tabs without a bottom-nav button are represented by the MORE button
+    if (MORE_TABS.includes(t)) {
+        const moreBtn = document.getElementById('mobile-more-btn');
+        if (moreBtn) moreBtn.classList.add('mobile-nav-active');
+    }
     
     // Defer heavy renders to next frame for smooth tab switching
     if (t === 'perks') {
@@ -1522,6 +1826,13 @@ function showTab(t) {
     }
     
     nsAudio.click();
+}
+
+/* Mobile MORE sheet — exposes tabs that don't fit in the bottom nav */
+function toggleMobileMore() {
+    const sheet = document.getElementById('mobile-more-sheet');
+    if (!sheet) return;
+    sheet.style.display = sheet.style.display === 'none' ? 'flex' : 'none';
 }
 
 /* Build Summary Drawer (Tablet/Laptop) */
@@ -1645,8 +1956,6 @@ function setMode(m, skipSave=false) {
         r.querySelector('.prog-notes-input')?.value || ''
     ]);
     mode = m;
-    const stdBtn = document.getElementById('m-std');
-    if (stdBtn) stdBtn.classList.toggle('active', m==='std');
     const addBtn = document.querySelector('.cs-start-trait-btn');
     if (addBtn) addBtn.style.opacity = '';
     renderStartingTraitsList();
@@ -1783,9 +2092,10 @@ function getPerkLevel(perk) {
 
 function getPerkSPECIAL(perk) {
     const order = ['STR','PER','END','CHA','INT','AGI','LCK'];
-    const m = perk.req.match(/\b(STR|PER|END|CHA|INT|AGI|LCK)\b/);
+    const m = perk.req.match(/\b(STR|PER|END|CHR|INT|AGL|LCK)\b/);
     if (!m) return 99;
-    return order.indexOf(m[1]);
+    const key = REQ_STAT_MAP[m[1].toUpperCase()];
+    return key ? order.indexOf(key) : 99;
 }
 
 function setSort(s) {
@@ -1804,46 +2114,71 @@ function toggleEligibleFilter() {
     renderAllPerks();
 }
 
+let _perkSearchTimer = null;
+function searchPerks() {
+    clearTimeout(_perkSearchTimer);
+    _perkSearchTimer = setTimeout(renderAllPerks, 150);
+}
+
+/* Debounced search wrappers for the modal pickers — grid rebuilds and eligibility
+ * recomputation only run after typing settles (mirrors searchPerks' 150ms pattern). */
+function debounceSearch(fn, ms) {
+    let t = null;
+    return function (...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), ms || 150);
+    };
+}
+const searchTraits       = debounceSearch((v) => renderTraitGrid(v));
+const searchPerkPicker   = debounceSearch(() => renderPerkPickerGrid());
+const searchRewardPerks  = debounceSearch((v) => renderRewardPerkGrid(v));
+const searchInternalized = debounceSearch((v) => renderInternalizedGrid(v));
+const searchImplants     = debounceSearch((v) => renderImplantModalGrid(v));
+const searchCompanions   = debounceSearch(() => renderCompanionModal());
+
 function renderAllPerks() {
-    const query = (document.getElementById('perk-search-bar')?.value || '').toUpperCase().trim();
-    let perks = PERKS_DATA.filter(p =>
-        !query || p.name.toUpperCase().includes(query) || p.req.toUpperCase().includes(query) || p.desc.toUpperCase().includes(query)
-    );
+    beginBonusCache();
+    try {
+        const query = (document.getElementById('perk-search-bar')?.value || '').toUpperCase().trim();
+        let perks = PERKS_DATA.filter(p =>
+            !query || p.name.toUpperCase().includes(query) || p.req.toUpperCase().includes(query) || p.desc.toUpperCase().includes(query)
+        );
 
-    if (showEligibleOnly && !_forceEnable) perks = perks.filter(p => meetsRequirements(p));
+        if (showEligibleOnly && !_forceEnable) perks = perks.filter(p => meetsRequirements(p));
 
-    if (currentSort === 'az') {
-        perks = [...perks].sort((a, b) => a.name.localeCompare(b.name));
-    } else if (currentSort === 'lvl') {
-        perks = [...perks].sort((a, b) => getPerkLevel(a) - getPerkLevel(b) || a.name.localeCompare(b.name));
-    } else if (currentSort === 'spec') {
-        perks = [...perks].sort((a, b) => getPerkSPECIAL(a) - getPerkSPECIAL(b) || a.name.localeCompare(b.name));
-    }
+        if (currentSort === 'az') {
+            perks = [...perks].sort((a, b) => a.name.localeCompare(b.name));
+        } else if (currentSort === 'lvl') {
+            perks = [...perks].sort((a, b) => getPerkLevel(a) - getPerkLevel(b) || a.name.localeCompare(b.name));
+        } else if (currentSort === 'spec') {
+            perks = [...perks].sort((a, b) => getPerkSPECIAL(a) - getPerkSPECIAL(b) || a.name.localeCompare(b.name));
+        }
 
-    const container = document.getElementById('all-perks-list');
-    container.innerHTML = '';
-    if (perks.length === 0) {
-        container.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">NO PERKS MATCH QUERY</div>';
-        return;
-    }
+        const container = document.getElementById('all-perks-list');
+        container.innerHTML = '';
+        if (perks.length === 0) {
+            container.innerHTML = '<div style="opacity:0.5; padding:20px; text-align:center;">NO PERKS MATCH QUERY</div>';
+            return;
+        }
 
-    if (currentSort === 'spec') {
-        const groups = {};
-        const specNames = ['STR — STRENGTH','PER — PERCEPTION','END — ENDURANCE','CHA — CHARISMA','INT — INTELLIGENCE','AGI — AGILITY','LCK — LUCK','NO SPECIAL REQ.'];
-        perks.forEach(p => {
-            const idx = getPerkSPECIAL(p);
-            const key = idx >= 7 ? 7 : idx;
-            if (!groups[key]) groups[key] = [];
-            groups[key].push(p);
-        });
-        Object.keys(groups).sort((a,b)=>a-b).forEach(k => {
-            const label = specNames[parseInt(k)] || 'OTHER';
-            container.insertAdjacentHTML('beforeend', `<div style="background:var(--pip-color);color:black;font-weight:bold;padding:4px 8px;font-size:0.75rem;margin-bottom:5px;margin-top:10px;">${label}</div>`);
-            groups[k].forEach(p => container.insertAdjacentHTML('beforeend', buildPerkCard(p)));
-        });
-    } else {
-        perks.forEach(p => container.insertAdjacentHTML('beforeend', buildPerkCard(p)));
-    }
+        if (currentSort === 'spec') {
+            const groups = {};
+            const specNames = ['STR — STRENGTH','PER — PERCEPTION','END — ENDURANCE','CHA — CHARISMA','INT — INTELLIGENCE','AGI — AGILITY','LCK — LUCK','NO SPECIAL REQ.'];
+            perks.forEach(p => {
+                const idx = getPerkSPECIAL(p);
+                const key = idx >= 7 ? 7 : idx;
+                if (!groups[key]) groups[key] = [];
+                groups[key].push(p);
+            });
+            Object.keys(groups).sort((a,b)=>a-b).forEach(k => {
+                const label = specNames[parseInt(k)] || 'OTHER';
+                container.insertAdjacentHTML('beforeend', `<div style="background:var(--pip-color);color:black;font-weight:bold;padding:4px 8px;font-size:0.75rem;margin-bottom:5px;margin-top:10px;">${label}</div>`);
+                groups[k].forEach(p => container.insertAdjacentHTML('beforeend', buildPerkCard(p)));
+            });
+        } else {
+            perks.forEach(p => container.insertAdjacentHTML('beforeend', buildPerkCard(p)));
+        }
+    } finally { endBonusCache(); }
 }
 
 function buildPerkCard(p) {
@@ -1928,14 +2263,18 @@ function _getPerkToast() {
     return toast;
 }
 
-function showPerkToast(name) {
+function showPerkToastMsg(message) {
     const toast = _getPerkToast();
     toast.style.color = '';
     toast.style.borderColor = '';
-    toast.textContent = '✓ PERK ADDED: ' + name;
+    toast.textContent = '✓ ' + message;
     toast.style.opacity = '1';
     clearTimeout(toast._timer);
     toast._timer = setTimeout(() => { toast.style.opacity = '0'; }, 2200);
+}
+
+function showPerkToast(name) {
+    showPerkToastMsg('PERK ADDED: ' + name);
 }
 
 function showPerkBlockedToast(name, reason) {
@@ -1962,11 +2301,24 @@ function openLevelUpModal() {
         document.getElementById('lvlup-not-ready').style.display = 'block';
         return;
     }
+    if (getSpecialRemaining() > 0) {
+        // Flash the SPECIAL section to guide user
+        const spArea = document.getElementById('collapsible-special');
+        if (spArea) {
+            spArea.style.outline = '2px solid var(--danger-red)';
+            setTimeout(() => spArea.style.outline = '', 1500);
+        }
+        const nb = document.getElementById('lvlup-not-ready');
+        if (nb) nb.textContent = '⚠ ALLOCATE ALL S.P.E.C.I.A.L. POINTS BEFORE LEVELING UP';
+        nb.style.display = 'block';
+        return;
+    }
     document.getElementById('lvlup-not-ready').style.display = 'none';
+    document.getElementById('lvlup-not-ready').textContent = '⚠ SELECT 3 TAGS TO UNLOCK';
     _lvlupSession = {};
     _lvlupAttributeChoice = null; // Reset attribute choice
     skills.forEach(s => { _lvlupSession[s] = 0; });
-    _lvlupPointsLeft = pointsPerLevel();
+    _lvlupPointsLeft = pointsPerLevel(charLevel + 1);
     renderLevelUpGrid();
     // Reset attribute button selection
     document.querySelectorAll('.lvlup-attr-btn').forEach(btn => btn.classList.remove('selected'));
@@ -2009,7 +2361,7 @@ function confirmLevelRollback() {
     const targetLevel = parseInt(inputEl.value);
     
     if (isNaN(targetLevel) || targetLevel < 1 || targetLevel >= charLevel) {
-        alert('Invalid level selected');
+        showAlertDialog({ title: 'INVALID LEVEL', message: 'Invalid level selected. Choose a level below your current level to roll back to.' });
         return;
     }
     
@@ -2020,14 +2372,7 @@ function confirmLevelRollback() {
         if (lvlTag) {
             const rowLevel = parseInt(lvlTag.textContent.match(/\d+/)?.[0] || '0');
             if (rowLevel > targetLevel) {
-                // Check if this was Intense Training and revert the SPECIAL increase
-                const perkName = row.querySelector('.prog-name-input')?.value || '';
-                const itMatch = perkName.match(/^Intense Training \(\+1 (\w+)\)/i);
-                if (itMatch) {
-                    const statKey = itMatch[1];
-                    if (special[statKey] > 1) special[statKey]--;
-                }
-                // Clear the row
+                // Clear the row — clearProgRow reverts any Intense Training SPECIAL gains
                 clearProgRow(row.querySelector('.prog-clear-btn'));
             }
         }
@@ -2062,18 +2407,18 @@ function confirmLevelRollback() {
     pushUndoState();
     
     // Show confirmation toast
-    showPerkToast(`ROLLED BACK TO LEVEL ${targetLevel}`);
+    showPerkToastMsg(`ROLLED BACK TO LEVEL ${targetLevel}`);
 }
 
 function renderLevelUpGrid() {
-    const tagged = getTaggedSkills();
+    const tagged = getLevelUpTaggedSkills();
     const spent = Object.values(_lvlupSession).reduce((a,b)=>a+b,0);
-    _lvlupPointsLeft = pointsPerLevel() - spent;
+    _lvlupPointsLeft = pointsPerLevel(charLevel + 1) - spent;
 
     document.getElementById('lvlup-level-from').textContent = charLevel;
     document.getElementById('lvlup-level-to').textContent = charLevel + 1;
     document.getElementById('lvlup-pts-left').textContent = _lvlupPointsLeft;
-    document.getElementById('lvlup-pts-total').textContent = pointsPerLevel();
+    document.getElementById('lvlup-pts-total').textContent = pointsPerLevel(charLevel + 1);
 
     const grid = document.getElementById('lvlup-skill-grid');
     grid.innerHTML = skills.map(s => {
@@ -2100,7 +2445,7 @@ function renderLevelUpGrid() {
 }
 
 function lvlupAdjust(skill, delta) {
-    const isTagged = getTaggedSkills().has(skill);
+    const isTagged = getLevelUpTaggedSkills().has(skill);
     const pts = _lvlupSession[skill] || 0; // points SPENT (not gained)
     if (delta > 0) {
         if (_lvlupPointsLeft <= 0) return;
@@ -2114,43 +2459,50 @@ function lvlupAdjust(skill, delta) {
         _lvlupSession[skill] = pts - 1;
     }
     const spent = Object.values(_lvlupSession).reduce((a,b)=>a+b,0);
-    _lvlupPointsLeft = pointsPerLevel() - spent;
+    _lvlupPointsLeft = pointsPerLevel(charLevel + 1) - spent;
     renderLevelUpGrid();
 }
 
 function confirmLevelUp() {
     // Validate attribute choice
     if (!_lvlupAttributeChoice) {
-        alert('Please select an attribute boost (Health, Action Points, or Carry Weight)');
+        showAlertDialog({ title: 'ATTR BOOST REQUIRED', message: 'Please select an attribute boost (Health, Action Points, or Carry Weight) before confirming this level up.' });
         return;
     }
     
-    const tagged = getTaggedSkills();
+    const tagged = getLevelUpTaggedSkills();
     const gains = {};
     const _bonusForLevelUp = getCachedBonuses();
     const traitBonuses = _bonusForLevelUp.trait ? _bonusForLevelUp.trait.skillDelta : {};
+    const perkBonuses = _bonusForLevelUp.perk ? _bonusForLevelUp.perk.perkSkillDelta : {};
+    const condBonuses = _bonusForLevelUp.cond ? _bonusForLevelUp.cond.skillDelta : {};
+    const condParityBonus = _bonusForLevelUp.cond ? _bonusForLevelUp.cond.paritySkillDelta : {};
+    const gearBonuses = getGearEffectsDelta().skillDelta;
     skills.forEach(s => {
         const pts = _lvlupSession[s] || 0;
         const gain = tagged.has(s) ? pts * 2 : pts; // tagged: 1 spent = 2 gained
-        gains[s] = gain;
-        skillPoints[s] = (skillPoints[s] || 0) + gain;
-        // Hard cap: total skill must not exceed 100
-        // Account for trait modifiers: negative traits allow more allocated points
-        const traitDelta = traitBonuses[s] || 0;
-        const maxPts = 100 - skillBase(s) - traitDelta;
-        if (skillPoints[s] > maxPts) skillPoints[s] = Math.max(0, maxPts);
+        // Hard cap: total skill must never exceed 100.
+        // Account for ALL external modifiers (trait/perk/conditional/gear/book) so
+        // spent points are never silently discarded and rollback stays accurate.
+        // Level-parity swings (Polar Personality) are display-only and are kept OUT
+        // of the cap so the ledger is identical on both sides of the split.
+        const condNet = (condBonuses[s] || 0) - (condParityBonus[s] || 0);
+        const totalDelta = (traitBonuses[s] || 0) + (perkBonuses[s] || 0) + condNet + (gearBonuses[s] || 0) + bookBonus(s);
+        const maxPts = 100 - skillBase(s) - totalDelta;
+        const prev = skillPoints[s] || 0;
+        const allowed = Math.max(0, maxPts);
+        skillPoints[s] = Math.min(prev + gain, allowed);
+        // Record the ACTUAL gain applied (post-cap) for the Skill Log / rollback
+        gains[s] = Math.max(0, skillPoints[s] - prev);
     });
     // Record this level's allocation for the Skill Log
-    const totalPtsSpent = Object.values(_lvlupSession).reduce((a,b)=>a+b,0);
-    if (totalPtsSpent > 0 || true) {
-        skillHistory.push({
-            level: charLevel + 1,
-            allocation: Object.assign({}, _lvlupSession),
-            gains: gains,
-            tagged: Array.from(tagged),
-            pointsTotal: pointsPerLevel()
-        });
-    }
+    skillHistory.push({
+        level: charLevel + 1,
+        allocation: Object.assign({}, _lvlupSession),
+        gains: gains,
+        tagged: Array.from(tagged),
+        pointsTotal: pointsPerLevel(charLevel + 1)
+    });
     
     // Store the attribute choice for this level
     levelUpBonuses[charLevel - 1] = _lvlupAttributeChoice; // charLevel is still at current level (will increment next)
@@ -2377,6 +2729,7 @@ function addUniqueToLoadout(name) {
     if (card) {
         const ins = card.querySelectorAll('.gear-field-input');
         if(ins[0]) ins[0].value = name;
+        updateWeaponBadge(card);
         triggerAutosave();
     }
     // Flash the loadout tab button briefly to guide the user
@@ -2598,7 +2951,20 @@ function renderLevelUpBonuses() {
     container.style.display = 'block';
 }
 
-function getSPECIALPool() { return 33; }
+function getSPECIALPool() {
+    // Head trauma permanently removes 1 point from each chosen stat — shrink the pool to match
+    const lost = Object.values(humbledReductions || {}).reduce((a, b) => a + (b ? 1 : 0), 0);
+    return Math.max(0, 33 - lost);
+}
+function getSpecialRemaining() {
+    const pool = getSPECIALPool();
+    let ib = 0, itb = 0;
+    IMPLANTS_DATA.forEach(i => { if (i.cat === 'special' && i.stat && implantsTaken[i.name]) ib++; });
+    document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row').forEach(r => {
+        if (/^Intense Training \(\+1 /i.test(r.querySelector('.prog-name-input')?.value || '')) itb++;
+    });
+    return Math.max(0, pool - (Object.values(special || {}).reduce((a, b) => a + b, 0) - 7 - ib - itb));
+}
 
 function getTraitForceIcon(name) {
     const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === name.trim().toLowerCase())
@@ -2719,6 +3085,8 @@ function renderCompanionsPanel() {
     const el = document.getElementById('ov-companions');
     if (!el) return;
     const cap = companionCapacity();
+    const card = document.getElementById('companions-card');
+    if (card) card.classList.toggle('companions-off', cap <= 0 && !companions.length);
     if (!companions.length) {
         el.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center;"><span style="opacity:0.35;">NONE</span><button class="companion-mini-btn" onclick="openCompanionModal()">+ RECRUIT</button></div>`;
         return;
@@ -2726,23 +3094,44 @@ function renderCompanionsPanel() {
     el.innerHTML = companions.map(c => {
         const d = _companionEntry(c);
         const butchTxt = c.name === 'Butch'
-            ? `<div class="butch-row"><span class="butch-badge">${c.butchBonus === 'improved' ? '▶ IMPROVED: -75% ENEMY CRIT. CHANCE' : c.butchBonus === 'worsened' ? '▶ WORSENED: +50% CRIT. DAMAGE' : '⚑ DISPOSITION PENDING'}</span><button class="companion-mini-btn" onclick="reChooseButch()">SWITCH</button></div>`
+            ? `<div class="butch-row"><span class="butch-badge">${c.butchBonus === 'improved' ? '▶ IMPROVED: -75% ENEMY CRIT. CHANCE' : c.butchBonus === 'worsened' ? '▶ WORSENED: +50% CRIT. DAMAGE' : '⚑ DISPOSITION PENDING'}</span><button class="companion-mini-btn" onclick="event.stopPropagation(); reChooseButch()">SWITCH</button></div>`
             : '';
         return `<div class="companion-panel-row">
             <span class="companion-panel-icon">${d ? d.icon : '❓'}</span>
             <div class="companion-panel-body">
-                <div class="companion-panel-name">${c.name}<span class="companion-origin-tag tag-${d ? d.origin : 'CW'}">${d ? d.origin : ''}</span></div>
-                <div class="companion-panel-desc">${d ? d.desc : ''}</div>
+                <div class="companion-panel-name companion-name-btn" onclick="openCompanionZoom('${_escQuote(c.name)}')">${c.name}<span class="companion-origin-tag tag-${d ? d.origin : 'CW'}">${d ? d.origin : ''}</span></div>
                 ${butchTxt}
             </div>
-            <button class="companion-remove-btn" title="Dismiss" onclick="removeCompanion('${_escQuote(c.name)}')">✕</button>
+            <button class="companion-remove-btn" title="Dismiss" onclick="event.stopPropagation(); removeCompanion('${_escQuote(c.name)}')">✕</button>
         </div>`;
     }).join('') + `<div style="margin-top:6px; font-size:0.68rem; color:rgba(255,255,255,0.35);">${companions.length} / ${cap} SLOT${cap !== 1 ? 'S' : ''} USED${cap - companions.length > 0 ? ' — ' + (cap - companions.length) + ' OPEN' : ''}${hasMagneticPersonalityPerk() ? ' — MAGNETIC PERSONALITY: +1 SLOT' : ''}</div>`;
+}
+
+function openCompanionZoom(name) {
+    const d = _companionEntry({ name });
+    const modal = document.getElementById('companion-zoom-modal');
+    const iconEl = document.getElementById('companion-zoom-icon');
+    const nameEl = document.getElementById('companion-zoom-name');
+    const reqEl = document.getElementById('companion-zoom-req');
+    const descEl = document.getElementById('companion-zoom-desc');
+    if (iconEl) iconEl.textContent = d ? d.icon : '❓';
+    if (nameEl) nameEl.textContent = d ? d.name : name;
+    if (reqEl) reqEl.textContent = d ? `ORIGIN: ${d.origin === 'MW' ? 'MOHAVE WASTELAND' : 'CAPITAL WASTELAND'}` : '';
+    if (descEl) descEl.textContent = d ? d.desc : '';
+    if (modal) modal.style.display = 'flex';
 }
 
 function updateAll() {
     beginBonusCache();
     try {
+    const locked = isCreationLocked();
+    // Toggle lock indicator notes on the SPECIAL / TAGS / TRAITS headers
+    const specNote = document.getElementById('spec-lock-note');
+    if (specNote) specNote.style.display = locked ? 'inline-block' : 'none';
+    const tagsNote = document.getElementById('tags-lock-note');
+    if (tagsNote) tagsNote.style.display = locked ? 'inline-block' : 'none';
+    const traitsNote = document.getElementById('traits-lock-note');
+    if (traitsNote) traitsNote.style.display = isTraitsLocked() ? 'inline-block' : 'none';
     const pool = getSPECIALPool();
     let _ib=0; IMPLANTS_DATA.forEach(i=>{if(i.cat==='special'&&i.stat&&implantsTaken[i.name])_ib++;});
     // Cache the prog-row query — used for IT tracking and perks overview
@@ -2755,7 +3144,7 @@ function updateAll() {
         const m = v.match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
         if (m) itBonus[m[1].toUpperCase()]++;
     });
-    const rem = pool - Math.max(0, (Object.values(special).reduce((a,b)=>a+b,0) - 7) - _ib - _itb);
+    const rem = getSpecialRemaining();
     document.getElementById('pts-left').innerText = rem;
     const { specialDelta, skillDelta, hasConditional } = getCachedBonuses().trait;
     const { perkSpecialDelta, perkSkillDelta } = getCachedBonuses().perk;
@@ -2789,16 +3178,18 @@ function updateAll() {
         const baseVal = special[k] - it - imp;
         // effectiveTotal = special[k] (base+IT+implants) + external modifiers (trait/perk/conditional)
         // NOTE: do NOT add imp again — it's already in special[k]
-        const effectiveTotal = special[k] + td + pd + cd + gd;
+        const effectiveTotal = Math.max(1, special[k] + td + pd + cd + gd);
         // what the number shows in the UI
         const dispVal = _showBaseSpecial ? baseVal : special[k];
         // bar fills against the full effective total
         const _ds = Math.max(1, Math.min(10, _showBaseSpecial ? baseVal : effectiveTotal));
 
         // Show = badge when external modifiers (trait / perk / conditional) are active.
-        // In detailed mode, also show it if ANY modifier exists (including IT/implants) for full transparency
+        // Intense Training and implants are permanent — already embedded in the shown
+        // base number — so they are never listed as a separate modifier in the badges.
         const hasExternalBonus = !_showBaseSpecial && (td + pd + cd + gd) !== 0;
-        const hasAnyModifier = (it || imp || td || pd || cd || gd) !== 0;
+        const hasAnyModifier = (td + pd + cd + gd) !== 0;
+        const hasAnyPermanent = (it || imp) !== 0;
         const hasBonus = !_showBaseSpecial && (_showDetailedSpecial ? hasAnyModifier : hasExternalBonus);
         
         const tooltipParts = [];
@@ -2813,7 +3204,7 @@ function updateAll() {
             : rank;
         
         // Compact single delta badge (simplified mode)
-        const totalDelta = (it||0) + (imp||0) + (td||0) + (pd||0) + (cd||0) + (gd||0);
+        const totalDelta = (td||0) + (pd||0) + (cd||0) + (gd||0);
         let deltaBadge = '';
         if (!_showBaseSpecial && totalDelta !== 0 && !_showDetailedSpecial) {
             const sign = totalDelta > 0 ? '+' : '';
@@ -2822,18 +3213,18 @@ function updateAll() {
         }
         
         // Detailed breakdown badges (detailed mode)
-        // Shows ALL individual modifiers, even if they cancel out to zero
+        // Shows individual modifiers, even if they cancel out to zero.
+        // IT / implants are permanent and embedded in the base number — excluded
+        // so users don't misread them as still-missing SPECIAL.
         let detailedBadges = '';
         if (!_showBaseSpecial && _showDetailedSpecial) {
             const badges = [];
-            if (it !== 0) badges.push(`<span class="spec-source-badge spec-badge-it" title="Intense Training">IT ${it>0?'+':''}${it}</span>`);
-            if (imp !== 0) badges.push(`<span class="spec-source-badge spec-badge-impl" title="Implant">I ${imp>0?'+':''}${imp}</span>`);
             if (td !== 0) badges.push(`<span class="spec-source-badge spec-badge-trait" title="Trait">T ${td>0?'+':''}${td}</span>`);
             if (pd !== 0) badges.push(`<span class="spec-source-badge spec-badge-perk" title="Perk">P ${pd>0?'+':''}${pd}</span>`);
             if (cd !== 0) badges.push(`<span class="spec-source-badge spec-badge-cond" title="Conditional">C ${cd>0?'+':''}${cd}</span>`);
             if (gd !== 0) badges.push(`<span class="spec-source-badge spec-badge-gear" title="Gear Effect">G ${gd>0?'+':''}${gd}</span>`);
             // Always show the container in detailed mode for consistent layout
-            detailedBadges = `<div class="spec-detailed-sources">${badges.length > 0 ? badges.join('') : '<span class="spec-no-mods">NO MODIFIERS</span>'}</div>`;
+            detailedBadges = `<div class="spec-detailed-sources">${badges.length > 0 ? badges.join('') : (hasAnyPermanent ? '<span class="spec-no-mods">NO EXTERNAL MODIFIERS (IT/IMPLANT IN BASE)</span>' : '<span class="spec-no-mods">NO MODIFIERS</span>')}</div>`;
         }
 
 
@@ -2846,15 +3237,15 @@ function updateAll() {
         // Bar tier classes similar to skill system
         const barTier = _ds >= 10 ? 'spec-bar-max' : _ds >= 8 ? 'spec-bar-high' : _ds >= 6 ? 'spec-bar-mid' : _ds >= 4 ? 'spec-bar-low' : 'spec-bar-dim';
 
-        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}${_showDetailedSpecial?' spec-detailed-mode':''} ${glowTier}" data-key="${k}">
+        return `<div class="special-row${_showBaseSpecial?' spec-base-mode':''}${_showDetailedSpecial?' spec-detailed-mode':''} ${glowTier}${isCreationLocked()?' creation-locked':''}" data-key="${k}">
             <div class="spec-card-top">
                 <span class="spec-abbr-lg spec-info-btn" title="${bonusTooltip}" onclick="openSpecialInfoModal('${k}')">${k}</span>
                 ${deltaBadge}
             </div>
             <div class="spec-card-mid">
-                <button class="special-btn" onclick="mod('${k}',-1)" ${special[k]<=1?'disabled':''}>−</button>
+                <button class="special-btn" onclick="mod('${k}',-1)" ${isCreationLocked()||special[k]<=1?'disabled':''}>−</button>
                 <span class="spec-val special-val">${dispVal}</span>
-                <button class="special-btn" onclick="mod('${k}',1)" ${rem<=0 || special[k]>=10?'disabled':''}>+</button>
+                <button class="special-btn" onclick="mod('${k}',1)" ${isCreationLocked()||rem<=0 || special[k]>=10?'disabled':''}>+</button>
                 ${hasBonus ? `<span class="spec-eq-badge" title="${bonusTooltip}">= ${effectiveTotal}</span>` : ''}
             </div>
             ${detailedBadges}
@@ -2871,7 +3262,8 @@ function updateAll() {
 
     document.getElementById('ov-name').innerText = (document.getElementById('char-name').value || "NO_ID").toUpperCase();
     document.getElementById('ov-spec').innerHTML = sKeys.map(k => `<div class="char-banner-stat"><span class="char-banner-stat-key">${k}</span><span class="char-banner-stat-val">${special[k]}</span></div>`).join('');
-    document.getElementById('ov-tags').innerHTML = (() => {
+    const ovTagsEl = document.getElementById('ov-tags');
+    if (ovTagsEl) ovTagsEl.innerHTML = (() => {
         const entries = Array.from(document.querySelectorAll('#tag-area input:checked')).map(c => {
             const label = c.parentElement.querySelectorAll('span')[1];
             const skillName = label ? label.innerText : '';
@@ -2891,7 +3283,7 @@ function updateAll() {
         // always clickable — ovPerkClick searches perks, traits, internalized, rewards
         return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${safeN}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>${getTraitForceIcon(t.name)}◈ ${t.name}</span></div>`;
     }).join('');
-    const levelTraitHTML = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => {
+    const levelTraitHTML = Array.from(document.querySelectorAll('#level-up-traits-list .trait-slot-row')).map(r => {
         const n = r.getAttribute('data-chosen')||'';
         if (!n) return '';
         const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase())
@@ -2914,42 +3306,109 @@ function updateAll() {
                 ? '<span class="ov-req-indicator ov-req-met" title="REQUIREMENTS CURRENTLY MET">✓</span>'
                 : '<span class="ov-req-indicator ov-req-unmet" title="FORCED INTO BUILD — REQUIREMENTS NOT MET">⚡</span>';
         }
-        const levelPerks = Array.from(document.querySelectorAll('#prog-list .prog-row')).map(r => {
-            const lvl = r.querySelector('.lvl-tag')?.innerText || '';
+        // Map level-up trait -> granted bonus perk name (rows carry data-grant-trait)
+        const bonusMap = new Map();
+        Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).forEach(r => {
+            const t = r.getAttribute('data-grant-trait') || '';
+            const v = r.querySelector('.prog-name-input')?.value || '';
+            if (t && v && !bonusMap.has(t)) bonusMap.set(t, v);
+        });
+        // Names of level-up traits actually chosen (only these nest their bonus perk below them)
+        const chosenLevelTraits = new Set(
+            Array.from(document.querySelectorAll('#level-up-traits-list .trait-slot-row'))
+                .map(r => (r.getAttribute('data-chosen') || '').trim())
+                .filter(Boolean)
+        );
+        // Merged chronological list: perks + traits ordered by level, tail items at the end
+        const entries = [];
+        let seq = 0;
+        function pushEntry(level, html, name) { entries.push({ level, seq: seq++, html, name: name || '' }); }
+        Array.from(document.querySelectorAll('#prog-list .prog-row')).forEach(r => {
+            const lvlTag = r.querySelector('.lvl-tag')?.innerText || '';
             const val = r.querySelector('.prog-name-input')?.value || '';
-            if (!val) return '';
+            if (!val) return;
+            const lvlNum = parseInt((lvlTag.match(/\d+/) || [''])[0]) || 0;
             const reqIndicator = getReqIndicator(baseName(val));
             // Annotate Tag! perk with chosen 4th skill
             const isTagPerk = baseName(val).trim().toUpperCase() === 'TAG!';
             const tagAnnotation = (isTagPerk && _fourthTagSkill) ? `<span style="font-size:0.6rem;color:rgba(255,200,80,0.8);margin-left:5px;letter-spacing:0.5px;">- ${_fourthTagSkill}</span>` : '';
             // always set onclick — ovPerkClick will look up across all data sources
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}${tagAnnotation}</span><span style="opacity:0.5;">${lvl}</span></div>`;
-        }).join('');
-        const bonusPerks = Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).map(r => {
+            pushEntry(lvlNum, `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}${tagAnnotation}</span><span style="opacity:0.5;">${lvlTag}</span></div>`, baseName(val));
+        });
+        Array.from(document.querySelectorAll('#level-up-traits-list .trait-slot-row')).forEach(r => {
+            const n = r.getAttribute('data-chosen') || '';
+            if (!n) return;
+            const lvlNum = parseInt(((r.querySelector('.lvl-tag')?.innerText || '').match(/\d+/) || [''])[0]) || 0;
+            const td = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase());
+            const lvlDisplay = lvlNum ? 'LVL ' + lvlNum + ' TRAIT' : '';
+            pushEntry(lvlNum, `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(n)}')" title="${td ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span>▸ ${n}</span><span style="opacity:0.5; color:#a0cfff;">${lvlDisplay}</span></div>`);
+            // Nest a perk-granting trait's bonus perk directly beneath it
+            const bonusPerk = bonusMap.get(n);
+            if (bonusPerk) {
+                const reqBonus = getReqIndicator(baseName(bonusPerk));
+                pushEntry(lvlNum, `<div class="ov-entry ov-entry-clickable" style="margin-left:14px;" onclick="ovPerkClick('${encodeURIComponent(baseName(bonusPerk))}')" title="CLICK FOR DETAILS"><span>└ ${reqBonus}${bonusPerk}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`, baseName(bonusPerk));
+            }
+        });
+        // Standalone bonus perks (not nested under a chosen level-up trait)
+        Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).forEach(r => {
+            const t = r.getAttribute('data-grant-trait') || '';
             const val = r.querySelector('.prog-name-input')?.value || '';
-            if (!val) return '';
+            if (!val) return;
+            if (t && chosenLevelTraits.has(t)) return; // already emitted beneath the trait
             const reqIndicator = getReqIndicator(baseName(val));
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`;
-        }).join('');
-        const rewardPerks = rewardPerksList.map(rp => {
+            pushEntry(1e9, `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(baseName(val))}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${val}</span><span style="opacity:0.5; color:#a0cfff;">BONUS</span></div>`, baseName(val));
+        });
+        rewardPerksList.forEach(rp => {
             const reqIndicator = getReqIndicator(rp.name);
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(rp.name)}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`;
-        }).join('');
-        const internalized = internalizedTraitsList.map(it => {
-            return `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(it.name)}')" title="CLICK FOR DETAILS"><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`;
-        }).join('');
-        return (levelPerks + bonusPerks + rewardPerks + internalized) || '<span style="opacity:0.3; font-size:0.65rem;">NONE YET</span>';
+            pushEntry(1e9, `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(rp.name)}')" title="CLICK FOR DETAILS"><span>${reqIndicator}${rp.name}</span><span style="opacity:0.5; color:#ffd080;">REWARD</span></div>`, rp.name);
+        });
+        internalizedTraitsList.forEach(it => {
+            pushEntry(1e9, `<div class="ov-entry ov-entry-clickable" onclick="ovPerkClick('${encodeURIComponent(it.name)}')" title="CLICK FOR DETAILS"><span>${it.name}</span><span style="opacity:0.5; color:#c8a0ff;">INT.</span></div>`);
+        });
+        entries.sort((a, b) => (a.level - b.level) || (a.seq - b.seq));
+        // Rank numerals: annotate every instance of a repeated perk (I, II, III...)
+        const rankTotals = {};
+        entries.forEach(e => { if (e.name) rankTotals[e.name] = (rankTotals[e.name] || 0) + 1; });
+        const rankSeen = {};
+        const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X'];
+        // Insertion point for the numeral: immediately AFTER the perk name on the
+        // NAME side (first span), hopping any req-indicator span in front of it —
+        // NOT after the LVL tag, where it juts out.
+        function nameSideInsert(html, name) {
+            const s1 = html.indexOf('<span');
+            const gt = html.indexOf('>', s1 + 5);
+            let end = gt + 1;
+            while (html.indexOf('<span', end) === end) {
+                const c = html.indexOf('</span>', end);
+                if (c < 0) break;
+                end = c + '</span>'.length;
+            }
+            const k = html.indexOf(name, end);
+            if (k >= 0) return k + name.length;
+            return gt + 1;
+        }
+        return entries.map(e => {
+            if (e.name && rankTotals[e.name] >= 2) {
+                const n = (rankSeen[e.name] = (rankSeen[e.name] || 0) + 1) - 1;
+                const badge = `<span class="ov-rank">${ROMAN[Math.min(n, ROMAN.length - 1)]}</span>`;
+                const at = nameSideInsert(e.html, e.name);
+                return e.html.slice(0, at) + badge + e.html.slice(at);
+            }
+            return e.html;
+        }).join('') || '<span style="opacity:0.3; font-size:0.65rem;">NONE YET</span>';
     })();
 
     let gearHTML = Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => {
         const ins = c.querySelectorAll('.gear-field-input');
         const n = ins[0]?.value||''; const a = ins[2]?.value||''; const str = ins[3]?.value||''; const sel = c.querySelector('.gear-skill-type-select'); const st = sel?.value||''; const sr = ins[4]?.value||'';
-        return n ? `<div class="ov-entry"><span>⚔ ${n}</span><div style="display:flex;gap:6px;align-items:center;">${st?`<span style="font-size:0.68rem;color:rgba(255,220,80,0.7);border:1px solid rgba(255,220,80,0.25);padding:0 4px;">${st}${sr?' '+sr:''}</span>`:''}${str?`<span style="font-size:0.68rem;color:rgba(100,180,255,0.7);border:1px solid rgba(100,180,255,0.2);padding:0 4px;">STR ${str}</span>`:''}${a?`<span style="opacity:0.55;">${a}</span>`:''}</div></div>` : '';
+        const wcls = gearWeaponClass(c); const wicon = GEAR_WEAPON_ICONS[wcls] || '⚔';
+        return n ? `<div class="ov-entry"><span>${wicon} ${n}</span><div style="display:flex;gap:6px;align-items:center;">${st?`<span style="font-size:0.68rem;color:rgba(255,220,80,0.7);border:1px solid rgba(255,220,80,0.25);padding:0 4px;">${st}${sr?' '+sr:''}</span>`:''}${str?`<span style="font-size:0.68rem;color:rgba(100,180,255,0.7);border:1px solid rgba(100,180,255,0.2);padding:0 4px;">STR ${str}</span>`:''}${a?`<span style="opacity:0.55;">${a}</span>`:''}</div></div>` : '';
     }).join('');
     gearHTML += Array.from(document.querySelectorAll('#armor-list .gear-card')).map(c => {
         const ins = c.querySelectorAll('.gear-field-input');
         const n = ins[0]?.value||''; const sel = c.querySelector('.gear-field-select'); const w = sel?.value||'';
-        return n ? `<div class="ov-entry"><span>🛡 ${n}</span><span style="opacity:0.6;">${w}</span></div>` : '';
+        const aicon = ({ LIGHT: '🧥', MEDIUM: '🪖', HEAVY: '⛓', 'POWER ARMOR': '🤖' })[w] || '🛡';
+        return n ? `<div class="ov-entry"><span>${aicon} ${n}</span><span style="opacity:0.6;">${w}</span></div>` : '';
     }).join('');
     document.getElementById('ov-gear').innerHTML = gearHTML || "EMPTY";
     updateGearCounts();
@@ -2970,17 +3429,21 @@ function updateAll() {
     // Update ov-traits-inline visibility
     const ovTI = document.getElementById('ov-traits-inline');
     const ovTEmpty = document.getElementById('ov-traits-empty');
-    const startingTraitHTML2 = startingTraits.map(t => `<div class="ov-trait-entry"><span class="ov-trait-dot" style="color:#c8ffd4;">◈</span>${getTraitForceIcon(t.name)}<span>${t.name}</span></div>`).join('');
-    const levelTraitHTML2 = Array.from(document.querySelectorAll('#prog-list .trait-slot-row')).map(r => { const n = r.getAttribute('data-chosen')||''; return n ? `<div class="ov-trait-entry"><span class="ov-trait-dot">▸</span>${getTraitForceIcon(n)}<span>${n}</span></div>` : ''; }).join('');
+    const startingTraitHTML2 = startingTraits.map(t => {
+        const safeN2 = encodeURIComponent(t.name).replace(/'/g, '%27');
+        const td2 = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase())
+                 || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === t.name.trim().toLowerCase());
+        return `<div class="ov-trait-entry ov-trait-clickable" onclick="ovPerkClick('${safeN2}')" title="${td2 ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span class="ov-trait-dot" style="color:#c8ffd4;">◈</span>${getTraitForceIcon(t.name)}<span>${t.name}</span></div>`;
+    }).join('');
+    const levelTraitHTML2 = Array.from(document.querySelectorAll('#level-up-traits-list .trait-slot-row')).map(r => { const n = r.getAttribute('data-chosen')||''; if (!n) return ''; const safeN2 = encodeURIComponent(n).replace(/'/g, '%27'); const td2 = TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase()) || INTERNALIZED_TRAITS_DATA.find(x => x.name.trim().toLowerCase() === n.trim().toLowerCase()); return `<div class="ov-trait-entry ov-trait-clickable" onclick="ovPerkClick('${safeN2}')" title="${td2 ? 'CLICK FOR TRAIT DETAILS' : 'CLICK FOR DETAILS'}"><span class="ov-trait-dot">▸</span>${getTraitForceIcon(n)}<span>${n}</span></div>`; }).join('');
     const traitHTML2 = startingTraitHTML2 + levelTraitHTML2;
     if (ovTI) ovTI.innerHTML = traitHTML2;
     if (ovTEmpty) ovTEmpty.style.display = traitHTML2 ? 'none' : 'block';
 
     syncTagLimit();
-
-    // Skills panel
+    renderStartingTraitsList();
     const tagged = getTaggedSkills();
-    const ptsLvl = pointsPerLevel();
+    const ptsLvl = pointsPerLevel(charLevel + 1);
     const lvlBtn = document.getElementById('lvlup-open-btn');
     if (lvlBtn) {
         document.getElementById('char-level-display').textContent = charLevel;
@@ -3049,8 +3512,26 @@ function updateAll() {
     } finally { endBonusCache(); }
 }
 
-function mod(k, v) { 
-    special[k] += v; 
+function mod(k, v) {
+    if (!SPECIAL_STATS.includes(k)) return;
+    if (isCreationLocked()) return; // creation choices are locked after first level-up
+    const val = special[k] || 1;
+    if (v > 0) {
+        if (val >= 10) return;
+        // Enforce the point pool here (not just via rendered button state) so rapid
+        // clicks between renders can't overshoot allocations. IT rows and implants
+        // live inside special[] already, so subtract them from the "allocated" count.
+        let ib = 0, itb = 0;
+        IMPLANTS_DATA.forEach(i => { if (i.cat === 'special' && i.stat && implantsTaken[i.name]) ib++; });
+        document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row), #extra-perk-list .prog-row').forEach(r => {
+            if (/^Intense Training \(\+1 /i.test(r.querySelector('.prog-name-input')?.value || '')) itb++;
+        });
+        const baseAlloc = Object.values(special || {}).reduce((a, b) => a + b, 0) - 7 - ib - itb;
+        if (baseAlloc >= getSPECIALPool()) return;
+    } else {
+        if (val <= 1) return;
+    }
+    special[k] = val + v; 
     
     // Immediate visual feedback - just update SPECIAL display (lightweight, fast)
     refreshSPECIALDisplay();
@@ -3118,7 +3599,7 @@ function addWeapon() {
             <div class="gear-card-fields">
                 <div class="gear-field-group gear-field-primary">
                     <label class="gear-field-label">WEAPON NAME</label>
-                    <input type="text" class="gear-field-input" oninput="triggerAutosave()" placeholder="E.G. LUCKY, THIS MACHINE...">
+                    <input type="text" class="gear-field-input" oninput="updateWeaponBadge(this.closest('.gear-card'));triggerAutosave()" placeholder="E.G. LUCKY, THIS MACHINE...">
                 </div>
                 <div class="gear-field-row">
                     <div class="gear-field-group">
@@ -3127,7 +3608,7 @@ function addWeapon() {
                     </div>
                     <div class="gear-field-group">
                         <label class="gear-field-label">AMMO TYPE</label>
-                        <input type="text" class="gear-field-input" oninput="triggerAutosave()" placeholder=".357 MAG, 5MM...">
+                        <input type="text" class="gear-field-input" oninput="updateWeaponBadge(this.closest('.gear-card'));triggerAutosave()" placeholder=".357 MAG, 5MM...">
                     </div>
                 </div>
                 <div class="gear-field-row gear-weapon-req-row">
@@ -3137,7 +3618,7 @@ function addWeapon() {
                     </div>
                     <div class="gear-field-group gear-skill-type-group">
                         <label class="gear-field-label">SKILL TYPE</label>
-                        <select class="gear-field-select gear-skill-type-select" onchange="triggerAutosave()">
+                        <select class="gear-field-select gear-skill-type-select" onchange="updateWeaponBadge(this.closest('.gear-card'));triggerAutosave()">
                             <option value="">— NONE —</option>
                             <option value="GUNS">GUNS</option>
                             <option value="BIG GUNS">BIG GUNS</option>
@@ -3197,6 +3678,8 @@ function addArmor() {
                 </div>
             </div>
         </div>`);
+    const sel = document.getElementById('armor-list').querySelector(':scope > .gear-card:last-child .gear-field-select');
+    if (sel) updateArmorBadge(sel);
     updateGearCounts();
 }
 
@@ -3205,6 +3688,40 @@ function updateArmorBadge(sel) {
     const badge = card.querySelector('.gear-card-type-badge');
     const icons = { LIGHT: '🧥', MEDIUM: '🪖', HEAVY: '⛓', 'POWER ARMOR': '🤖' };
     badge.textContent = (icons[sel.value] || '🛡') + ' ' + sel.value;
+}
+
+const GEAR_WEAPON_ICONS = {
+    'PISTOLS & REVOLVERS': '🔫',
+    'SMGS & RIFLES': '🎯',
+    'SHOTGUNS': '🧨',
+    'BIG GUNS': '💣',
+    'ENERGY WEAPONS': '⚡',
+    'EXPLOSIVES': '💥',
+    'MELEE WEAPONS': '⚔️',
+    'UNARMED': '👊',
+};
+const GEAR_PISTOL_CALIBERS = /\.(357|44|45|38|32|22|25)(?:\s|$)|9MM|10MM|\bBB\b/;
+const GEAR_SHOTGUN_HINTS = /GAUGE|SHOTGUN|SHOTTY/;
+
+function gearWeaponClass(card) {
+    const sel = card.querySelector('.gear-skill-type-select');
+    const skill = sel ? sel.value : '';
+    if (skill !== 'GUNS' && skill !== '' && GEAR_WEAPON_ICONS[skill]) return skill;
+    const ins = card.querySelectorAll('.gear-field-input');
+    const name = (ins[0] && ins[0].value || '').toUpperCase();
+    const ammo = (ins[2] && ins[2].value || '').toUpperCase();
+    if (!name && !ammo) return '';
+    if (GEAR_SHOTGUN_HINTS.test(name) || GEAR_SHOTGUN_HINTS.test(ammo)) return 'SHOTGUNS';
+    if (GEAR_PISTOL_CALIBERS.test(ammo)) return 'PISTOLS & REVOLVERS';
+    return 'SMGS & RIFLES';
+}
+
+function updateWeaponBadge(card) {
+    const badge = card.querySelector('.gear-card-type-badge');
+    if (!badge) return;
+    const cls = gearWeaponClass(card);
+    badge.textContent = (GEAR_WEAPON_ICONS[cls] || '⚔') + ' ' + (cls || 'WEAPON');
+    badge.classList.toggle('weapon-class-badge', !!cls);
 }
 
 function updateGearCounts() {
@@ -3322,7 +3839,7 @@ function effectiveSpecial(key) {
     const c = getCachedBonuses();
     const td = c.trait.specialDelta[key] ?? 0;
     const pd = c.perk.perkSpecialDelta[key] ?? 0;
-    return Math.max(0, base + td + pd);
+    return Math.max(1, base + td + pd);
 }
 
 /**
@@ -3334,7 +3851,7 @@ function modifiedSpecial(key) {
     const base = effectiveSpecial(key);
     const { specDelta } = getCachedBonuses().cond;
     const { specDelta: gearDelta } = getGearEffectsDelta();
-    return base + (specDelta[key] ?? 0) + (gearDelta[key] ?? 0);
+    return Math.max(1, base + (specDelta[key] ?? 0) + (gearDelta[key] ?? 0));
 }
 
 /* Refresh SPECIAL panel without full re-render */
@@ -3581,7 +4098,22 @@ function tryHydratePerkRow(row, name) {
 
 function clearProgRow(btn) {
     const row = btn.closest('.prog-row');
-    row.querySelector('.prog-name-input').value = '';
+    const nameInput = row.querySelector('.prog-name-input');
+    const oldName = (nameInput.value || '').trim();
+    // Revert Intense Training's SPECIAL +1 when its row is cleared
+    const it = oldName.match(/^Intense Training \(\+1 (STR|PER|END|CHA|INT|AGI|LCK)\)/i);
+    if (it && (special[it[1]] || 5) > 1) special[it[1]] -= 1;
+    // Clear the 4th-skill designation when the Tag! row is cleared
+    const baseName = oldName.replace(/\s*[\[(].*?[\])]$/, '').trim().toUpperCase();
+    if (baseName === 'TAG!' && _fourthTagSkill) _fourthTagSkill = null;
+    // Purge conditional toggle state + widget when a conditional perk row is cleared
+    const condBase = oldName.replace(/\s*[\[(].*?[\])]$/, '').trim();
+    if (CONDITIONAL_PERK_NAMES && CONDITIONAL_PERK_NAMES.has(condBase)) {
+        delete conditionalToggles[condBase];
+    }
+    const toggleRow = row.querySelector('.cond-toggle-row');
+    if (toggleRow) toggleRow.remove();
+    nameInput.value = '';
     row.querySelector('.prog-notes-input').value = '';
     row.querySelector('.prog-perk-info').style.display = 'none';
     row.querySelector('.prog-rank-badge').style.display = 'none';
@@ -3589,6 +4121,7 @@ function clearProgRow(btn) {
     row.classList.remove('has-perk', 'req-fail');
     const warn = row.querySelector('.prog-req-warning');
     if (warn) { warn.style.display = 'none'; warn.innerHTML = ''; }
+    updateAll();
     triggerAutosave();
 }
 
@@ -3624,23 +4157,29 @@ function makeProgRow(levelLabel, isTrait, removable) {
 
 function renderProgression() {
     const div = document.getElementById('prog-list');
+    const traitDiv = document.getElementById('level-up-traits-list');
     // Save current trait slot choices before wiping
     const savedTraits = {};
-    div.querySelectorAll('.trait-slot-row').forEach(r => {
+    (traitDiv || div).querySelectorAll('.trait-slot-row').forEach(r => {
         const id = r.id, chosen = r.getAttribute('data-chosen') || '';
         if (id && chosen) savedTraits[id] = chosen;
     });
     div.innerHTML = '';
-    // Level progression rows (starting traits are managed separately)
-    let traitIdx = 0;
+    if (traitDiv) traitDiv.innerHTML = '';
+    // Level progression rows (starting traits are managed separately).
+    // Level-up trait slots (every 4 levels from 5) live in the visible
+    // TRAITS & IMPLANTS tab, not the hidden ghost perk store.
     for(let i=2; i<=50; i++) {
         const isP = i % 2 === 0;
         const isT = (i>=5 && (i-5)%4===0);
         if(isP) div.insertAdjacentHTML('beforeend', makeProgRow(`LVL ${i} PERK`, false, false));
         if(isT) {
             const slotId = `trait-slot-lvl-${i}`;
-            div.insertAdjacentHTML('beforeend', makeTraitRow(slotId, `LVL ${i} TRAIT`, savedTraits[slotId] || ''));
-            traitIdx++;
+            // Only render rows for traits that have actually been taken — no
+            // pre-populated empty slots (rows appear when a trait is taken via level-up)
+            if (savedTraits[slotId]) {
+                (traitDiv || div).insertAdjacentHTML('beforeend', makeTraitRow(slotId, `LVL ${i} TRAIT`, savedTraits[slotId]));
+            }
         }
     }
 }
@@ -3648,27 +4187,42 @@ function renderProgression() {
 function syncTagLimit() {
     const cbs = Array.from(document.querySelectorAll('#tag-area input'));
     const count = cbs.filter(c => c.checked).length;
+    const locked = isCreationLocked();
     cbs.forEach(c => {
         const item = c.parentElement;
         const marker = item.querySelector('.tag-marker');
-        if(!c.checked && count >= 3) {
+        if (locked) {
+            // Creation choices are locked after the first level-up — all tag toggles frozen
+            c.disabled = true;
+            item.classList.add('locked');
+            item.classList.add('creation-locked');
+            if (marker) marker.textContent = c.checked ? '[X]' : '[ ]';
+        } else if(!c.checked && count >= 3) {
             c.disabled = true;
             item.classList.add('locked');
             if (marker) marker.textContent = '[ ]';
         } else {
             c.disabled = false;
             item.classList.remove('locked');
+            item.classList.remove('creation-locked');
             if (marker) marker.textContent = c.checked ? '[X]' : '[ ]';
         }
     });
-    // Guard: add-trait-btn may not exist if traits managed via modal
-    const addTraitBtn = document.getElementById('add-trait-btn');
 }
 
 function toggleTag(itemEl) {
     const cb = itemEl.querySelector('input[type="checkbox"]');
     if (!cb || cb.disabled) return;
+    if (!cb.checked) {
+        // Enforce the 3-tag limit even when rapid clicks outpace the re-render
+        const count = Array.from(document.querySelectorAll('#tag-area input:checked')).length;
+        if (count >= 3) {
+            showToast('MAX 3 TAGGED SKILLS — clear one first to tag another.', 3000);
+            return;
+        }
+    }
     cb.checked = !cb.checked;
+    syncTagLimit();
     const marker = itemEl.querySelector('.tag-marker');
     if (marker) marker.textContent = cb.checked ? '[X]' : '[ ]';
     triggerAutosave();
@@ -3676,8 +4230,12 @@ function toggleTag(itemEl) {
 
 /* ===== AUTOSAVE & PERSISTENCE ===== */
 let _autosaveDebounce = null;
+let _undoPushTimer = null;
 function triggerAutosave() {
-    pushUndoState();
+    // Debounce undo snapshots: typing bursts collapse to one push instead of
+    // serializing the whole build on every keystroke.
+    clearTimeout(_undoPushTimer);
+    _undoPushTimer = setTimeout(pushUndoState, 400);
     clearTimeout(_autosaveDebounce);
     _autosaveDebounce = setTimeout(() => {
         try {
@@ -3694,14 +4252,19 @@ function triggerAutosave() {
 }
 
 function collectData() {
-    regionalStorage[origin].quests = Array.from(document.querySelectorAll('#quest-list-container input')).map(i => i.checked);
-    regionalStorage[origin].colls = Array.from(document.querySelectorAll('#coll-list input')).map(i => i.checked);
+    const questChecks = Array.from(document.querySelectorAll('#quest-list-container input')).map(i => i.checked);
+    const collChecks = Array.from(document.querySelectorAll('#coll-list input')).map(i => i.checked);
+    regionalStorage[origin].quests = questChecks;
+    regionalStorage[origin].colls = collChecks;
     return {
         name: document.getElementById('char-name').value, special, mode, origin,
         regionalStorage,
         notes: document.getElementById('user-notes').value,
         tags: Array.from(document.querySelectorAll('#tag-area input')).map(i => i.checked),
-        traits: Array.from(document.querySelectorAll('.trait-slot-row')).map(r => r.getAttribute('data-chosen')||''),
+        traits: LEVEL_UP_TRAIT_LEVELS.map(lvl => {
+            const row = document.getElementById('trait-slot-lvl-' + lvl);
+            return row ? (row.getAttribute('data-chosen') || '') : '';
+        }),
         // Note: startingTraits is serialized separately
         perks: Array.from(document.querySelectorAll('#prog-list .prog-row:not(.trait-slot-row)')).map(r => [
             r.querySelector('.prog-name-input')?.value || '',
@@ -3709,12 +4272,13 @@ function collectData() {
         ]),
         extraPerks: Array.from(document.querySelectorAll('#extra-perk-list .prog-row')).map(r => [
             r.querySelector('.prog-name-input')?.value || '',
-            r.querySelector('.prog-notes-input')?.value || ''
+            r.querySelector('.prog-notes-input')?.value || '',
+            r.getAttribute('data-grant-trait') || ''
         ]),
         weapons: Array.from(document.querySelectorAll('#weapon-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-skill-type-select'); return [ins[0]?.value||'', ins[1]?.value||'', ins[2]?.value||'', ins[3]?.value||'', sel?.value||'', ins[4]?.value||'']; }),
         armor: Array.from(document.querySelectorAll('#armor-list .gear-card')).map(c => { const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); return [ins[0]?.value||'', ins[1]?.value||'', sel?.value||'LIGHT', ins[2]?.value||'', ins[3]?.value||'', ins[4]?.value||'']; }),
-        quests: Array.from(document.querySelectorAll('#quest-list-container input')).map(i => i.checked),
-        colls: Array.from(document.querySelectorAll('#coll-list input')).map(i => i.checked),
+        quests: questChecks,
+        colls: collChecks,
         uniWpns: Array.from(document.querySelectorAll('.u-wpn-check')).map(i => i.checked),
         uniArmor: Array.from(document.querySelectorAll('.u-armor-check')).map(i => i.checked),
         skillPoints, charLevel, buildKarma,
@@ -3732,6 +4296,7 @@ function collectData() {
         companions: companions.map(c => ({ name: c.name, butchBonus: c.butchBonus || null }))
     };
 }
+
 
 function exportBuild() {
     const data = collectData();
@@ -3894,7 +4459,9 @@ function hydrate(d) {
             butchBonus: (c && (c.butchBonus === 'improved' || c.butchBonus === 'worsened')) ? c.butchBonus : null
         })).filter(c => COMPANIONS_DATA.some(x => x.name === c.name))
         : [];
-    conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object') ? d.conditionalToggles : {};
+    conditionalToggles = (d.conditionalToggles && typeof d.conditionalToggles === 'object')
+        ? Object.fromEntries(Object.entries(d.conditionalToggles).filter(([k,v]) => typeof k === 'string' && typeof v === 'boolean' && !isKarmaDrivenConditional(k)))
+        : {};
     perkWishlist = Array.isArray(d.perkWishlist) ? d.perkWishlist : [];
     currentBuildName = d.currentBuildName || 'Current Build';
     levelUpBonuses = Array.isArray(d.levelUpBonuses) ? d.levelUpBonuses : [];
@@ -3911,20 +4478,23 @@ function hydrate(d) {
     });
     // Restore trait slots from saved traits array (legacy #trait-list element no longer used)
     document.getElementById('weapon-list').innerHTML = '';
-    d.weapons.forEach(v => { addWeapon(); const c = document.querySelector('#weapon-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-skill-type-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(ins[2]) ins[2].value = v[2]||''; if(ins[3]) ins[3].value = v[3]||''; if(sel && v[4]) sel.value = v[4]; if(ins[4]) ins[4].value = v[5]||''; });
+    d.weapons.forEach(v => { addWeapon(); const c = document.querySelector('#weapon-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-skill-type-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(ins[2]) ins[2].value = v[2]||''; if(ins[3]) ins[3].value = v[3]||''; if(sel && v[4]) sel.value = v[4]; if(ins[4]) ins[4].value = v[5]||''; updateWeaponBadge(c); });
     document.getElementById('armor-list').innerHTML = '';
     d.armor.forEach(v => { addArmor(); const c = document.querySelector('#armor-list .gear-card:last-child'); const ins = c.querySelectorAll('.gear-field-input'); const sel = c.querySelector('.gear-field-select'); if(ins[0]) ins[0].value = v[0]||''; if(ins[1]) ins[1].value = v[1]||''; if(sel && v[2]) { sel.value = v[2]; updateArmorBadge(sel); } if(ins[2]) ins[2].value = v[3]||''; if(ins[3]) ins[3].value = v[4]||''; if(ins[4]) ins[4].value = v[5]||''; });
-    // Restore trait slots from saved traits array
+    // Restore trait slots from saved traits array (level-indexed: index i -> LVL 5+i*4).
+    // Rows are only shown for taken traits, so wipe any stale rows then create per trait.
+    const traitList = document.getElementById('level-up-traits-list');
+    if (traitList) traitList.innerHTML = '';
     if (d.traits && Array.isArray(d.traits)) {
-        const traitSlots = Array.from(document.querySelectorAll('#prog-list .trait-slot-row'));
         d.traits.forEach((traitName, i) => {
-            if (traitName && traitSlots[i]) {
-                const slotId = traitSlots[i].id;
-                traitSlots[i].setAttribute('data-chosen', traitName);
-                traitSlots[i].querySelector('.trait-slot-name').textContent = traitName;
-                traitSlots[i].querySelector('.trait-slot-btn').textContent = 'CHANGE';
-                const clearBtn = traitSlots[i].querySelector('.trait-slot-clear');
-                if (clearBtn) clearBtn.style.display = 'inline-block';
+            if (!traitName) return;
+            const slotId = 'trait-slot-lvl-' + (5 + i * 4);
+            ensureTraitSlotRow(slotId);
+            const row = document.getElementById(slotId);
+            if (row) {
+                row.setAttribute('data-chosen', traitName);
+                // Rebuild the row so conditional traits get their ⚡ toggle rendered
+                rerenderTraitSlot(slotId);
             }
         });
     }
@@ -3942,6 +4512,7 @@ function hydrate(d) {
         if(ep) {
             tryHydratePerkRow(ep, v[0] || '');
             const ni = ep.querySelector('.prog-notes-input'); if(ni) ni.value = v[1] || '';
+            if (v[2]) ep.setAttribute('data-grant-trait', v[2]);
         }
     });
     const uC = document.querySelectorAll('.u-wpn-check');
@@ -3967,21 +4538,6 @@ function hydrate(d) {
 function openArchetypesModal() {
     const modal = document.getElementById('archetypes-modal');
     if (!modal) return;
-    // Reset filters on open
-    Object.keys(_archFilters).forEach(k => _archFilters[k] = '');
-    const search = document.getElementById('arch-search');
-    if (search) {
-        search.value = '';
-        // Auto-focus for immediate typing
-        setTimeout(() => search.focus(), 50);
-    }
-    const perkSearch = document.getElementById('arch-perk-search');
-    if (perkSearch) perkSearch.value = '';
-    const perkResults = document.getElementById('arch-perk-results');
-    if (perkResults) perkResults.style.display = 'none';
-    document.querySelectorAll('.arch-chip').forEach(c => {
-        c.classList.toggle('active', c.dataset.val === '');
-    });
     renderArchetypeGrid();
     document.getElementById('archetype-detail').style.display = 'none';
     modal.style.display = 'flex';
@@ -3994,80 +4550,10 @@ function closeArchetypesModal() {
 
 let _selectedArchetypeId = null;
 
-const _archFilters = { karma: '', style: '' };
-
-function toggleArchChip(btn) {
-    const filter = btn.dataset.filter;
-    const val    = btn.dataset.val;
-    _archFilters[filter] = _archFilters[filter] === val ? '' : val;
-    // Update active state — only one active per filter group
-    btn.closest('div').querySelectorAll(`.arch-chip[data-filter="${filter}"]`).forEach(c => {
-        c.classList.toggle('active', c.dataset.val === _archFilters[filter] || (c.dataset.val === '' && _archFilters[filter] === ''));
-    });
-    renderArchetypeGrid();
-}
-
-function renderArchPerkSearch() {
-    const q = (document.getElementById('arch-perk-search')?.value || '').trim();
-    const resultsEl = document.getElementById('arch-perk-results');
-    if (!resultsEl) return;
-    if (!q) { resultsEl.style.display = 'none'; return; }
-    const ql = q.toLowerCase();
-    const matches = [];
-    ARCHETYPES_DATA.forEach(a => {
-        const perkMatches = a.perks
-            .filter(p => p && p[0] && p[0].toLowerCase().includes(ql))
-            .map(p => p[0]);
-        if (perkMatches.length) {
-            matches.push({ name: a.name, icon: a.icon, color: a.color, perks: perkMatches });
-        }
-    });
-    if (!matches.length) {
-        resultsEl.style.display = 'block';
-        resultsEl.innerHTML = '<span style="opacity:0.4;">NO BUILDS USE A PERK MATCHING "' + q.toUpperCase() + '"</span>';
-        return;
-    }
-    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const html = matches.map(m => {
-        const perkList = m.perks.map(p => {
-            const highlighted = p.replace(new RegExp('(' + escaped + ')', 'gi'), '<span style="color:#ffd080;">$1</span>');
-            return '<span style="opacity:0.7;">' + highlighted + '</span>';
-        }).join(', ');
-        return '<div style="display:flex;align-items:baseline;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.06);">'
-            + '<span style="color:' + m.color + ';font-size:1rem;line-height:1;">' + m.icon + '</span>'
-            + '<span style="color:' + m.color + ';font-weight:600;min-width:160px;">' + m.name + '</span>'
-            + '<span>' + perkList + '</span>'
-            + '</div>';
-    }).join('');
-    resultsEl.style.display = 'block';
-    resultsEl.innerHTML = '<div style="opacity:0.5;margin-bottom:6px;font-size:0.65rem;">BUILDS USING: ' + q.toUpperCase() + ' (' + matches.length + ' FOUND)</div>' + html;
-}
-
 function renderArchetypeGrid() {
     const grid = document.getElementById('archetype-grid');
     if (!grid || typeof ARCHETYPES_DATA === 'undefined') return;
-    const SKILLS = ["BARTER","BIG GUNS","ENERGY WEAPONS","EXPLOSIVES","GUNS","LOCKPICK","MEDICINE","MELEE WEAPONS","REPAIR","SCIENCE","SNEAK","SPEECH","SURVIVAL","UNARMED"];
-    const q = (document.getElementById('arch-search')?.value || '').toLowerCase().trim();
-    const filtered = ARCHETYPES_DATA.filter(a => {
-        if (_archFilters.karma  && a.buildKarma !== _archFilters.karma)  return false;
-        if (_archFilters.style) {
-            const tagged = SKILLS.filter((_,i) => a.tags[i]);
-            if (!tagged.includes(_archFilters.style)) return false;
-        }
-        if (q) {
-            const haystack = (a.name + ' ' + a.tagline + ' ' + (a.description||'')).toLowerCase();
-            if (!haystack.includes(q)) return false;
-        }
-        return true;
-    });
-    const countEl = document.getElementById('arch-filter-count');
-    if (countEl) {
-        const total = ARCHETYPES_DATA.length;
-        countEl.textContent = filtered.length === total
-            ? `SHOWING ALL ${total} ARCHETYPES`
-            : `SHOWING ${filtered.length} OF ${total} ARCHETYPES`;
-    }
-    grid.innerHTML = filtered.length ? filtered.map(a => {
+    grid.innerHTML = ARCHETYPES_DATA.map(a => {
         const isSel = _selectedArchetypeId === a.id;
         return `<div class="archetype-card${isSel ? ' archetype-selected' : ''}" onclick="selectArchetype('${a.id}')"
             style="border-color:${isSel ? a.color : 'rgba(255,255,255,0.1)'};">
@@ -4080,7 +4566,7 @@ function renderArchetypeGrid() {
                 </div>
             </div>
         </div>`;
-    }).join('') : '<div style="opacity:0.35;font-size:0.7rem;letter-spacing:1px;padding:24px 0;text-align:center;">NO ARCHETYPES MATCH YOUR FILTERS</div>';
+    }).join('');
 }
 
 function selectArchetype(id) {
@@ -4092,12 +4578,8 @@ function selectArchetype(id) {
     const detail = document.getElementById('archetype-detail');
     if (!detail) return;
 
-    // Key-based archetypes: decode the key to get full build data for preview
-    let bd = a; // fallback to legacy full-data archetype
-    if (a.key) {
-        const decoded = decodeBuildKey(a.key);
-        if (decoded) bd = decoded;
-    }
+    // Archetype builds are stored directly in ARCHETYPES_DATA (no share codes)
+    const bd = a.build || a;
 
     const skillNames = ['BARTER','BIG GUNS','ENERGY WEAPONS','EXPLOSIVES','GUNS','LOCKPICK','MEDICINE','MELEE WEAPONS','REPAIR','SCIENCE','SNEAK','SPEECH','SURVIVAL','UNARMED'];
     const taggedSkills = skillNames.filter((_,i) => bd.tags && bd.tags[i]);
@@ -4121,8 +4603,13 @@ function selectArchetype(id) {
 
     const traitNames = (bd.startingTraits || []).map(t => t.name).join(', ') || 'None';
 
-    // Description: use archetype meta description first, then decoded notes, then nothing
-    const descText = a.description || (bd.notes ? bd.notes.substring(0, 280) : '');
+    // Description: archetype meta description first; otherwise only the PLAY
+    // STYLE half of the notes (never the raw headers), trimmed to fit the card.
+    const noteStyle = (bd.notes || '')
+        .replace(/^\s*PLAY STYLE\s*/i, '')
+        .split(/\n\s*RP\s*\n/)[0]
+        .trim();
+    const descText = a.description || (noteStyle ? noteStyle.substring(0, 280) : '');
 
     detail.style.display = 'block';
     detail.innerHTML = `
@@ -4135,7 +4622,7 @@ function selectArchetype(id) {
                     <div style="font-size:0.65rem;opacity:0.6;margin-top:2px;">${a.tagline}</div>
                 </div>
             </div>
-            ${descText ? `<p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;overflow-wrap:break-word;">${descText}</p>` : ''}
+            ${descText ? `<p style="font-size:0.68rem;opacity:0.7;line-height:1.7;margin:0;overflow-wrap:break-word;white-space:pre-line;">${descText}</p>` : ''}
         </div>
         <div class="arch-detail-cols">
             <div class="arch-detail-col">
@@ -4153,7 +4640,7 @@ function selectArchetype(id) {
             </div>
         </div>
         <div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.07);display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="action-btn" onclick="loadArchetypeKey('${a.id}')"
+            <button class="action-btn" onclick="loadArchetype('${a.id}')"
                 style="background:${a.color}22;border-color:${a.color};color:${a.color};font-size:0.72rem;padding:8px 20px;flex:1;letter-spacing:1px;">
                 ◈ LOAD THIS ARCHETYPE
             </button>
@@ -4166,10 +4653,37 @@ function selectArchetype(id) {
     detail.scrollIntoView({ behavior:'smooth', block:'nearest' });
 }
 
-function loadArchetype(id) {
+async function loadArchetype(id) {
     const a = ARCHETYPES_DATA.find(x => x.id === id);
     if (!a) return;
-    if (!confirm('LOAD ARCHETYPE: "' + a.name.toUpperCase() + '"?\n\nThis will overwrite your current build. Export first if you want to keep it.')) return;
+    const confirmed = await showConfirmDialog({
+        title: 'LOAD ARCHETYPE',
+        message: 'Load "' + escHtml(a.name).toUpperCase() + '"?<br><span style="opacity:0.6; font-size:0.85em;">This will overwrite your current build. Export first if you want to keep it.</span>',
+        confirmText: 'LOAD',
+        cancelText: 'CANCEL',
+        isDanger: true
+    });
+    if (!confirmed) return;
+    // Embedded full build data (modern) — hydrate directly
+    if (a.build) {
+        const safe = sanitizeImport(a.build);
+        if (!safe) { showAlertDialog({ title: 'ARCHETYPE DATA VALIDATION FAILED', message: 'This archetype could not be loaded from its embedded data.' }); return; }
+        closeArchetypesModal();
+        _selectedArchetypeId = null;
+        hydrate(safe);
+        nsAudio.diceRoll();
+        showPerkToastMsg('ARCHETYPE LOADED: ' + a.name.toUpperCase());
+        triggerAutosave();
+        const btn = document.getElementById('tab-btn-prog');
+        if (btn) {
+            btn.style.boxShadow = '0 0 12px var(--pip-color)';
+            btn.style.background = 'var(--pip-color)';
+            btn.style.color = 'black';
+            setTimeout(() => { if (!btn.classList.contains('active')) { btn.style.boxShadow=''; btn.style.background=''; btn.style.color=''; } }, 1200);
+        }
+        return;
+    }
+    // Legacy full-data archetype (no embedded build)
     const buildData = {
         name: a.name,
         notes: a.notes || ('Archetype: ' + a.name + ' — ' + a.tagline),
@@ -4220,12 +4734,12 @@ function loadArchetype(id) {
         regionalStorage: { CW:{quests:[],colls:[]}, MW:{quests:[],colls:[]} },
     };
     const safe = sanitizeImport(buildData);
-    if (!safe) { alert('ARCHETYPE LOAD ERROR'); return; }
+    if (!safe) { showAlertDialog({ title: 'ARCHETYPE LOAD ERROR', message: 'This archetype could not be loaded.' }); return; }
     closeArchetypesModal();
     _selectedArchetypeId = null;
     hydrate(safe);
     nsAudio.diceRoll();
-    showPerkToast('ARCHETYPE LOADED: ' + a.name.toUpperCase());
+    showPerkToastMsg('ARCHETYPE LOADED: ' + a.name.toUpperCase());
     triggerAutosave();
     const btn = document.getElementById('tab-btn-prog');
     if (btn) {
@@ -4297,225 +4811,21 @@ async function purgeMemory() {
     }
 }
 /* ═══════════════════════════════════════════════════════════════════════
-   NSB3/NSB5 decoders — used to load archetype builds (stored as NSB3 keys).
-   Encoding removed in favor of JSON export (.nsbuild files).
+   SHARE-CODE (NSB3/NSB5) SYSTEM REMOVED
+   Legacy relic: archetype builds now embed their full data in data.js.
+   No share-code encoding/decoding exists in the planner anymore.
 ═══════════════════════════════════════════════════════════════════════ */
-
-// Shared bit-level I/O class used by NSB3 and NSB5 decoders
-class _BitReader {
-    constructor(b64) { const s = atob(b64.replace(/-/g, '+').replace(/_/g, '/')); this.bytes = Array.from(s, c => c.charCodeAt(0)); this.pos = 0; this.cur = 0; this.bits = 0; }
-    read(n) { let val = 0, rem = n; while (rem > 0) { if (this.bits === 0) { if (this.pos >= this.bytes.length) return 0; this.cur = this.bytes[this.pos++]; this.bits = 8; } const take = Math.min(this.bits, rem), shift = this.bits - take; val = (val << take) | ((this.cur >>> shift) & ((1 << take) - 1)); this.cur &= (1 << shift) - 1; this.bits -= take; rem -= take; } return val >>> 0; }
-}
-
-const NSB3 = (() => {
-    const BR = _BitReader;
-    const KARMA_LIST = ['very-good','good','neutral','evil','very-evil'];
-    const SKEYS      = sKeys;
-    const SKILLS     = skills;
-    const BONUS_LIST = ['hp','ap','cw'];
-    const CT_KEYS    = [
-        'Claustrophobia','Early Bird','Night Person','Solar Powered','War Child',
-        'Four Eyes','Blind Luck','Impartial Mediation','Confirmed Bachelor','Lady Killer',
-        'Graceful','Ideologue','Twisted',"Breakin' A Sweat",'Masochist','Desert Rose',
-        'Hoarder','Bankrupt','Magnate','Callous',"Assassin's Step",'Polar Personality',
-        'Architect','Alertness','Headless Courier','Irradiated Beauty','Thirsty',
-        'Fight Hungry','Walker Instinct','Boiadero','Wasteland Masquerade',
-        'My Own Master Now','Collective Consciousness'
-    ];
-    const getIdx  = (arr, n) => { if (!n) return 0; const i = arr.findIndex(x => x.name.trim() === (n||'').trim()); return i >= 0 ? i+1 : 0; };
-    const getName = (arr, i) => (i > 0 && i <= arr.length) ? arr[i-1].name : '';
-    const readStr = br => { const len = br.read(10); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
-    const readShortStr = br => { const len = br.read(6); let s=''; for(let i=0;i<len;i++) s+=String.fromCharCode(br.read(7)); return s; };
-
-    function decode(key) {
-        try {
-            const br = new BR(key.replace(/^NSB3-/,''));
-            br.read(1); // legacy mode byte (retained for save alignment)
-            const mode       = 'std';
-            const origin     = br.read(1)?'MW':'CW';
-            const buildKarma = KARMA_LIST[br.read(3)]||'neutral';
-            const difficulty = br.read(3)+1;
-            const level      = br.read(6)+1;
-            const charName   = readShortStr(br);
-            const notes      = readStr(br);
-            const special = {}; SKEYS.forEach(k=>{ special[k]=br.read(4)+1; });
-            const tags = SKILLS.map(()=>br.read(1)===1);
-            const ftsI = br.read(4);
-            const fourthTagSkill = ftsI>0?(SKILLS[ftsI-1]||null):null;
-            const hasBeenHumbled = br.read(1)===1;
-            const humbledLevel   = br.read(6);
-            const humbledReductions = {}; SKEYS.forEach(k=>{ if(br.read(1)) humbledReductions[k]=1; });
-            const levelUpBonuses = []; for(let i=0;i<level-1;i++) levelUpBonuses.push(BONUS_LIST[br.read(2)]||'ap');
-            const implantsTaken = {};
-            (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp=>{ if(br.read(1)) implantsTaken[imp.name]=true; });
-            const skillPoints={}; SKILLS.forEach(s=>{ skillPoints[s]=br.read(7); });
-            const skillBooksFound={}; SKILLS.forEach(s=>{ skillBooksFound[s]=br.read(4); });
-            const conditionalToggles={}; CT_KEYS.forEach(k=>{ if(br.read(1)) conditionalToggles[k]=true; });
-            const stCount=br.read(3); const startingTraits=[];
-            for(let i=0;i<stCount;i++){ const n=getName(TRAITS_DATA,br.read(7)); if(n) startingTraits.push({name:n}); }
-            const traitCount=br.read(5); const traits=[];
-            for(let i=0;i<traitCount;i++) traits.push(getName(TRAITS_DATA,br.read(7)));
-            const _AS_FROM_CODE = {
-                'as:ap': 'ACTION STAR [+TOTAL AP]',
-                'as:rg': 'ACTION STAR [+AP REGEN]',
-                'as:ct': 'ACTION STAR [-WEAP AP COST]'
-            };
-            const _IT_STATS = new Set(['STR','PER','END','CHA','INT','AGI','LCK']);
-            function _decPerk(name, notes) {
-                if (name === 'Intense Training' && (notes||'').startsWith('it:')) {
-                    const stat = notes.slice(3).toUpperCase();
-                    if (_IT_STATS.has(stat)) return ['Intense Training (+1 ' + stat + ')', ''];
-                }
-                if (_AS_FROM_CODE[notes]) return [_AS_FROM_CODE[notes], ''];
-                return [name, notes];
-            }
-            const perkCount=br.read(6); const perks=[];
-            for(let i=0;i<perkCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); perks.push([n,nt]); }
-            const extraCount=br.read(5); const extraPerks=[];
-            for(let i=0;i<extraCount;i++){ const [n,nt]=_decPerk(getName(PERKS_DATA,br.read(8)),readShortStr(br)); extraPerks.push([n,nt]); }
-            const rplCount=br.read(5); const rewardPerksList=[];
-            for(let i=0;i<rplCount;i++){ const n=getName(REWARD_PERKS_DATA,br.read(7)); const notes=readShortStr(br); if(n) rewardPerksList.push({name:n,notes}); }
-            const itlCount=br.read(5); const internalizedTraitsList=[];
-            for(let i=0;i<itlCount;i++){ const n=getName(INTERNALIZED_TRAITS_DATA,br.read(4)); const notes=readShortStr(br); if(n) internalizedTraitsList.push({name:n,notes}); }
-            const shCount=br.read(6); const skillHistory=[];
-            for(let i=0;i<shCount;i++){
-                const entryLevel=br.read(6)+1, pointsTotal=br.read(4);
-                const tagBits=SKILLS.map(()=>br.read(1)===1);
-                const tagged=SKILLS.filter((_,j)=>tagBits[j]);
-                const allocation={},gains={};
-                SKILLS.forEach((s,j)=>{ const a=br.read(4); allocation[s]=a; gains[s]=tagBits[j]?a*2:a; });
-                skillHistory.push({level:entryLevel,pointsTotal,tagged,allocation,gains});
-            }
-            return { name:charName, notes, mode, origin, buildKarma, difficulty, charLevel:level,
-                special, tags, fourthTagSkill, hasBeenHumbled, humbledLevel, humbledReductions,
-                levelUpBonuses, implantsTaken, skillPoints, skillBooksFound, conditionalToggles,
-                startingTraits, traits, perks, extraPerks, rewardPerksList, internalizedTraitsList,
-                perkWishlist:[], currentBuildName:charName||'Loaded Build', skillHistory,
-                regionalStorage:{CW:{quests:[],colls:[]},MW:{quests:[],colls:[]}},
-                weapons:[],armor:[],quests:[],colls:[],uniWpns:[],uniArmor:[] };
-        } catch(e) { console.error('NSB3 decode error:',e); return null; }
-    }
-    return { decode };
-})();
-
-/* ═══════════════════════════════════════════════════════════════════════
-   NSB5 — COMPACT SHARE CODE DECODER
-═══════════════════════════════════════════════════════════════════════ */
-const NSB5 = (() => {
-    const BR = _BitReader;
-    const KARMA_LIST = ['very-good','good','neutral','evil','very-evil'];
-    const SKEYS      = sKeys;
-    const SKILLS     = skills;
-    const BONUS_LIST = ['hp','ap','cw'];
-    const CT_KEYS    = [
-        'Claustrophobia','Early Bird','Night Person','Solar Powered','War Child',
-        'Four Eyes','Blind Luck','Impartial Mediation','Confirmed Bachelor','Lady Killer',
-        'Graceful','Ideologue','Twisted',"Breakin' A Sweat",'Masochist','Desert Rose',
-        'Hoarder','Bankrupt','Magnate','Callous',"Assassin's Step",'Polar Personality',
-        'Architect','Alertness','Headless Courier','Irradiated Beauty','Thirsty',
-        'Fight Hungry','Walker Instinct','Boiadero','Wasteland Masquerade',
-        'My Own Master Now','Collective Consciousness'
-    ];
-    const IT_STATS   = ['STR','PER','END','CHA','INT','AGI','LCK'];
-    const AS_FROM_CODE = {'ap':'ACTION STAR [+TOTAL AP]','rg':'ACTION STAR [+AP REGEN]','ct':'ACTION STAR [-WEAP AP COST]'};
-    const getIdx  = (arr,n) => { if(!n) return 0; const i=arr.findIndex(x=>x.name.trim()===(n||'').trim()); return i>=0?i+1:0; };
-    const getName = (arr,i) => (i>0&&i<=arr.length)?arr[i-1].name:'';
-
-    function decPerk(br) {
-        const idx=br.read(8), name=getName(PERKS_DATA,idx), annType=br.read(2);
-        if(annType===1){ const s=IT_STATS[br.read(3)]||'STR'; return ['Intense Training (+1 '+s+')','']; }
-        if(annType===2){ const c=['ap','rg','ct'][br.read(2)]||'ap'; return [AS_FROM_CODE[c]||name,'']; }
-        return [name,''];
-    }
-
-    function decode(key) {
-        try {
-            // Strip prefix, dashes, convert to lower for base64url
-            const b64 = key.replace(/^NSB5-/i,'').replace(/-/g,'').toLowerCase()
-                           .replace(/[^a-z0-9+/=_]/g,'');
-            // Our toB64 uses - and _ for + and /; uppercase was cosmetic
-            const fixed = b64.replace(/-/g,'+').replace(/_/g,'/');
-            const br=new BR(fixed);
-            br.read(1); // legacy mode byte (retained for save alignment)
-            const mode='std', origin=br.read(1)?'MW':'CW';
-            const buildKarma=KARMA_LIST[br.read(3)]||'neutral';
-            const difficulty=br.read(3)+1, level=br.read(6)+1;
-            const special={}; SKEYS.forEach(k=>{special[k]=br.read(4)+1;});
-            const tags=SKILLS.map(()=>br.read(1)===1);
-            const ftsI=br.read(4); const fourthTagSkill=ftsI>0?(SKILLS[ftsI-1]||null):null;
-            const skillPoints={}; SKILLS.forEach(s=>{skillPoints[s]=br.read(7);});
-            const hasBeenHumbled=br.read(1)===1, humbledLevel=br.read(6);
-            const humbledReductions={}; SKEYS.forEach(k=>{if(br.read(1))humbledReductions[k]=1;});
-            const levelUpBonuses=[]; for(let i=0;i<level-1;i++) levelUpBonuses.push(BONUS_LIST[br.read(2)]||'ap');
-            const implantsTaken={};
-            (typeof IMPLANTS_DATA!=='undefined'?IMPLANTS_DATA:[]).forEach(imp=>{if(br.read(1))implantsTaken[imp.name]=true;});
-            const conditionalToggles={}; CT_KEYS.forEach(k=>{if(br.read(1))conditionalToggles[k]=true;});
-            const stCount=br.read(3); const startingTraits=[];
-            for(let i=0;i<stCount;i++){const n=getName(TRAITS_DATA,br.read(7));if(n)startingTraits.push({name:n});}
-            const traitCount=br.read(5); const traits=[];
-            for(let i=0;i<traitCount;i++) traits.push(getName(TRAITS_DATA,br.read(7)));
-            const perkCount=br.read(6); const perks=[];
-            for(let i=0;i<perkCount;i++) perks.push(decPerk(br));
-            const extraCount=br.read(5); const extraPerks=[];
-            for(let i=0;i<extraCount;i++) extraPerks.push(decPerk(br));
-            const rplCount=br.read(5); const rewardPerksList=[];
-            for(let i=0;i<rplCount;i++){const n=getName(REWARD_PERKS_DATA,br.read(7));if(n)rewardPerksList.push({name:n,notes:''});}
-            const itlCount=br.read(5); const internalizedTraitsList=[];
-            for(let i=0;i<itlCount;i++){const n=getName(INTERNALIZED_TRAITS_DATA,br.read(4));if(n)internalizedTraitsList.push({name:n,notes:''});}
-            return { name:'', notes:'', mode, origin, buildKarma, difficulty, charLevel:level,
-                special, tags, fourthTagSkill, hasBeenHumbled, humbledLevel, humbledReductions,
-                levelUpBonuses, implantsTaken, skillPoints, skillBooksFound:{}, conditionalToggles,
-                startingTraits, traits, perks, extraPerks, rewardPerksList, internalizedTraitsList,
-                perkWishlist:[], currentBuildName:'Imported Build', skillHistory:[],
-                regionalStorage:{CW:{quests:[],colls:[]},MW:{quests:[],colls:[]}},
-                weapons:[],armor:[],quests:[],colls:[],uniWpns:[],uniArmor:[] };
-        } catch(e) { console.error('NSB5 decode error:',e); return null; }
-    }
-
-    return { decode };
-})();
-
-function decodeBuildKey(key) {
-    try {
-        const k = key.trim();
-        if (k.startsWith('NSB5-')) return NSB5.decode(k);
-        if (k.startsWith('NSB3-')) return NSB3.decode(k);
-        if (k.startsWith('NSB1-')) return JSON.parse(decodeURIComponent(escape(atob(k.slice(5)))));
-        return JSON.parse(decodeURIComponent(escape(atob(k))));
-    } catch(e) { console.error('Build key decode error:',e); return null; }
-}
-
-function addArchetypeKey(keyStr, meta) { ARCHETYPES_DATA.push(Object.assign({},meta,{key:keyStr})); }
-
-function loadArchetypeKey(id) {
-    const a = ARCHETYPES_DATA.find(x=>x.id===id);
-    if (!a) return;
-    if (a.key) {
-        if (!confirm('LOAD ARCHETYPE: "'+a.name.toUpperCase()+'"?\n\nThis will overwrite your current build.')) return;
-        const data=decodeBuildKey(a.key);
-        if (!data){alert('ARCHETYPE KEY DECODE FAILED');return;}
-        const safe=sanitizeImport(data);
-        if (!safe){alert('ARCHETYPE DATA VALIDATION FAILED');return;}
-        closeArchetypesModal(); _selectedArchetypeId=null;
-        hydrate(safe); nsAudio.diceRoll();
-        showPerkToast('ARCHETYPE LOADED: '+a.name.toUpperCase());
-        triggerAutosave();
-        const btn=document.getElementById('tab-btn-prog');
-        if(btn){ btn.style.boxShadow='0 0 12px var(--pip-color)'; btn.style.background='var(--pip-color)'; btn.style.color='black'; setTimeout(()=>{ if(!btn.classList.contains('active')){btn.style.boxShadow='';btn.style.background='';btn.style.color='';} },1200); }
-        return;
-    }
-    loadArchetype(id);
-}
-
-
-
 /* ===== BUILD MANAGEMENT SYSTEM ===== */
 
 // Load saved builds from localStorage
 function loadSavedBuildsList() {
     let stored = null;
     try { stored = localStorage.getItem('NS_SavedBuilds'); } catch(e) {}
-    savedBuilds = stored ? JSON.parse(stored) : [];
+    let parsed = [];
+    if (stored) {
+        try { parsed = JSON.parse(stored); } catch(e) { parsed = []; }
+    }
+    savedBuilds = Array.isArray(parsed) ? parsed : [];
     return savedBuilds;
 }
 
@@ -4525,8 +4835,12 @@ function saveBuildsList() {
 }
 
 // Save current build to the builds list
-function saveCurrentBuild() {
-    const name = prompt('ENTER BUILD NAME:', currentBuildName || 'My Build');
+async function saveCurrentBuild() {
+    const name = await showPromptDialog({
+        title: 'ENTER BUILD NAME',
+        initial: currentBuildName || 'My Build',
+        confirmText: 'SAVE'
+    });
     if (!name) return;
     
     const buildData = collectData();
@@ -4536,7 +4850,14 @@ function saveCurrentBuild() {
     const existingIndex = savedBuilds.findIndex(b => b.name === name);
     
     if (existingIndex >= 0) {
-        if (!confirm(`Overwrite existing build "${name}"?`)) return;
+        const confirmed = await showConfirmDialog({
+            title: 'OVERWRITE BUILD',
+            message: 'A saved build named "' + escHtml(name) + '" already exists. Overwrite it?',
+            confirmText: 'OVERWRITE',
+            cancelText: 'Cancel',
+            isDanger: true
+        });
+        if (!confirmed) return;
         savedBuilds[existingIndex] = {
             name: name,
             data: buildData,
@@ -4552,7 +4873,7 @@ function saveCurrentBuild() {
     
     currentBuildName = name;
     saveBuildsList();
-    showPerkToast(`BUILD SAVED: ${name}`);
+    showPerkToastMsg(`BUILD SAVED: ${name}`);
     renderBuildsManager();
 }
 
@@ -4565,37 +4886,48 @@ function loadBuild(index) {
     if (safe) {
         hydrate(safe);
         currentBuildName = build.name;
-        showPerkToast(`BUILD LOADED: ${build.name}`);
+        showPerkToastMsg(`BUILD LOADED: ${build.name}`);
         closeBuildManager();
     }
 }
 
 // Delete a build
-function deleteBuild(index) {
+async function deleteBuild(index) {
     if (index < 0 || index >= savedBuilds.length) return;
     
     const build = savedBuilds[index];
-    if (!confirm(`DELETE BUILD "${build.name}"?`)) return;
+    const confirmed = await showConfirmDialog({
+        title: 'DELETE BUILD',
+        message: 'Delete saved build "' + escHtml(build.name) + '"?',
+        confirmText: 'DELETE',
+        cancelText: 'Cancel',
+        isDanger: true
+    });
+    if (!confirmed) return;
     
     savedBuilds.splice(index, 1);
     saveBuildsList();
-    showPerkToast(`BUILD DELETED`);
+    showPerkToastMsg(`BUILD DELETED`);
     renderBuildsManager();
 }
 
 // Duplicate a build
-function duplicateBuild(index) {
+async function duplicateBuild(index) {
     if (index < 0 || index >= savedBuilds.length) return;
     
     const original = savedBuilds[index];
     const copy = JSON.parse(JSON.stringify(original));
-    copy.name = prompt('ENTER NAME FOR COPY:', `${original.name} (Copy)`);
+    copy.name = await showPromptDialog({
+        title: 'ENTER NAME FOR COPY',
+        initial: original.name + ' (Copy)',
+        confirmText: 'DUPLICATE'
+    });
     if (!copy.name) return;
     
     copy.timestamp = Date.now();
     savedBuilds.push(copy);
     saveBuildsList();
-    showPerkToast(`BUILD DUPLICATED`);
+    showPerkToastMsg(`BUILD DUPLICATED`);
     renderBuildsManager();
 }
 
@@ -4845,13 +5177,20 @@ function rollDiceAnimation() {
 async function randomizeBuild() {
     const confirmed = await showConfirmDialog({
         title: '🎲 WASTELAND FORTUNA',
-        message: 'Let the dice decide your new destiny?<br><span style="opacity:0.6; font-size:0.85em;">Randomize wasteland, karma, S.P.E.C.I.A.L., tags, and starting traits — this will overwrite your current selections.</span>',
+        message: 'Let the dice decide your new destiny?<br><span style="opacity:0.6; font-size:0.85em;">Randomize wasteland, karma, S.P.E.C.I.A.L., tags, and starting traits — this will overwrite your current selections and reset you to LEVEL 1.</span>',
         confirmText: 'SPIN THE DICE',
         cancelText: 'BACK OUT'
     });
     if (!confirmed) return;
     nsAudio.diceRoll();
     await rollDiceAnimation();
+
+    // ── Clear slate: reset progress so the reroll reads as fresh char creation.
+    // This lifts the first-level-up lock (SPECIAL/tags/starting traits unlocked).
+    charLevel = 1;
+    if (typeof skillHistory !== 'undefined') skillHistory = [];
+    if (typeof levelUpBonuses !== 'undefined') levelUpBonuses = [];
+    if (typeof skillPoints !== 'undefined') { Object.keys(skillPoints).forEach(k => { skillPoints[k] = 0; }); }
 
     // ── Step 0: Random wasteland (origin)
     setOrigin(Math.random() < 0.5 ? 'CW' : 'MW', true);
@@ -5031,6 +5370,8 @@ function closePerkPickerModal() {
 }
 
 function renderPerkPickerGrid() {
+    beginBonusCache();
+    try {
     const modal = document.getElementById('perk-picker-modal');
     const isTraitMode = modal && modal.getAttribute('data-mode') === 'trait';
     const forceOn = _forceEnable;
@@ -5044,6 +5385,14 @@ function renderPerkPickerGrid() {
     function takenCount(p) { return takenCounts.get(p.name.toUpperCase()) || 0; }
     // Is every rank of this perk already filled?
     function isFullyTaken(p) { return takenCount(p) >= p.ranks; }
+
+    // Requirements evaluated once per perk per render (meetsRequirements cascades into
+    // full bonus-tree recomputes on every call, so cache the per-render result)
+    const reqOk = new Map();
+    function meets(p) {
+        if (!reqOk.has(p)) reqOk.set(p, meetsRequirements(p));
+        return reqOk.get(p);
+    }
 
     // Helper: parse the minimum level from a perk's req string
     function perkLevel(p) {
@@ -5087,11 +5436,11 @@ function renderPerkPickerGrid() {
         // Trait mode: show all perks except fully-taken ones
         const available = PERKS_DATA.filter(p => !isFullyTaken(p));
         const eligible = available
-            .filter(p => forceOn ? true : meetsRequirements(p))
+            .filter(p => forceOn ? true : meets(p))
             .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
         const ineligible = available
-            .filter(p => !(forceOn ? true : meetsRequirements(p)))
+            .filter(p => !(forceOn ? true : meets(p)))
             .filter(p => !search || fuzzyMatch(p.name, search) || p.desc.toLowerCase().includes(search))
             .sort(sortPerks);
 
@@ -5101,7 +5450,7 @@ function renderPerkPickerGrid() {
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
             const isElig = i < eligible.length;
-            const isForced = forceOn && !meetsRequirements(p);
+            const isForced = forceOn && !meets(p);
             const taken = takenCount(p);
             const lvlNum = perkLevel(p);
             const lvlBadge = lvlNum > 0 ? `<span class="pperk-lvl-badge">LVL ${lvlNum}</span>` : '';
@@ -5126,13 +5475,13 @@ function renderPerkPickerGrid() {
     } else {
         // Level-up mode: show eligible and optionally ineligible perks with filters
         const available = PERKS_DATA.filter(p => !isFullyTaken(p));
-        const eligible = available.filter(p => meetsRequirements(p));
+        const eligible = available.filter(p => meets(p));
         
         let list, ineligibleList = [];
         
         if (_perkPickerShowIneligible || forceOn) {
             // Get ineligible perks and filter by block type
-            const allIneligible = available.filter(p => !meetsRequirements(p));
+            const allIneligible = available.filter(p => !meets(p));
             ineligibleList = allIneligible.filter(p => {
                 if (forceOn) return true; // force mode ignores block-type filters
                 const blockType = getBlockType(p);
@@ -5168,7 +5517,7 @@ function renderPerkPickerGrid() {
         }
 
         grid.innerHTML = _perkPickerList.map((p, i) => {
-            const natElig = meetsRequirements(p);
+            const natElig = meets(p);
             const isElig = forceOn ? true : natElig;
             const taken = takenCount(p);
             const lvlNum = perkLevel(p);
@@ -5204,6 +5553,7 @@ function renderPerkPickerGrid() {
             </div>`;
         }).join('') || '<div style="grid-column:1/-1;text-align:center;opacity:0.4;padding:24px;">NO PERKS FOUND</div>';
     }
+    } finally { endBonusCache(); }
 }
 
 function setPerkPickerSort(mode) {
@@ -5281,6 +5631,12 @@ function takePerkFromModal(idx) {
         const extras = document.querySelectorAll('#extra-perk-list .prog-row');
         const last = extras[extras.length - 1];
         if (last) selectPerkInRow(last, perk.name);
+        // Remember which trait granted this bonus perk so the PERK & TRAIT
+        // LOG can interleave it directly under the granting trait
+        if (last && modal) {
+            const trait = modal.getAttribute('data-trait');
+            if (trait) last.setAttribute('data-grant-trait', trait);
+        }
         // Clean up modal state
         if (modal) { modal.style.display = 'none'; modal.removeAttribute('data-mode'); modal.removeAttribute('data-trait'); }
         showPerkToast(perk.name);
@@ -5321,47 +5677,6 @@ function takePerkFromModal(idx) {
 
     showPerkToast(perk.name);
 }
-
-/* ===== STICKY NOTE EASTER EGG ===== */
-let _stickyClicks = 0;
-let _stickyActive = false;
-
-function stickyNoteClick() {
-    if (_stickyActive) return; // prevent retriggering mid-animation
-    _stickyClicks++;
-    const note = document.getElementById('sysop-note');
-    const hint = document.getElementById('sticky-click-hint');
-
-    // Update hint text with countdown
-    const remaining = 5 - _stickyClicks;
-    if (hint && remaining > 0) {
-        hint.textContent = remaining <= 2 ? `(${remaining}...)` : `(click)`;
-        // Micro-jolt on each click
-        note.style.animation = 'none';
-        void note.offsetHeight; // reflow
-        note.style.animation = 'stickyJolt 0.25s ease forwards';
-    }
-
-    if (_stickyClicks >= 5) {
-        _stickyActive = true;
-        if (hint) hint.style.display = 'none';
-        // Stop flicker, then shake + fall
-        note.classList.add('sticky-falling');
-        note.style.animation = 'stickyShake 0.5s ease, stickyFall 0.6s 0.5s ease forwards';
-        setTimeout(() => {
-            note.style.display = 'none';
-            // Reveal doomsday note
-            const doom = document.getElementById('doomsday-note');
-            if (doom) {
-                doom.style.display = 'block';
-                doom.style.animation = 'doomReveal 0.5s ease forwards';
-            }
-            _stickyClicks = 0;
-            _stickyActive = false;
-        }, 1100);
-    }
-}
-
 
 /* ===== RANDOM NAME LISTS ===== */
 /* [RAND_MALE_FIRST — moved to data.js] */
@@ -5520,12 +5835,9 @@ function setCustomTheme(name, skipSave) {
     const originClass = (origin === 'MW') ? 'theme-mw' : 'theme-cw';
     document.body.className = originClass;
     if (_activeCustomTheme) document.body.classList.add('theme-' + _activeCustomTheme);
-    if (!skipSave) localStorage.setItem('NS_CustomTheme', _activeCustomTheme);
-    // Update selector button states
-    document.querySelectorAll('.theme-btn').forEach(btn => {
-        const active = (btn.dataset.theme || '') === _activeCustomTheme;
-        btn.classList.toggle('active-theme', active);
-    });
+    if (!skipSave) {
+        try { localStorage.setItem('NS_CustomTheme', _activeCustomTheme); } catch(e) {}
+    }
     // Inject faction quote
     const quoteBar = document.getElementById('faction-quote-bar');
     if (quoteBar) {
@@ -5561,7 +5873,6 @@ function applyStoredTheme() {
         setCustomTheme(saved, true);
     } else {
         _activeCustomTheme = '';
-        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active-theme'));
     }
     // Sync HUD panel tiles
     document.querySelectorAll('.hud-theme-tile').forEach(tile => {
@@ -5596,6 +5907,8 @@ function setKarma(k) {
         b.classList.toggle('karma-active', b.dataset.karma === k);
     });
     updateKarmaFace(k);
+    updateAll();            // karma-driven trait/perk bonuses auto-follow the selected karma
+    syncProgToggleStates(); // sync the read-only karma indicators on prog/extra rows
     triggerAutosave();
 }
 
@@ -5617,7 +5930,7 @@ function renderKarmaSelector() {
 let _humbledPickedStats = [];
 
 function openHumbledModal() {
-    if (hasBeenHumbled) { alert('HEAD TRAUMA: Transit already applied.'); return; }
+    if (hasBeenHumbled) { showAlertDialog({ title: 'HEAD TRAUMA', message: 'Transit already applied. Your SPECIAL has already been humbled.' }); return; }
     _humbledPickedStats = [];
     renderHumbledPicker();
     document.getElementById('humbled-modal').style.display = 'flex';
@@ -5636,8 +5949,9 @@ function renderHumbledPicker() {
     grid.innerHTML = stats.map(s => {
         const picked = _humbledPickedStats.includes(s);
         const cur = special[s] || 5;
-        return `<button class="humbled-stat-btn${picked ? ' humbled-stat-picked' : ''}"
-            onclick="toggleHumbledStat('${s}')"
+        const canDrop = cur > 1;
+        return `<button class="humbled-stat-btn${picked ? ' humbled-stat-picked' : ''}${canDrop ? '' : ' humbled-stat-disabled'}"
+            ${canDrop ? `onclick="toggleHumbledStat('${s}')"` : 'disabled'}
             title="${s}: ${cur} → ${cur - 1}">
             <span class="hs-name">${s}</span>
             <span class="hs-val">${cur}</span>
@@ -5665,12 +5979,18 @@ function confirmHumbled() {
     hasBeenHumbled = true;
     humbledLevel = charLevel;
     humbledReductions = {};
-    _humbledPickedStats.forEach(s => { humbledReductions[s] = 1; });
+    _humbledPickedStats.forEach(s => {
+        humbledReductions[s] = 1;
+        // Apply the permanent -1 to the chosen SPECIAL stats (floor 1)
+        if ((special[s] || 5) > 1) special[s] -= 1;
+    });
     // Reset level and skills
     charLevel = 1;
     Object.keys(skillPoints).forEach(k => { skillPoints[k] = 0; });
     // Clear skill history too
     if (typeof skillHistory !== 'undefined') skillHistory = [];
+    // Clear attribute-boost history — a humbled restart starts from scratch
+    if (typeof levelUpBonuses !== 'undefined') levelUpBonuses = [];
     // Close modal
     document.getElementById('humbled-modal').style.display = 'none';
     _humbledPickedStats = [];
@@ -6009,6 +6329,7 @@ const nsAudio = (() => {
             document.addEventListener('click', (e) => {
                 const t = e.target;
                 if (t.closest('.tab-nav')) return;       // showTab() calls click() itself
+                if (t.closest('#mobile-more-sheet')) return; // showTab() calls click() itself
                 if (t.matches('.randomize-btn')) return;  // diceRoll() called directly
                 if (t.matches('#ns-mute-btn')) return;    // toggleMute handles its own sound
                 // Checkboxes
@@ -6193,6 +6514,7 @@ window.onload = () => {
     renderBooksTab();
     loadSavedBuildsList(); // Load saved builds list
     loadCollapsedSections(); // Load collapsed section states
+    loadNotesCollapsed(); // Load notes log hidden state
     
     // Clear any stale toasts from previous session
     const toastContainer = document.getElementById('toast-container');
@@ -6202,6 +6524,30 @@ window.onload = () => {
     
     showTab('ov');
 };
+
+/* ═══════════════════════════════════════════════
+   DWELLER NOTES LOG HIDE / SHOW
+═══════════════════════════════════════════════ */
+let _notesCollapsed = false;
+
+function toggleNotesLog() {
+    _notesCollapsed = !_notesCollapsed;
+    document.body.classList.toggle('notes-collapsed', _notesCollapsed);
+    const toggleBtn = document.getElementById('notes-toggle-btn');
+    const restoreBtn = document.getElementById('notes-restore-btn');
+    if (toggleBtn) toggleBtn.textContent = _notesCollapsed ? '☰ NOTES' : '▸ HIDE';
+    if (restoreBtn) restoreBtn.style.display = _notesCollapsed ? 'block' : 'none';
+    try {
+        localStorage.setItem('ns_notes_collapsed', _notesCollapsed ? '1' : '0');
+    } catch(e) {}
+}
+
+function loadNotesCollapsed() {
+    try {
+        const saved = localStorage.getItem('ns_notes_collapsed');
+        if (saved === '1') toggleNotesLog();
+    } catch(e) {}
+}
 
 /* ═══════════════════════════════════════════════
    COLLAPSIBLE SECTIONS
@@ -6265,6 +6611,8 @@ function loadCollapsedSections() {
    KEYBOARD SHORTCUTS SYSTEM
 ═══════════════════════════════════════════════ */
 document.addEventListener('keydown', function(e) {
+    // The in-planner confirm/alert overlay owns the keyboard while it is open
+    if (document.querySelector('.confirm-dialog-overlay')) return;
     // Don't trigger shortcuts when typing in input fields
     if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
         // Allow ESC to blur/close even from inputs
@@ -6276,10 +6624,14 @@ document.addEventListener('keydown', function(e) {
         return;
     }
     
-    // ESC - Close any open modal
+    // ESC - Close any open modal (or clear toasts if nothing is open)
     if (e.key === 'Escape') {
         e.preventDefault();
-        closeAnyOpenModal();
+        if (hasAnyModalOpen()) {
+            closeAnyOpenModal();
+        } else {
+            clearAllToasts();
+        }
         return;
     }
     
@@ -6306,42 +6658,41 @@ document.addEventListener('keydown', function(e) {
         showToast('Shortcuts: ESC=Close, Ctrl+S=Export, Ctrl+Z=Undo', 'info', 5000);
         return;
     }
-    
-    // Escape key also clears all toasts if no modals are open
-    if (e.key === 'Escape' && !document.querySelector('.modal-overlay[style*="display: flex"]')) {
-        clearAllToasts();
-    }
 });
 
+/* All openable modals — used by closeAnyOpenModal() and hasAnyModalOpen().
+   Element IDs match the real markup (build-manager-modal, tag-pick-modal, ...). */
+const OPENABLE_MODALS = [
+    'trait-modal', 'implant-modal', 'archetypes-modal', 'lvlup-modal', 'perk-picker-modal',
+    'reward-perk-modal', 'internalized-modal', 'it-modal', 'perk-zoom-modal', 'trait-detail-modal',
+    'special-info-modal', 'humbled-modal', 'build-manager-modal', 'tag-pick-modal', 'gear-effect-modal',
+    'rollback-modal', 'action-star-modal', 'wishlist-modal', 'companion-modal', 'butch-modal',
+    'companion-zoom-modal'
+];
+
+function _modalOpen(el) {
+    if (!el) return false;
+    return el.classList.contains('active')
+        || (el.style.display !== '' && el.style.display !== 'none');
+}
+
+function hasAnyModalOpen() {
+    return OPENABLE_MODALS.some(id => _modalOpen(document.getElementById(id)));
+}
+
 function closeAnyOpenModal() {
-    // Close all possible modals
-    const modals = [
-        'trait-modal',
-        'implant-modal',
-        'archetypes-modal',
-        'lvlup-modal',
-        'perk-picker-modal',
-        'reward-perk-modal',
-        'internalized-modal',
-        'it-modal',
-        'perk-zoom-modal',
-        'trait-detail-modal',
-        'special-info-modal',
-        'humbled-modal',
-        'builds-manager-modal',
-        'tag-modal',
-        'gear-effect-modal'
-    ];
-    
-    modals.forEach(id => {
+    OPENABLE_MODALS.forEach(id => {
         const modal = document.getElementById(id);
-        if (modal && modal.style.display !== 'none') {
-            modal.style.display = 'none';
-            // Call specific close handlers if they exist
-            const closeFn = window[`close${id.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}`];
-            if (typeof closeFn === 'function') {
-                // Don't call directly, just hide - handlers may have side effects
-            }
+        if (!_modalOpen(modal)) return;
+        // Route modals that keep state through their real close handlers
+        if (id === 'it-modal') { closeITModal(); return; }
+        if (id === 'lvlup-modal') { closeLevelUpModal(); return; }
+        // Handle both open mechanisms: inline display (flex/block) and .active class
+        modal.classList.remove('active');
+        modal.style.display = '';
+        if (id === 'perk-zoom-modal') {
+            const box = document.querySelector('.perk-zoom-box');
+            if (box) box.dataset.type = '';
         }
     });
 }
@@ -6412,6 +6763,118 @@ function showConfirmDialog(options) {
             const confirmBtn = dialog.querySelector('[data-action="confirm"]');
             if (confirmBtn) confirmBtn.focus();
         }, 100);
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   IN-PLANNER ALERT DIALOG
+═══════════════════════════════════════════════ */
+function showAlertDialog(options) {
+    const title = options.title || 'NOTICE';
+    const message = options.message || '';
+    return new Promise((resolve) => {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-dialog-overlay';
+        
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        
+        dialog.innerHTML = `
+            <div class="confirm-dialog-title">
+                <span>⚠</span>
+                <span>${escHtml(title)}</span>
+            </div>
+            <div class="confirm-dialog-message">${message}</div>
+            <div class="confirm-dialog-actions">
+                <button class="confirm-btn confirm-btn-primary" data-action="ok">OK</button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+        const handleEsc = (e) => { if (e.key === 'Escape') cleanup(); };
+        const cleanup = () => {
+            document.removeEventListener('keydown', handleEsc);
+            overlay.remove();
+            dialog.remove();
+            resolve(true);
+        };
+        
+        const okBtn = dialog.querySelector('[data-action="ok"]');
+        okBtn.addEventListener('click', cleanup);
+        overlay.addEventListener('click', cleanup);
+        document.addEventListener('keydown', handleEsc);
+        setTimeout(() => okBtn.focus(), 10);
+    });
+}
+
+/* ═══════════════════════════════════════════════
+   IN-PLANNER PROMPT DIALOG
+═══════════════════════════════════════════════ */
+function showPromptDialog(options) {
+    const title = options.title || 'ENTER VALUE';
+    const message = options.message || '';
+    const placeholder = options.placeholder || '';
+    const initial = options.initial || '';
+    const confirmText = options.confirmText || 'OK';
+    const cancelText = options.cancelText || 'Cancel';
+    const maxlength = options.maxlength || 40;
+    return new Promise((resolve) => {
+        // Create overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'confirm-dialog-overlay';
+        
+        // Create dialog
+        const dialog = document.createElement('div');
+        dialog.className = 'confirm-dialog';
+        
+        dialog.innerHTML = `
+            <div class="confirm-dialog-title">
+                <span>✎</span>
+                <span>${escHtml(title)}</span>
+            </div>
+            <div class="confirm-dialog-message">${message}</div>
+            <input type="text" class="confirm-dialog-input" value="${escHtml(initial)}" placeholder="${escHtml(placeholder)}" maxlength="${maxlength}" autocomplete="off">
+            <div class="confirm-dialog-actions">
+                <button class="confirm-btn confirm-btn-cancel" data-action="cancel">${escHtml(cancelText)}</button>
+                <button class="confirm-btn confirm-btn-primary" data-action="ok">${escHtml(confirmText)}</button>
+            </div>
+        `;
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(dialog);
+        
+        const inputEl = dialog.querySelector('.confirm-dialog-input');
+        const finish = (result) => {
+            document.removeEventListener('keydown', onKey);
+            inputEl.removeEventListener('keydown', onInputKey);
+            overlay.remove();
+            dialog.remove();
+            resolve(result);
+        };
+        const submit = () => {
+            const v = inputEl.value.trim();
+            finish(v ? v : null);
+        };
+        const onInputKey = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                submit();
+                return;
+            }
+            e.stopPropagation();
+        };
+        const onKey = (e) => { if (e.key === 'Escape') finish(null); };
+        
+        dialog.querySelector('[data-action="ok"]').addEventListener('click', submit);
+        dialog.querySelector('[data-action="cancel"]').addEventListener('click', () => finish(null));
+        overlay.addEventListener('click', () => finish(null));
+        inputEl.addEventListener('keydown', onInputKey);
+        document.addEventListener('keydown', onKey);
+        setTimeout(() => { inputEl.focus(); inputEl.select(); }, 10);
     });
 }
 
